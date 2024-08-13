@@ -11,7 +11,7 @@ import { searchedPhone } from '../models/searchedPhone';
 @Injectable({ providedIn: 'root' })
 export class PhonesService {
 
-  private apiUrl = 'http://vps-4306850-x.dattaweb.com:8080/api/phones';
+  private apiUrl = 'http://localhost:8080/api/phones';
 
   productos: Phone[] = [];
 

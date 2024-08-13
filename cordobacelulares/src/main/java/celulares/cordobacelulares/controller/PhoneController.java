@@ -18,7 +18,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 @RestController
 @RequestMapping("/api/phones")
-@CrossOrigin(origins = "http://vps-4306850-x.dattaweb.com:4200")
 public class PhoneController {
 
     @Autowired
