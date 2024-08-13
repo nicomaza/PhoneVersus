@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
-
 @RestController
 @RequestMapping("/api/brand")
 public class BrandController {
@@ -20,7 +19,6 @@ public class BrandController {
     @Autowired
     BrandService brandService;
 
-    @CrossOrigin(origins = "*")
     @PostMapping("createBrand")
     public ResponseEntity<Object> createBrand(@RequestBody BrandDto brandDTO) {
         try {
@@ -31,7 +29,6 @@ public class BrandController {
                     .body(new ErrorApi(LocalDateTime.now().toString(), HttpStatus.INTERNAL_SERVER_ERROR.value(), "Error al crear la marca.", ex.getMessage()));
         }
     }
-    @CrossOrigin(origins = "*")
     @GetMapping
     public ResponseEntity<Object> getAllBrands() {
         try {
@@ -43,7 +40,6 @@ public class BrandController {
         }
     }
 
-    @CrossOrigin(origins = "*")
     @DeleteMapping("/{id}")
     public ResponseEntity<Object> deleteBrand(@PathVariable Long id) {
         try {
@@ -54,7 +50,6 @@ public class BrandController {
                     .body(new ErrorApi(LocalDateTime.now().toString(), HttpStatus.INTERNAL_SERVER_ERROR.value(), "Error deleting brand", ex.getMessage()));
         }
     }
-    @CrossOrigin(origins = "*")
     @GetMapping("/{id}")
     public ResponseEntity<Object> getBrandById(@PathVariable Long id) {
         try {

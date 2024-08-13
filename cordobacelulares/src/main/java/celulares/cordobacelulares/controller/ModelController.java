@@ -12,13 +12,11 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
-
 @RestController
 @RequestMapping("/api/models")
 public class ModelController {
     @Autowired
     ModelService modelService;
-    @CrossOrigin(origins = "*")
     @GetMapping
     public ResponseEntity<Object> getAllModels() {
         try {
@@ -29,7 +27,6 @@ public class ModelController {
                     .body(new ErrorApi(LocalDateTime.now().toString(), HttpStatus.INTERNAL_SERVER_ERROR.value(), "Error obtaining models", ex.getMessage()));
         }
     }
-    @CrossOrigin(origins = "*")
     @GetMapping("/{id}")
     public ResponseEntity<Object> getModelById(@PathVariable Long id) {
         try {
@@ -41,7 +38,6 @@ public class ModelController {
                     .body(new ErrorApi(LocalDateTime.now().toString(), HttpStatus.INTERNAL_SERVER_ERROR.value(), "Error obtaining model by ID", ex.getMessage()));
         }
     }
-    @CrossOrigin(origins = "*")
     @PostMapping
     public ResponseEntity<Object> createModel(@RequestBody ModelDto modelDto ) {
         try {
@@ -52,7 +48,6 @@ public class ModelController {
                     .body(new ErrorApi(LocalDateTime.now().toString(), HttpStatus.INTERNAL_SERVER_ERROR.value(), "Error creating model", ex.getMessage()));
         }
     }
-    @CrossOrigin(origins = "*")
     @PutMapping("/{id}")
     public ResponseEntity<Object> updateModel(@PathVariable Long id, @RequestBody ModelEntity model) {
         try {
