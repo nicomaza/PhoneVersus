@@ -32,6 +32,7 @@ celulares\cordobacelulares\services\PhoneService.class
 celulares\cordobacelulares\CordobacelularesApplication.class
 celulares\cordobacelulares\repository\PhoneJPA.class
 celulares\cordobacelulares\services\ModelService.class
+celulares\cordobacelulares\config\CORSConfig$1.class
 celulares\cordobacelulares\dtos\phonedto\PostNewPhone.class
 celulares\cordobacelulares\dtos\whatsapp\MessageBodyDto.class
 celulares\cordobacelulares\dtos\whatsapp\RequestMessageText.class

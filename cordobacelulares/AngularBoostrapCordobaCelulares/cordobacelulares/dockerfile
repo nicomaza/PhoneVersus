@@ -1,5 +1,4 @@
-# Etapa de construcción
-FROM node:20 as build
+FROM node:20
 
 # Establece el directorio de trabajo en la raíz del proyecto
 WORKDIR /app
@@ -12,16 +11,7 @@ RUN npm install
 COPY . .
 
 # Construye la aplicación Angular
-RUN npm run build --prod
+RUN npm run build
 
-# Etapa de producción
-FROM nginx:alpine
-
-# Copia los archivos construidos en la etapa anterior al contenedor de nginx
-COPY --from=build /app/dist/cordobacelulares /usr/share/nginx/html
-
-# Expone el puerto 80 para el tráfico HTTP
-EXPOSE 80
-
-# Comando para iniciar nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Establece el comando para iniciar la aplicación
+CMD ["npx", "ng", "serve", "--host", "0.0.0.0", "--disable-host-check"]
