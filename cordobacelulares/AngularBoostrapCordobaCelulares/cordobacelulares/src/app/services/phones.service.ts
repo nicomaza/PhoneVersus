@@ -11,7 +11,7 @@ import { searchedPhone } from '../models/searchedPhone';
 @Injectable({ providedIn: 'root' })
 export class PhonesService {
 
-  private apiUrl = 'http://localhost:8080/api/phones';
+  private apiUrl = 'http://practicapp:8080/api/phones';
 
   productos: Phone[] = [];
 
@@ -24,7 +24,7 @@ export class PhonesService {
   }
   getPhoneById(id: number): Observable<Phone> {
     return this.http.get<Phone>(`${this.apiUrl}/${id}`);
-    
+
   }
   getPhonesByBrand(brand:string): Observable<Phone[]> {
     return this.http.get<Phone[]>(`${this.apiUrl}/brand/${brand}`);
@@ -33,7 +33,7 @@ export class PhonesService {
     return this.http.get<searchedPhone[]>(`${this.apiUrl}/search?textsearch=${textSearch}`);
   }
 
-  
+
 }
 
 
@@ -50,15 +50,15 @@ export class PhonesService {
     return this.productos;
   }
 
- * 
- * 
- * 
+ *
+ *
+ *
  * [
-    
+
 
     {
       idPhone: 1,
-    
+
       brand: "Samsung",
       model: "Galaxy S21",
       version: "5G",
@@ -80,7 +80,7 @@ export class PhonesService {
     },
     {
       idPhone: 2,
-    
+
       brand: "Samsung",
       model: "Galaxy S21",
       version: "5G",
@@ -102,7 +102,7 @@ export class PhonesService {
     },
    {
     idPhone: 3,
-    
+
       brand: "Apple",
       model: "iPhone 13 Pro",
       version: "A2639",
@@ -128,7 +128,7 @@ export class PhonesService {
       model: "Pixel 6 Pro",
       version: "2021",
       images: ["https://images.fravega.com/f300/31748935fdb542bb843f3803c7972829.jpg.webp"],
-     
+
       mainCamera: [
         "50 MP (f/1.9, PDAF, Laser AF, OIS, wide)",
         "12 MP (f/2.2, ultrawide)",
@@ -148,5 +148,5 @@ export class PhonesService {
       colors: ["Cloudy White", "Sorta Sunny", "Stormy Black"],
       boxContents: ["Phone", "Charger", "USB Cable", "Quick Switch Adapter", "SIM Eject Tool", "Quick Start Guide"]
     }
-   
+
   ]; */

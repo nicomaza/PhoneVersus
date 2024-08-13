@@ -9,7 +9,7 @@ import { Brand } from '../models/brand';
 export class BrandService {
 
   constructor(private http:HttpClient) { }
-  private apiUrl = 'http://localhost:8080/api/brand';
+  private apiUrl = 'http://practicapp:8080/api/brand';
 
   getAllBrands(): Observable<Brand[]> {
     return this.http.get<Brand[]>(this.apiUrl);
