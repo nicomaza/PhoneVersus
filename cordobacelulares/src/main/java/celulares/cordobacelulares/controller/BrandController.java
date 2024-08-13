@@ -12,9 +12,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
-@CrossOrigin
 @RestController
 @RequestMapping("/api/brand")
+@CrossOrigin(origins = "http://vps-4306850-x.dattaweb.com:4200")
 public class BrandController {
 
     @Autowired
