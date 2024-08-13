@@ -26,7 +26,7 @@ public class PhoneController {
 
     @Autowired
     private WhatsappService whatsappService;
-
+    @CrossOrigin(origins = "*")
     @GetMapping
     public ResponseEntity<Object> getAllPhones() {
         try {
@@ -37,7 +37,7 @@ public class PhoneController {
                     .body(new ErrorApi(LocalDateTime.now().toString(), HttpStatus.INTERNAL_SERVER_ERROR.value(), "Error obtaining phones", ex.getMessage()));
         }
     }
-
+    @CrossOrigin(origins = "*")
     @GetMapping("/search")
     public ResponseEntity<Object> searchPhone(String textsearch) {
         try {
@@ -48,7 +48,7 @@ public class PhoneController {
                     .body(new ErrorApi(LocalDateTime.now().toString(), HttpStatus.INTERNAL_SERVER_ERROR.value(), "Error obtaining phones", ex.getMessage()));
         }
     }
-
+    @CrossOrigin(origins = "*")
     @PostMapping("/sendmessage")
     public ResponseEntity<Object> sendMessage(@RequestBody MessageBodyDto messageBodyDto) {
         try {
@@ -59,7 +59,7 @@ public class PhoneController {
                     .body(new ErrorApi(LocalDateTime.now().toString(), HttpStatus.INTERNAL_SERVER_ERROR.value(), "Error sending message", ex.getMessage()));
         }
     }
-
+    @CrossOrigin(origins = "*")
     @GetMapping("/{id}")
     public ResponseEntity<Object> getPhoneById(@PathVariable Long id) {
         try {
@@ -71,7 +71,7 @@ public class PhoneController {
                     .body(new ErrorApi(LocalDateTime.now().toString(), HttpStatus.INTERNAL_SERVER_ERROR.value(), "Error obtaining phone by ID", ex.getMessage()));
         }
     }
-
+    @CrossOrigin(origins = "*")
     @GetMapping("/brand/{brand}")
     public ResponseEntity<Object> getPhoneByBrand(@PathVariable String brand) {
         try {
@@ -83,7 +83,7 @@ public class PhoneController {
                     .body(new ErrorApi(LocalDateTime.now().toString(), HttpStatus.INTERNAL_SERVER_ERROR.value(), "Error obtaining phones by brand", ex.getMessage()));
         }
     }
-
+    @CrossOrigin(origins = "*")
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Object> createPhone(@RequestBody PostNewPhone phone) {
         try {
@@ -94,7 +94,7 @@ public class PhoneController {
                     .body(new ErrorApi(LocalDateTime.now().toString(), HttpStatus.INTERNAL_SERVER_ERROR.value(), "Error creating phone", ex.getMessage()));
         }
     }
-
+    @CrossOrigin(origins = "*")
     @DeleteMapping("/{id}")
     public ResponseEntity<Object> deletePhone(@PathVariable Long id) {
         try {

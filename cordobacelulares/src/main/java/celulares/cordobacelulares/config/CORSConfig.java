@@ -12,7 +12,7 @@ public class CORSConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        config.addAllowedOrigin("http://localhost:4200"); // Reemplaza con el origen que deseas permitir
+        config.addAllowedOrigin("*"); // Reemplaza con el origen que deseas permitir
         config.addAllowedHeader("*");
         config.addAllowedMethod("GET");
         config.addAllowedMethod("POST");
