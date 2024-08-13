@@ -1,0 +1,22 @@
+<div class="main-content bg-light animated-div">
+    <div class="album bg-light pb-4">
+      <div class="container">
+        <div class="hstack gap-3">
+          <input [(ngModel)]="searchText" placeholder="Buscar teléfono" type="search" class="form-control" (keyup)="resetPage()" />
+        </div>
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-2 mt-2">
+          <app-phone-item *ngFor="let item of displayPhones" [phone]="item"></app-phone-item>
+        </div>
+        <nav aria-label="Page navigation example">
+          <ul class="pagination d-flex justify-content-center">
+            <li class="page-item" [class.disabled]="currentPage === 1"><a class="page-link" (click)="previusPage()">Anterior</a></li>
+            <li class="page-item" *ngFor="let page of [].constructor(quantitypages); let i = index" [class.active]="currentPage === i + 1">
+              <a class="page-link" (click)="changePage(i + 1)">{{ i + 1 }}</a>
+            </li>
+            <li class="page-item" [class.disabled]="currentPage === quantitypages"><a class="page-link" (click)="nextPage()">Siguiente</a></li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </div>
+  

@@ -1,0 +1,48 @@
+#version: '3.8'
+
+services:
+
+  angular_app:
+    container_name: angular_app
+    image: angular_app_1.0
+    build: ./AngularBoostrapCordobaCelulares/cordobacelulares
+    ports:
+      - 4200:4200
+    depends_on:
+      - practicapp
+  practicapp:
+    build: .
+    image: practicapp
+    ports:
+      - 8080:8080
+    depends_on:
+      - db_cel
+    environment:
+      - username=nicolas
+      - password=nicolas12
+      - url=db:5432
+    networks:
+      - database
+      - backend
+
+  db_cel:
+    image: postgres
+    environment:
+      - POSTGRES_USER=nicolas
+      - POSTGRES_PASSWORD=nicolas12
+      - POSTGRES_DB=postgres
+    ports:
+      - 5438:5432
+    volumes:
+      - postgres_volume:/var/lib/postgresql/data
+    networks:
+      - database
+
+volumes:
+  postgres_volume:
+
+networks:
+  database:
+    driver: bridge
+  backend:
+    driver: bridge

@@ -1,0 +1,85 @@
+.background-gradient {
+    position: relative;
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(135deg, #8B0000, #FFD700);
+    overflow: hidden;
+  }
+  
+  .background-gradient::before,
+  .background-gradient::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    opacity: 0.6;
+  }
+  
+  .background-gradient::before {
+    width: 150px;
+    height: 150px;
+    top: 20%;
+    left: 15%;
+  }
+  
+  .background-gradient::after {
+    width: 250px;
+    height: 250px;
+    bottom: 10%;
+    right: 10%;
+  }
+  
+
+  
+
+
+/* SLider infinito */
+
+.slider{
+    width: 75vw;
+    height: auto;
+    margin: auto;
+    overflow: hidden;
+}
+
+.slider .slide-track{
+    display: flex;
+    animation: scroll 40s linear infinite;
+    -webkit-animation: scroll 40s linear infinite;
+    width: calc(200px *14);
+
+}
+
+.slider .slide img{
+width: 100%;
+}
+
+@keyframes scroll {
+
+    0%{
+        -webkit-transform: translateX(0);
+        transform: translateX(0)
+    }
+    100%{
+        -webkit-transform: translateX(calc(-200px *7));
+        transform: translateX(calc(-200px *7))
+    }
+}
+/* Divisior gris */
+.b-example-divider {
+    width: 100%;
+    height: 1rem;
+    background-color: rgba(0, 0, 0, .1);
+    border: solid rgba(0, 0, 0, .15);
+    border-width: 1px 0;
+    box-shadow: inset 0 .5em 1.5em rgba(0, 0, 0, .1), inset 0 .125em .5em rgba(0, 0, 0, .15);
+}
+
+/* fondo violeta */
+
+#hero {
+    width: 100%;
+    height: 100vh;
+    background: linear-gradient(130deg, rgba(255, 255, 255, 0.9) 30%, rgba(235, 235, 235, 0.9) 70%), url(../../assets/img/fondoxiaomi.jpg) center center no-repeat;
+    background-size: cover;
+}

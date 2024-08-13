@@ -1,0 +1,122 @@
+<!-- FAQ 2 - Bootstrap Brain Component -->
+<section class="bsb-faq-2 bg-light py-3 py-md-5 py-xl-8 animated-div">
+  <div class="container">
+    <div class="row justify-content-center justify-items-center align-items-center py-5">
+      <div class="col-12 col-lg-6 py-5 justify-content-center px-5">
+        <h2 class="h1 mb-3">¿Tenés dudas? Te ayudamos a despejarlas...</h2>
+        <p class="lead fs-4 text-secondary mb-4">¡Te damos la bienvenida a nuestra sección de info sobre smartphones!
+          Aquí respondemos las dudas más frecuentes de clientes y usuarios. ¿Tenés otra pregunta? ¡Escribinos por
+          WhatsApp! Estamos para ayudarte a elegir el equipo ideal para vos
+        </p>
+        <a class="btn btn-success" href="https://wa.me/5493512129922" target="_blank">Whatsapp</a>
+      </div>
+      <div class="col-12 col-lg-6">
+        <div class="row justify-content-xl-end">
+          <div class="col-12 col-xl-11">
+            <div class="accordion accordion-flush" id="accordionExample">
+              <div class="accordion-item mb-4 shadow-sm">
+                <h2 class="accordion-header" id="headingOne">
+                  <button class="accordion-button bg-transparent fw-bold" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                    ¿Qué precio tienen los equipos?
+                  </button>
+                </h2>
+                <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne"
+                  data-bs-parent="#accordionExample">
+                  <div class="accordion-body">
+                    <p>En este link, podes acceder a la lista de precios y stock actualizado</p>
+                    <ul>
+                      <a href="https://docs.google.com/spreadsheets/d/1MtaCGCL0fGMg25RdshtRKcakiy-ggLCjSeuhiKy4Zdk/edit?pli=1&gid=0#gid=0"
+                        target="_blank">
+                        <li>https://bit.ly/3xmBJ0H</li>
+                      </a>
+
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              <div class="accordion-item mb-4 shadow-sm">
+                <h2 class="accordion-header" id="headingTwo">
+                  <button class="accordion-button collapsed bg-transparent fw-bold" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false"
+                    aria-controls="collapseTwo">
+                    ¿Tienen local físico?
+                  </button>
+                </h2>
+                <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#accordionExample">
+                  <div class="accordion-body">
+                    ¡Próximamente contaremos con local físico nuevamente!
+                    Actualmente, sólo tenemos un depósito, el cual no está abierto al público. </div>
+                </div>
+              </div>
+              <div class="accordion-item mb-4 shadow-sm">
+                <h2 class="accordion-header" id="headingThree">
+                  <button class="accordion-button collapsed bg-transparent fw-bold" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false"
+                    aria-controls="collapseThree">
+                    ¿Se puede pagar con tarjeta?
+                  </button>
+                </h2>
+                <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#accordionExample">
+                  <div class="accordion-body">
+                    <p>Por el momento, no estamos recibiendo tarjetas. Los precios de la lista corresponden a pagos en
+                      efectivo o transferencia. Los medios de pago son:</p>
+                    <li>Pesos</li>
+                    <li>Dolares</li>
+                    <li>USDT</li>
+                    <li>Transferencias Bancarias</li>
+                  </div>
+
+                </div>
+              </div>
+              <div class="accordion-item mb-4 shadow-sm">
+                <h2 class="accordion-header" id="headingFour">
+                  <button class="accordion-button collapsed bg-transparent fw-bold" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#collapseFour" aria-expanded="false"
+                    aria-controls="collapseFour">
+                    ¿Tienen garantía?
+                  </button>
+                </h2>
+                <div id="collapseFour" class="accordion-collapse collapse" aria-labelledby="headingFour" data-bs-parent="#accordionExample">
+                  <div class="accordion-body">
+                    ¡Si! Todos los equipos tienen garantía. La misma se entrega en el momento de la compra. Podes
+                    acceder al siguiente link con las condiciones detalladas: </div>
+                  <ul>
+                    <a [routerLink]="'../warranty'">
+                      <li>Condiciones de garantia</li>
+                    </a>
+
+                  </ul>
+                </div>
+
+
+              </div>
+              <div class="accordion-item shadow-sm">
+                <h2 class="accordion-header" id="headingFive">
+                  <button class="accordion-button collapsed bg-transparent fw-bold" type="button"
+                    data-bs-toggle="collapse" data-bs-target="#collapseFive" aria-expanded="false"
+                    aria-controls="collapseFive" >
+                    ¿Si no soy de Córdoba puedo comprar?
+                  </button>
+                </h2>
+                <div id="collapseFive" class="accordion-collapse collapse" aria-labelledby="headingFive" data-bs-parent="#accordionExample">
+                  <div class="accordion-body">
+                    <p>Si vivís en Córdoba o en un rango de 40km de la capital y realizas tu pedido antes de las 16hs,
+                      ¡tu equipo llega en el día!.</p>
+                    <P>Si sos de otra localidad o provincia:</P>
+                    <ul>
+                      <li>Despachamos por encomienda que normalmente suelen llegar al dia siguiente o como mucho a los 2
+                        dias</li>
+                      <li>Podes solicitar tu envio personalizado con representante de CordobaCelulares, en caso de envio
+                        personalizado consulta al siguiente <a class="" href="https://wa.me/5493512129922" target="_blank" style="color: green;"><i class="bi bi-whatsapp" style="color: green;"></i> Whatsapp</a></li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

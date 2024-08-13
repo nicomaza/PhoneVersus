@@ -1,0 +1,30 @@
+.aurora-title {
+    margin-top: -2%;
+    font-size: 1.1rem;
+    font-weight: normal;
+    text-transform: none;
+    background: linear-gradient(90deg, #ff0000, #ffff00, #ff00ff);
+    background-size: 600% 100%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: aurora 10s linear infinite;
+  }
+  
+  @keyframes aurora {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+  @media (max-width: 660px) {
+    .aurora-title {
+      margin-top: 0%;
+      font-size: 1.1rem;
+    }
+
+  }

@@ -1,0 +1,40 @@
+.img-small {
+    width: 150;
+    height: 150;
+    object-fit: cover; /* Esto ayudará a mantener la proporción de la imagen */
+  }
+
+.card-hover-effect {
+    transition: transform 0.3s, box-shadow 0.3s;
+  }
+  
+.card-hover-effect:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+  }
+  
+.card-body {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.card-body .btn {
+  align-self: flex-end; /* Alinea el botón a la derecha */
+}
+.btn-smaller {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem; /* Ajusta el tamaño de la fuente para hacerlo más pequeño */
+  line-height: 1.5;
+  border-radius: 0.2rem; /* Ajusta el radio del borde para hacerlo más pequeño */
+}
+@media (max-width: 576px) {
+  .custom-img-size {
+    width: 169px;
+    height: 295px;
+  }
+  .custom-img-container {
+    padding-top: 5%; /* Ajusta este valor según sea necesario */
+  }
+}
+

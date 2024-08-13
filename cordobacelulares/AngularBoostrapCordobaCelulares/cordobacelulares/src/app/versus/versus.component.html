@@ -1,0 +1,155 @@
+<div *ngIf="phoneleft && phoneright" class="d-flex justify-content-center animated-div">
+
+
+    <div class="container  py-5 ">
+        <div class="py-3">
+            <h1 class="text-center px-1 pt-3">{{phoneleft.brand}} {{phoneleft.model}}</h1>
+            <h3 class="text-center">VS</h3>
+            <h1 class="text-center px-1"> {{phoneright.brand}} {{phoneright.model}} </h1>
+        </div>
+
+        <div class="row">
+            <div class="col-12 col-lg-12">
+                <table class="table caption-top  align-middle">
+                    <thead>
+                        <tr>
+                            <th scope="col">Caracteristicas</th>
+                            <th scope="col">{{phoneleft.brand}} {{phoneleft.model}}</th>
+                            <th scope="col">{{phoneright.brand}} {{phoneright.model}}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th scope="col"><i class="bi bi-palette-fill"></i> Colores</th>
+                            <td>
+                                <p *ngFor="let item of phoneleft.colors">{{item}}</p>
+                            </td>
+                            <td>
+                                <p *ngFor="let item of phoneright.colors">{{item}}</p>
+                            </td>
+
+                        </tr>
+                        <tr>
+                            <th scope="col"><i class="bi bi-palette-fill"></i> Contenido de la caja</th>
+                            <td>
+                                <p *ngFor="let item of phoneleft.boxContents">{{item}}</p>
+                            </td>
+                            <td>
+                                <p *ngFor="let item of phoneright.boxContents">{{item}}</p>
+                            </td>
+
+                        </tr>
+                        <tr class="align-middle">
+                            <th scope="col"><i class="bi bi-camera-fill"></i> Camara principal</th>
+                            <td>
+                                <p *ngFor="let item of phoneleft.mainCamera">{{item}}</p>
+                            </td>
+                            <td>
+                                <p *ngFor="let item of phoneright.mainCamera">{{item}}</p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="col"><i class="bi bi-webcam-fill"></i> Camara secundaria</th>
+                            <td>{{phoneleft.secondaryCamera}}</td>
+                            <td>{{phoneright.secondaryCamera}}</td>
+                        </tr>
+                        <tr>
+                            <th scope="col"><i class="bi bi-phone-fill"></i> Pantalla</th>
+                            <td>
+                                <p *ngFor="let item of phoneleft.screen">{{item}}</p>
+                            </td>
+                            <td>
+                                <p *ngFor="let item of phoneright.screen">{{item}}</p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th scope="col"><i class="bi bi-cpu-fill"></i> Procesador</th>
+                            <td>
+                                <p>{{phoneleft.processor}}</p>
+                            </td>
+                            <td>
+                                <p>{{phoneright.processor}}</p>
+                            </td>
+
+                        </tr>
+                        <tr>
+                            <th scope="col"><i class="bi bi-badge-3d-fill"></i> GPU</th>
+                            <td>
+                                <p>{{phoneleft.gpu}}</p>
+                            </td>
+                            <td>
+                                <p>{{phoneright.gpu}}</p>
+                            </td>
+
+                        </tr>
+                        <tr>
+                            <th scope="col"><i class="bi bi-floppy-fill"></i> Memoria</th>
+                            <td>
+                                <p *ngFor="let item of phoneleft.memory">{{item}}</p>
+                            </td>
+                            <td>
+                                <p *ngFor="let item of phoneright.memory">{{item}}</p>
+                            </td>
+
+                        </tr>
+                        <tr>
+                            <th scope="col"><i class="bi bi-battery-charging"></i> Bateria</th>
+                            <td>
+                                <p *ngFor="let item of phoneleft.battery">{{item}}</p>
+                            </td>
+                            <td>
+                                <p *ngFor="let item of phoneright.battery">{{item}}</p>
+                            </td>
+
+
+                        </tr>
+                        <tr>
+                            <th scope="col"><i class="bi bi-android"></i> Sistema operativo</th>
+                            <td>
+                                <p>{{phoneleft.os}}</p>
+                            </td>
+                            <td>
+                                <p>{{phoneright.os}}</p>
+                            </td>
+
+                        </tr>
+
+                        <tr>
+                            <th scope="col"><i class="bi bi-bluetooth"></i> Conectividad</th>
+                            <td>
+                                <p *ngFor="let item of phoneleft.connectivity">{{item}}</p>
+                            </td>
+                            <td>
+                                <p *ngFor="let item of phoneright.connectivity">{{item}}</p>
+                            </td>
+
+                        </tr>
+
+                        <tr>
+                            <th scope="col"><i class="bi bi-file-lock-fill"></i> Seguridad</th>
+                            <td>
+                                <p *ngFor="let item of phoneleft.security">{{item}}</p>
+                            </td>
+                            <td>
+                                <p *ngFor="let item of phoneright.security">{{item}}</p>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <th scope="col"><i class="bi bi-arrows-expand-vertical"></i> Dimensiones y Peso</th>
+                            <td>
+                                <p>{{phoneleft.dimensions}}</p>
+                            </td>
+                            <td>
+                                <p>{{phoneright.dimensions}}</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>

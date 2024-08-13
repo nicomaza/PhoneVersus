@@ -1,0 +1,49 @@
+<header data-bs-theme="dark fixed-top">
+    <nav class="navbar navbar-expand-md navbar-dark bg-dark fixed-top">
+        <div class="container">
+            <a class="mr-3" [routerLink]="'home'">
+                <img src="../../assets/img/logo40x40.png" alt="">
+
+            </a>
+            <button class="navbar-toggler collapsed" type="button" data-bs-toggle="collapse"
+                data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false"
+                aria-label="Alternar navegación">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="navbar-collapse collapse" id="navbarCollapse" #navbarCollapse>
+                <ul class="navbar-nav me-auto mb-2 mb-md-0 px-2">
+                    <li><a href="#" class="nav-link px-2 text-white" [routerLink]="'home'"
+                            (click)="toggleNavbar()">Home</a></li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link text-white dropdown-toggle ms-2" role="button" data-bs-toggle="dropdown"
+                            aria-expanded="false">
+                            Equipos
+                        </a>
+                        <ul class="dropdown-menu">
+
+                            <li><a class="dropdown-item" *ngFor="let marca of Brand" (click)="toggleNavbar()"
+                                    [routerLink]="['../phonelist/', marca.brandName.toString()]">{{marca.brandName}}</a>
+                            </li>
+
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item" [routerLink]="['../phonelist/', 'todos']"
+                                    (click)="toggleNavbar()">Todos</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="#" class="nav-link px-2 text-white aurora-title" [routerLink]="'comparatives'"
+                            (click)="toggleNavbar()">Versus</a></li>
+                    <li><a href="#" class="nav-link px-2 text-white" [routerLink]="'warranty'"
+                            (click)="toggleNavbar()">Garantia</a></li>
+                    <li><a href="#" class="nav-link px-2 text-white" [routerLink]="'faqs'"
+                            (click)="toggleNavbar()">Dudas</a></li>
+
+                    <li><a href="#" class="nav-link px-2 text-white" [routerLink]="'glossary'"
+                            (click)="toggleNavbar()">Glosario</a></li>
+                </ul>
+
+            </div>
+        </div>
+    </nav>
+</header>

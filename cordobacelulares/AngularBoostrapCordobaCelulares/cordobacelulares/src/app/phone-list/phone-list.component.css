@@ -1,0 +1,6 @@
+.main-content {
+    padding-top: 80px; /* Ajusta esta cantidad según la altura de tu header */
+}
+.page-item{
+    cursor: pointer;
+}

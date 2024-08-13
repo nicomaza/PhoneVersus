@@ -1,0 +1,105 @@
+<section class="animated-div">
+    <div [ngClass]="{'card-box': !phoneleft, 'card-versus': phoneleft}">
+        <div *ngIf="!phoneleft">
+            <form action="">
+                <div class="input-box" [ngClass]="{'input-error': leftclass}">
+                    <span class="icon"><ion-icon name="search-outline"></ion-icon></span>
+                    <div class="search-container">
+                        <input type="text" name="search" (ngModelChange)="onSearch($event)" [(ngModel)]="searchText"
+                            placeholder="Primer equipo"  >
+                    </div>
+
+                </div>
+               
+
+                <div *ngIf="isLoading">
+                    <div *ngFor="let phone of phones$ | async">
+                        <button class="btn text-white" (click)="setPhoneLeft(phone.idPhone)">
+                            {{ phone.brand }} - {{ phone.model }}
+                        </button>
+                    </div>
+                </div>
+
+
+
+            </form>
+        </div>
+
+        <!-- Mostrar la tarjeta del teléfono seleccionado -->
+        <div *ngIf="phoneleft" style="max-width: 540px;">
+            <div class="row g-0">
+
+                <div>
+                    <div class="card-body">
+
+                        <h6 class="card-title">{{ phoneleft.brand }}</h6>
+                        <h3>{{ phoneleft.model }}</h3>
+
+                        <p><small class="" style="color: rgb(165, 165, 165);">Primer equipo a comparar
+                                seleccionado</small></p>
+                        <button type="button" class="" (click)="deletePhoneLeft()">Eliminar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div [ngClass]="{'card-box': !phoneright, 'card-versus': phoneright}">
+        <div *ngIf="!phoneright">
+            <form action="">
+                <div class="input-box" [ngClass]="{'input-error': rightclass}">
+                    <span class="icon"><ion-icon name="search-outline"></ion-icon></span>
+                    <div class="search-container">
+                        <input type="text" name="search" (ngModelChange)="onSearchRight($event)" [(ngModel)]="searchTextRight"
+                            placeholder="Segundo equipo" >
+                    </div>
+
+                </div>
+               
+
+                <div *ngIf="isLoadingRight">
+                    <div *ngFor="let phone of phones$ | async">
+                        <button class="btn text-white" (click)="setPhoneRight(phone.idPhone)">
+                            {{ phone.brand }} - {{ phone.model }}
+                        </button>
+                    </div>
+                </div>
+
+
+
+            </form>
+        </div>
+
+        <!-- Mostrar la tarjeta del teléfono seleccionado -->
+        <div *ngIf="phoneright" style="max-width: 540px;">
+            <div class="row g-0">
+
+                <div>
+                    <div class="card-body">
+
+                        
+                        <h6 class="card-title">{{ phoneright.brand }}</h6>
+                        <h3>{{ phoneright.model }}</h3>
+
+                        <p><small class="" style="color: rgb(165, 165, 165);">Segundo equipo a comparar
+                                seleccionado</small></p>
+                        <button type="button" class="" (click)="deletePhoneRight()">Eliminar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="graphic-circle absolute">
+
+        <div class="graphic-energy">
+            <a 
+              [routerLink]="(phoneleft?.idPhone && phoneright?.idPhone) ? ['../versus',phoneleft?.idPhone?.toString(), phoneright?.idPhone?.toString()] : null"
+              (click)="isBothLoaded()">
+          
+              <img src="../../assets/img/circulofin.png" class="graphic-energy" alt="">
+            </a>
+          </div>
+          
+
+    </div>
+</section>

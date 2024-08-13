@@ -1,0 +1,34 @@
+.content {
+    grid-template-columns: 1.15fr 3fr;
+    gap: 3rem;
+}
+
+
+.masthead {
+    position: -webkit-sticky;
+    position: sticky;
+    top: 4rem;
+}
+
+.page, .post {
+    margin-bottom: 4em;
+}
+.posts-container {
+    max-width: 760px;
+}
+main {
+    display: block;
+    unicode-bidi: isolate;
+}
+.img-blog{
+    display: flex;
+    
+}
+
+.tecnic-card {
+    transition: transform 0.3s ease; /* Agrega una transición suave para la transformación */
+}
+
+.tecnic-card:hover {
+    transform: scale(1.1); /* Aumentar el tamaño al pasar el mouse */
+}

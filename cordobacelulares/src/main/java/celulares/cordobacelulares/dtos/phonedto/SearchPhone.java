@@ -1,0 +1,22 @@
+package celulares.cordobacelulares.dtos.phonedto;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import java.util.List;
+
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
+@Setter
+public class SearchPhone {
+    private Long idPhone;
+
+    private String brand;
+
+    private String model;
+
+    private String imageSearch;
+}
