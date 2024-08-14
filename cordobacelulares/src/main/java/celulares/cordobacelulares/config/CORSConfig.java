@@ -17,7 +17,7 @@ public class CORSConfig implements WebMvcConfigurer {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
-                        .allowedOrigins("http://vps-4306850-x.dattaweb.com:4200")
+                        .allowedOrigins("http://vps-4306850-x.dattaweb.com", "http://www.cordobacelulares.com", "http://cordobacelulares.com")
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
                         .allowCredentials(true);
