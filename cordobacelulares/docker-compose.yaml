@@ -7,14 +7,14 @@ services:
     image: angular_app_1.0
     build: ./AngularBoostrapCordobaCelulares/cordobacelulares
     ports:
-      - 4200:4200
+      - 80:80
     depends_on:
       - practicapp
   practicapp:
     build: .
     image: practicapp
     ports:
-      - 80:80
+      - 8080:8080
     depends_on:
       - db_cel
     environment:
