@@ -9,7 +9,7 @@ import { Brand } from '../models/brand';
 export class BrandService {
 
   constructor(private http:HttpClient) { }
-  private apiUrl = 'http://vps-4306850-x.dattaweb.com:8080/api/brand';
+  private apiUrl = 'https://www.cordobacelulares.com/api/brand';
 
   getAllBrands(): Observable<Brand[]> {
     return this.http.get<Brand[]>(this.apiUrl);
