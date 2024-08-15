@@ -10,13 +10,13 @@
                                 [attr.aria-label]="'Slide ' + (i + 1)">
                             </button>
                         </div>
-                
+
                         <div class="carousel-inner">
                             <div *ngFor="let photo of phone.images; let i = index" class="carousel-item" [ngClass]="{'active': i === 0}">
                                 <img [src]="photo" class="d-block w-100" alt="Image" style=" padding-top: 10%;">
                             </div>
                         </div>
-                
+
                         <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide="prev">
                             <span class="carousel-control-prev-icon" aria-hidden="true"></span>
                             <span class="visually-hidden">Previous</span>
@@ -27,7 +27,7 @@
                         </button>
                     </div>
                 </div>
-                
+
                 <div class="col-md-8">
 
                     <div class="container px-4 py-5" id="hanging-icons">
@@ -252,30 +252,7 @@
 
 
 </div>
-<div class="b-example-divider"></div>
-@defer (on viewport) {
-<div *ngIf="phone$ | async as phone">
-    <div class="container marketing py-5">
 
-        <div class="row featurette animated-div">
-            <div class="col-md-7 py-5">
-                <h2 class="featurette-heading fw-normal lh-1">Video explicativo de {{phone.brand}} {{phone.model}}
-
-                </h2>
-                <p class="lead">EL mejor resumen filtrado de la web</p>
-            </div>
-            <div class="col-md-5 d-flex align-items-center">
-                <div class="object-fit-fill">
-                    <iframe class="object-fit-fill" width="560" height="315" src="{{phone.videoYoutube}}"
-                        frameborder="0" allowfullscreen></iframe>
-
-                </div>
-            </div>
-        </div>
-
-    </div>
-</div>
-}@placeholder {<p>loading</p> }
 
 
 

@@ -64,13 +64,10 @@ export class PhoneListComponent implements OnInit, OnChanges {
   }
 
   filterPhones(): void {
-    console.log("phones",this.phones)
-    console.log(this.searchText)
     this.filteredPhones = this.phones.filter(phone =>
-      phone.brand.toLowerCase().includes(this.searchText.toLowerCase()) || 
+      phone.brand.toLowerCase().includes(this.searchText.toLowerCase()) ||
       phone.model.toLowerCase().includes(this.searchText.toLowerCase())
     );
-    console.log(this.filteredPhones)
     this.quantitypages = Math.ceil(this.filteredPhones.length / this.itemsPerPage);
     this.updatePage();
   }

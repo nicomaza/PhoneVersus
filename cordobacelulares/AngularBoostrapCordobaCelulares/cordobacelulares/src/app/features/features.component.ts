@@ -17,7 +17,7 @@ import { Observable, of } from 'rxjs';
 export class FeaturesComponent implements OnInit {
   @Input('id') idphone!: string;
   phone!: Phone;
-  phone$: Observable<Phone> = of(); ; 
+  phone$: Observable<Phone> = of();
 
   constructor(private phoneService: PhonesService) { }
 
@@ -33,7 +33,7 @@ export class FeaturesComponent implements OnInit {
         console.error('Error fetching phones', error);
       }
     )
-    
+
   }
 
 
@@ -49,7 +49,7 @@ export class FeaturesComponent implements OnInit {
 
 /**{
     id: 1,
-  
+
     brand: "Samsung",
     model: "Galaxy S21",
     version: "5G",
@@ -69,3 +69,29 @@ export class FeaturesComponent implements OnInit {
     colors: ["Phantom Gray", "Phantom White", "Phantom Violet", "Phantom Pink"],
     boxContents: ["Phone", "USB-C cable", "Ejection pin", "Quick Start Guide"]
   } */
+
+/**
+ <div class="b-example-divider"></div>
+ @defer (on viewport) {
+  <div *ngIf="phone$ | async as phone">
+  <div class="container marketing py-5">
+
+  <div class="row featurette animated-div">
+  <div class="col-md-7 py-5">
+  <h2 class="featurette-heading fw-normal lh-1">Video explicativo de {{phone.brand}} {{phone.model}}
+
+  </h2>
+  <p class="lead">EL mejor resumen filtrado de la web</p>
+  </div>
+  <div class="col-md-5 d-flex align-items-center">
+  <div class="object-fit-fill">
+  <iframe class="object-fit-fill" width="560" height="315" src="{{phone.videoYoutube}}"
+  frameborder="0" allowfullscreen></iframe>
+
+  </div>
+  </div>
+  </div>
+
+  </div>
+  </div>
+  }@placeholder {<p>loading</p> }*/
