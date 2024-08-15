@@ -7,7 +7,7 @@ services:
     image: angular_app_1.0
     build: ./AngularBoostrapCordobaCelulares/cordobacelulares
     ports:
-      - 80:80
+      - 8081:80
     depends_on:
       - practicapp
   practicapp:
