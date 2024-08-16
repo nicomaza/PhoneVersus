@@ -10,12 +10,17 @@
                                 [attr.aria-label]="'Slide ' + (i + 1)">
                             </button>
                         </div>
-
                         <div class="carousel-inner">
                             <div *ngFor="let photo of phone.images; let i = index" class="carousel-item" [ngClass]="{'active': i === 0}">
-                                <img [src]="photo" class="d-block w-100" alt="Image" style=" padding-top: 10%;">
+                              <img [src]="photo" class="d-block w-100" alt="Image" style="padding-top: 10%; ">
+                              
+                              <div class="">
+                                <h5 class="text-black text-center pb-3 ">{{ getColorForImage(photo) }}</h5>
+                              </div>
                             </div>
-                        </div>
+                            
+                          </div>
+                          
 
                         <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide="prev">
                             <span class="carousel-control-prev-icon" aria-hidden="true"></span>

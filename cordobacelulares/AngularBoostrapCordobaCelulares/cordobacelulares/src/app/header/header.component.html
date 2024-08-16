@@ -22,7 +22,7 @@
                         <ul class="dropdown-menu">
 
                             <li><a class="dropdown-item" *ngFor="let marca of Brand" (click)="toggleNavbar()"
-                                    [routerLink]="['../phonelist/', marca.brandName.toString()]">{{marca.brandName}}</a>
+                                [href]="'../phonelist/' + marca.brandName.toString()" >{{marca.brandName}}</a>
                             </li>
 
                             <li>
@@ -34,7 +34,7 @@
                     </li>
                     <li><a href="#" class="nav-link px-2 text-white aurora-title" [routerLink]="'comparatives'"
                             (click)="toggleNavbar()">Versus</a></li>
-                    <li><a href="#" class="nav-link px-2 text-white" [routerLink]="'warranty'"
+                    <li><a href="warranty" class="nav-link px-2 text-white"
                             (click)="toggleNavbar()">Garantia</a></li>
                     <li><a href="#" class="nav-link px-2 text-white" [routerLink]="'faqs'"
                             (click)="toggleNavbar()">Dudas</a></li>
