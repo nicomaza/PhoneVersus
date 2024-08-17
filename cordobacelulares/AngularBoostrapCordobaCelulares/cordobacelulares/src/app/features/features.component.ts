@@ -38,20 +38,26 @@ export class FeaturesComponent implements OnInit {
   getColorForImage(image: string): string {
     console.log('image', image);
     
-    // Eliminar la ruta de la imagen y obtener solo el nombre del archivo sin extensión
+    // Obtener solo el nombre del archivo de la imagen (sin la ruta)
     const imageNameWithExtension = image.split('/').pop() || '';
     
-    // Remover la extensión del archivo, por ejemplo '.png' o '.jpg'
-    const imageName = imageNameWithExtension.split('.').slice(0, -1).join('.') || '';
-    
-    console.log('imageName without extension', imageName);
+    // Eliminar la extensión del archivo y quedarnos solo con la última parte del nombre separada por "_"
+    const imageNameParts = imageNameWithExtension.split('.');
+    const colorPart = imageNameParts[0].split('_').pop() || '';
   
-    // Normalizar el nombre de la imagen
-    const normalizedImage = this.normalizeString(imageName);
-    console.log('normalizedImage', normalizedImage);
+    console.log('colorPart', colorPart);
+  
+    // Normalizar el color obtenido de la imagen
+    const normalizedImageColor = this.normalizeString(colorPart);
+    console.log('normalizedImageColor', normalizedImageColor);
     
     // Buscar el color correspondiente en el array `colors`
-    const matchedColor = this.phone.colors.find(color => this.normalizeString(color) === normalizedImage);
+    const matchedColor = this.phone.colors.find(color => {
+      const normalizedColor = this.normalizeString(color);
+      console.log('Comparing:', normalizedImageColor, 'with', normalizedColor);
+      return normalizedColor === normalizedImageColor;
+    });
+  
     console.log('matchedColor', matchedColor);
     
     // Retornar el color coincidente o vacío si no hay coincidencia
@@ -62,6 +68,8 @@ export class FeaturesComponent implements OnInit {
   normalizeString(str: string): string {
     return str.replace(/[_ ]+/g, '').toLowerCase();
   }
+  
+  
   
 
 /**  message: string = `Hola!! Quiero informacion de este modelo: ${this.phone.model}`

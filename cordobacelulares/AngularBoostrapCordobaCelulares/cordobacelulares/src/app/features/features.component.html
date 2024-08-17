@@ -12,10 +12,10 @@
                         </div>
                         <div class="carousel-inner">
                             <div *ngFor="let photo of phone.images; let i = index" class="carousel-item" [ngClass]="{'active': i === 0}">
-                              <img [src]="photo" class="d-block w-100" alt="Image" style="padding-top: 10%; ">
+                              <img [src]="photo" class="d-block w-100" alt="Image" style="padding-top: 3%; ">
                               
                               <div class="">
-                                <h5 class="text-black text-center pb-3 ">{{ getColorForImage(photo) }}</h5>
+                                <h5 class="text-black text-center py-4 ">{{ getColorForImage(photo) }}</h5>
                               </div>
                             </div>
                             
