@@ -37,23 +37,28 @@ export class FeaturesComponent implements OnInit {
   }
   getColorForImage(image: string): string {
     console.log('image', image);
-  
+    
     // Eliminar la ruta de la imagen y obtener solo el nombre del archivo sin extensión
-    const imageName = image.split('/').pop()?.split('.')[0] || '';
+    const imageNameWithExtension = image.split('/').pop() || '';
+    
+    // Remover la extensión del archivo, por ejemplo '.png' o '.jpg'
+    const imageName = imageNameWithExtension.split('.').slice(0, -1).join('.') || '';
+    
+    console.log('imageName without extension', imageName);
   
+    // Normalizar el nombre de la imagen
     const normalizedImage = this.normalizeString(imageName);
- 
-  
+    console.log('normalizedImage', normalizedImage);
+    
     // Buscar el color correspondiente en el array `colors`
     const matchedColor = this.phone.colors.find(color => this.normalizeString(color) === normalizedImage);
-  
-
-  
+    console.log('matchedColor', matchedColor);
+    
     // Retornar el color coincidente o vacío si no hay coincidencia
     return matchedColor || '';
   }
   
-  // Función para normalizar las cadenas (elimina guiones bajos, espacios y pasa a minúsculas)
+  // Función para normalizar las cadenas (elimina guiones bajos, espacios, convierte a minúsculas)
   normalizeString(str: string): string {
     return str.replace(/[_ ]+/g, '').toLowerCase();
   }
