@@ -49,18 +49,9 @@
                     <h2 class="text-body-emphasis">Guías de uso</h2>
                     <p>Recomendaciones basicas al adquirir un nuevo equipo</p>
                     <ul class="list-unstyled ps-0">
+                    
                         <li>
-                            <a class="icon-link mb-1" href="https://github.com/twbs/examples/tree/main/icons-font"
-                                rel="noopener" target="_blank">
-                                <svg class="bi" width="16" height="16">
-                                    <use xlink:href="#arrow-right-circle"></use>
-                                </svg>
-                                UnBoxing
-                            </a>
-                        </li>
-                        <li>
-                            <a class="icon-link mb-1" href="https://github.com/twbs/examples/tree/main/parcel"
-                                rel="noopener" target="_blank">
+                            <a class="icon-link mb-1" [routerLink]="['/glossary']" fragment="primer-uso">
                                 <svg class="bi" width="16" height="16">
                                     <use xlink:href="#arrow-right-circle"></use>
                                 </svg>
@@ -74,7 +65,7 @@
                     <p>Lee instrucciones y documentación más detalladas sobre cómo usar o contribuir a hacer un buen uso.</p>
                     <ul class="list-unstyled ps-0">
                         <li>
-                            <a class="icon-link mb-1" href="/docs/5.3/getting-started/introduction/">
+                            <a class="icon-link mb-1" [routerLink]="['/glossary']" fragment="limpieza">
                                 <svg class="bi" width="16" height="16">
                                     <use xlink:href="#arrow-right-circle"></use>
                                 </svg>
@@ -82,37 +73,23 @@
                             </a>
                         </li>
                         <li>
-                            <a class="icon-link mb-1" href="/docs/5.3/getting-started/webpack/">
+                            <a class="icon-link mb-1" [routerLink]="['/glossary']" fragment="palabras-claves">
                                 <svg class="bi" width="16" height="16">
                                     <use xlink:href="#arrow-right-circle"></use>
                                 </svg>
-                                Proteccion
+                                Palabras Claves
                             </a>
                         </li>
                         <li>
-                            <a class="icon-link mb-1" href="/docs/5.3/getting-started/parcel/">
+                            <a class="icon-link mb-1"  [routerLink]="['/glossary']" fragment="st">
                                 <svg class="bi" width="16" height="16">
                                     <use xlink:href="#arrow-right-circle"></use>
                                 </svg>
                                 Services Oficiales
                             </a>
                         </li>
-                        <li>
-                            <a class="icon-link mb-1" href="/docs/5.3/getting-started/vite/" [routerLink]="['/glossary']" fragment="reparaciones-en-cordoba">
-                                <svg class="bi" width="16" height="16">
-                                    <use xlink:href="#arrow-right-circle"></use>
-                                </svg>
-                                Reparaciones en cordoba
-                            </a>
-                        </li>
-                        <li>
-                            <a class="icon-link mb-1" href="/docs/5.3/getting-started/contribute/">
-                                <svg class="bi" width="16" height="16">
-                                    <use xlink:href="#arrow-right-circle"></use>
-                                </svg>
-                                Contribuyendo a la ecologia
-                            </a>
-                        </li>
+                
+                       
                     </ul>
                 </div>
             </div>

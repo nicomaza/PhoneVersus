@@ -4,39 +4,70 @@
             <div class="row">
                 <div class="col-md-4">
                     <div id="carouselExampleIndicators" class="carousel slide">
+                        <h2 class="pb-2 text-center d-sm-none">{{phone.brand}} {{phone.model}}
+                        </h2>
                         <div class="carousel-indicators">
-                            <button *ngFor="let photo of phone.images; let i = index" type="button" [attr.data-bs-target]="'#carouselExampleIndicators'"
-                                [attr.data-bs-slide-to]="i" [ngClass]="{'active': i === 0}" [attr.aria-current]="i === 0 ? 'true' : null"
+                            <button *ngFor="let photo of phone.images; let i = index" type="button"
+                                [attr.data-bs-target]="'#carouselExampleIndicators'" [attr.data-bs-slide-to]="i"
+                                [ngClass]="{'active': i === 0}" [attr.aria-current]="i === 0 ? 'true' : null"
                                 [attr.aria-label]="'Slide ' + (i + 1)">
                             </button>
                         </div>
                         <div class="carousel-inner">
-                            <div *ngFor="let photo of phone.images; let i = index" class="carousel-item" [ngClass]="{'active': i === 0}">
-                              <img [src]="photo" class="d-block w-100" alt="Image" style="padding-top: 3%; ">
-                              
-                              <div class="">
-                                <h5 class="text-black text-center py-4 ">{{ getColorForImage(photo) }}</h5>
-                              </div>
-                            </div>
-                            
-                          </div>
-                          
+                            <div *ngFor="let photo of phone.images; let i = index" class="carousel-item"
+                                [ngClass]="{'active': i === 0}">
+                                <img [src]="photo" class="d-block w-100" alt="Image" style="padding-top: 3%; ">
 
-                        <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide="prev">
+                                <div class="">
+                                    <h5 class="text-black text-center py-4 ">{{ getColorForImage(photo) }}</h5>
+                                </div>
+                            </div>
+
+                        </div>
+
+
+                        <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleIndicators"
+                            data-bs-slide="prev">
                             <span class="carousel-control-prev-icon" aria-hidden="true"></span>
                             <span class="visually-hidden">Previous</span>
                         </button>
-                        <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicators" data-bs-slide="next">
+                        <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleIndicators"
+                            data-bs-slide="next">
                             <span class="carousel-control-next-icon" aria-hidden="true"></span>
                             <span class="visually-hidden">Next</span>
                         </button>
                     </div>
                 </div>
 
-                <div class="col-md-8">
 
-                    <div class="container px-4 py-5" id="hanging-icons">
-                        <h2 class="pb-2 border-bottom text-center">{{phone.brand}} {{phone.model}}
+
+                <div class="col-md-8">
+                    <div class="d-sm-none full-width-content">
+                        <div class="b-example-divider"></div>
+                        <div class="d-flex align-items-center justify-content-evenly bg-dark">
+                            <div class="py-3">
+                                <a class="gradient-button"
+                                    [routerLink]="['../../comparatives/', phone?.idPhone?.toString()]">Versus</a>
+
+                            </div>
+
+
+                            <div class="py-3">
+                                <a class="gradient-text-button"
+                                    href="https://wa.me/5493512129922?text=Hola!%21%20estuve%20navegando%20en%20la%20pagina%20web%20y%20necesito%20informacion%20del%20{{phone.brand}}%20{{phone.model}}"
+                                    target="_blank">
+                                    Comprar
+                                </a>
+
+
+                            </div>
+
+
+                        </div>
+                        <div class="b-example-divider"></div>
+                    </div>
+                    <div class="container px-4 py-3" id="hanging-icons">
+                        <h2 class="pb-2 border-bottom text-center  d-none d-md-block">{{phone.brand}} {{phone.model}}
                         </h2>
                         <div class="row py-4 ">
                             <div class="row g-2 row-cols-1 row-cols-lg-3 text-center">
@@ -143,13 +174,36 @@
         </div>
     </div>
 </div>
+
+
+<div class="b-example-divider"></div>
+<div class="d-flex align-items-center justify-content-evenly bg-dark ">
+    <div class="py-3">
+        <a class="gradient-button" [routerLink]="['../../comparatives/', phone?.idPhone?.toString()]">Versus</a>
+
+    </div>
+
+
+    <div class="py-3">
+        <a class="gradient-text-button"
+            href="https://wa.me/5493512129922?text=Hola!%21%20estuve%20navegando%20en%20la%20pagina%20web%20y%20necesito%20informacion%20del%20{{phone.brand}}%20{{phone.model}}"
+            target="_blank">
+            Comprar
+        </a>
+
+
+    </div>
+
+
+</div>
+
 <div class="b-example-divider"></div>
 <div class="d-flex justify-content-center">
 
     @defer (on viewport) { <div *ngIf="phone$ | async as phone">
-        <div class="container  py-5 ">
+        <div class="container  py-3 ">
 
-            <h1 class="text-center py-5 px-1">Caracteristicas Ampliadas</h1>
+            <h1 class="text-center py-3 px-1">Caracteristicas Ampliadas</h1>
             <div class="row">
                 <div class="col-12 col-lg-8">
                     <table class="table caption-top  align-middle">

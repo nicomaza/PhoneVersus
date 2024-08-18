@@ -39,3 +39,78 @@
     background-size: 100% 100%;
   }
 
+/* gradient button versus*/
+
+.gradient-button {
+    background: linear-gradient(45deg, #ff0080, #ff8c00, #8a2be2, #ff0080);
+    background-size: 300% 300%;
+    color: white;
+    border: none;
+    padding: 5px 70px;
+    font-size: 16px;
+    border-radius: 10px;
+    text-decoration: none; /* Elimina el subrayado */
+    animation: gradientBackground 10s linear infinite;
+    transition: box-shadow 0.3s ease;
+  }
+  
+.gradient-button:hover {
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.6);
+  }
+  
+  @keyframes gradientBackground {
+    0% {
+        background-position: 0% 50%;
+      }
+      50% {
+        background-position: 100% 50%;
+      }
+      100% {
+        background-position: 0% 50%;
+      }
+  }
+  
+  /*  button comprar */
+
+  .gradient-text-button  {
+    background-color: black;
+    color: rgb(255, 255, 255);
+    background-clip: text;
+    -webkit-background-clip: text;
+    background: linear-gradient(45deg, #006e06, #25db00, #75cf00);
+    background-size: 200% 200%;
+    border: none;
+    padding: 5px 70px;
+    font-size: 16px;
+    border-radius: 10px;
+    text-decoration: none; /* Elimina el subrayado */
+    animation: gradientBackground 10s linear infinite;
+    transition: box-shadow 0.3s ease;
+  }
+  .gradient-text-button:hover {
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.6);
+  }
+  @keyframes gradientBackground {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  
+
+  @media (max-width: 768px) {
+    /* Estilos para pantallas de celulares (máximo ancho de 768px) */
+    .gradient-text-button {
+      padding: 7px 34px; /* Este padding se aplica en pantallas pequeñas */
+    }
+
+
+    .gradient-button {
+        padding: 7px 34px; /* Este padding se aplica en pantallas pequeñas */
+      }
+  }
+  .full-width-content {
+    width: 100vw; /* Ocupa todo el ancho del viewport */
+    margin-left: calc(-50vw + 50%); /* Desplaza a la izquierda para sobresalir de los bordes */
+    margin-right: calc(-50vw + 50%); /* Desplaza a la derecha para sobresalir de los bordes */
+  }
+  

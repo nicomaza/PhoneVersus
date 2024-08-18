@@ -38,8 +38,8 @@ export class ComparativesComponent implements OnInit {
   constructor(private phoneservice: PhonesService, private cdr: ChangeDetectorRef) { }
 
   ngOnInit(): void {
-
-   
+    
+   this.setPhoneLeft(parseInt(this.idphone))
   }
 
   deletePhoneLeft(){

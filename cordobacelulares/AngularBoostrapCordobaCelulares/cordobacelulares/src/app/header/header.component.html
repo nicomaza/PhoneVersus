@@ -12,34 +12,34 @@
             </button>
             <div class="navbar-collapse collapse" id="navbarCollapse" #navbarCollapse>
                 <ul class="navbar-nav me-auto mb-2 mb-md-0 px-2">
-                    <li><a href="#" class="nav-link px-2 text-white" [routerLink]="'home'"
+                    <li><a href="#" class="nav-link px-2 text-white  text-center" [routerLink]="'home'"
                             (click)="toggleNavbar()">Home</a></li>
                     <li class="nav-item dropdown">
-                        <a class="nav-link text-white dropdown-toggle ms-2" role="button" data-bs-toggle="dropdown"
+                        <a class="nav-link text-white dropdown-toggle ms-2  text-center" role="button" data-bs-toggle="dropdown"
                             aria-expanded="false">
                             Equipos
                         </a>
                         <ul class="dropdown-menu">
 
-                            <li><a class="dropdown-item" *ngFor="let marca of Brand" (click)="toggleNavbar()"
+                            <li><a class="dropdown-item text-center" *ngFor="let marca of Brand" (click)="toggleNavbar()"
                                     [routerLink]="['../phonelist/', marca.brandName.toString()]">{{marca.brandName}}</a>
                             </li>
 
                             <li>
                                 <hr class="dropdown-divider">
                             </li>
-                            <li><a class="dropdown-item" [routerLink]="['../phonelist/', 'todos']"
+                            <li><a class="dropdown-item text-center" [routerLink]="['../phonelist/', 'todos']"
                                     (click)="toggleNavbar()">Todos</a></li>
                         </ul>
                     </li>
-                    <li><a href="#" class="nav-link px-2 text-white aurora-title" [routerLink]="'comparatives'"
+                    <li><a href="#" class="nav-link px-2 text-white aurora-title text-center" [routerLink]="'comparatives'"
                             (click)="toggleNavbar()">Versus</a></li>
-                    <li><a href="#" class="nav-link px-2 text-white" [routerLink]="'warranty'"
+                    <li><a href="#" class="nav-link px-2 text-white  text-center" [routerLink]="'warranty'"
                             (click)="toggleNavbar()">Garantia</a></li>
-                    <li><a href="#" class="nav-link px-2 text-white" [routerLink]="'faqs'"
+                    <li><a href="#" class="nav-link px-2 text-white  text-center" [routerLink]="'faqs'"
                             (click)="toggleNavbar()">Dudas</a></li>
 
-                    <li><a href="#" class="nav-link px-2 text-white" [routerLink]="'glossary'"
+                    <li><a href="#" class="nav-link px-2 text-white  text-center" [routerLink]="'glossary'"
                             (click)="toggleNavbar()">Glosario</a></li>
                 </ul>
 
