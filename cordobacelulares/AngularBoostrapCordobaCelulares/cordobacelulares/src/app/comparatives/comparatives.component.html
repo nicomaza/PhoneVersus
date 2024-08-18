@@ -35,8 +35,7 @@
                         <h6 class="card-title">{{ phoneleft.brand }}</h6>
                         <h3>{{ phoneleft.model }}</h3>
 
-                        <p><small class="" style="color: rgb(165, 165, 165);">Primer equipo a comparar
-                                seleccionado</small></p>
+                       
                         <button type="button" class="" (click)="deletePhoneLeft()">Eliminar</button>
                     </div>
                 </div>
@@ -80,8 +79,7 @@
                         <h6 class="card-title">{{ phoneright.brand }}</h6>
                         <h3>{{ phoneright.model }}</h3>
 
-                        <p><small class="" style="color: rgb(165, 165, 165);">Segundo equipo a comparar
-                                seleccionado</small></p>
+                
                         <button type="button" class="" (click)="deletePhoneRight()">Eliminar</button>
                     </div>
                 </div>
@@ -93,7 +91,7 @@
 
         <div class="graphic-energy">
             <a 
-              [routerLink]="(phoneleft?.idPhone && phoneright?.idPhone) ? ['../versus',phoneleft?.idPhone?.toString(), phoneright?.idPhone?.toString()] : null"
+            [routerLink]="getRouterLink()"
               (click)="isBothLoaded()">
           
               <img src="../../assets/img/circulofin.png" class="graphic-energy" alt="">

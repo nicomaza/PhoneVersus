@@ -40,6 +40,9 @@ export class ComparativesComponent implements OnInit {
   ngOnInit(): void {
     
    this.setPhoneLeft(parseInt(this.idphone))
+   if (this.idphone) {
+    this.setPhoneLeft(parseInt(this.idphone));
+  }
   }
 
   deletePhoneLeft(){
@@ -79,6 +82,8 @@ export class ComparativesComponent implements OnInit {
   }
 
   isBothLoaded(){
+
+   
     if(this.phoneleft == undefined){
         this.leftclass = true
         
@@ -98,7 +103,15 @@ export class ComparativesComponent implements OnInit {
   }
 
 
-
+  getRouterLink(): string[] | null {
+    if (this.phoneleft?.idPhone && this.phoneright?.idPhone) {
+      // Verificar si el ID fue pasado por @Input y ajustar la ruta
+      return this.idphone ? ['../../versus', this.phoneleft.idPhone.toString(), this.phoneright.idPhone.toString()]
+                          : ['../versus', this.phoneleft.idPhone.toString(), this.phoneright.idPhone.toString()];
+    }
+    return null;
+  }
+  
 
   onSearch(value: string): void {
     if (value.trim() === '') {
@@ -174,5 +187,14 @@ export class ComparativesComponent implements OnInit {
                                 style="width: 200; height: 400;" />
                         </div> */
 /**
+ * 
+ */
+
+/**
+ *  <p><small class="" style="color: rgb(165, 165, 165);">Primer equipo a comparar
+                                seleccionado</small></p>
+ * 
+                                        <p><small class="" style="color: rgb(165, 165, 165);">Segundo equipo a comparar
+                                seleccionado</small></p>
  * 
  */

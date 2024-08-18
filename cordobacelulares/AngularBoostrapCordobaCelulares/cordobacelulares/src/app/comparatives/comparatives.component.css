@@ -138,7 +138,7 @@ section {
     color: #fff;
 }
 
-@media (max-width: 660px) {
+@media (max-width: 600px) {
     section {
         flex-direction: column; /* Cambiar la dirección a columna en pantallas pequeñas */
         gap: 40%;
