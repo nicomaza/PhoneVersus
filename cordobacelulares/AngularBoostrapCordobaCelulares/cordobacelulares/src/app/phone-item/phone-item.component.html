@@ -1,22 +1,46 @@
-
-    <div class="card mb-3 card-hover-effect shadow-sm rounded-4" style="max-width: 540px;">
-        <div class="row g-0">
-            <div class="col-md-4 d-flex justify-content-center custom-img-container">
-                <img [src]="ruta" class="img-fluid rounded-start py-2 custom-img-size" alt="...">
-            </div>
-            <div class="col-md-8 d-flex flex-column">
-                <div class="card-body d-flex flex-column justify-content-between ps-0 text-center">
-                    <p class="fw-light mb-0">{{phone?.brand}}</p>
-                    <h5 class="card-title mt-1">{{phone?.model}}</h5>
-                    <div class="mt-auto d-flex justify-content-center gap-2">
-                   
-                        <a [routerLink]="['../../phone/', phone?.idPhone?.toString()]"
-                            class="btn btn-dark mt-auto d-flex justify-content-end stretched-link">Detalles</a>
-    
+<div class="card mb-3 card-hover-effect shadow-sm rounded-4" style="max-width: 540px;">
+    <div class="row g-0">
+        <div class="col-md-6 d-flex justify-content-center custom-img-container">
+            <!-- Generamos un id único usando phone?.idPhone -->
+            <div [attr.id]="'carouselExampleIndicators_' + phone?.idPhone" class="carousel slide">
+                <div class="carousel-indicators">
+                    <button *ngFor="let photo of phone?.images; let i = index" type="button"
+                        [attr.data-bs-target]="'#carouselExampleIndicators_' + phone?.idPhone" 
+                        [attr.data-bs-slide-to]="i"
+                        [ngClass]="{'active': i === 0}" 
+                        [attr.aria-current]="i === 0 ? 'true' : null"
+                        [attr.aria-label]="'Slide ' + (i + 1)">
+                    </button>
+                </div>
+                <div class="carousel-inner py-3 pb-0">
+                    <div *ngFor="let photo of phone?.images; let i = index" class="carousel-item"
+                        [ngClass]="{'active': i === 0}">
+                        <img [src]="photo" class="d-block w-100" alt="Image" style="padding-top: 3%;">
                     </div>
+                </div>
+                <button class="carousel-control-prev" type="button" 
+                    [attr.data-bs-target]="'#carouselExampleIndicators_' + phone?.idPhone"
+                    data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Previous</span>
+                </button>
+                <button class="carousel-control-next" type="button" 
+                    [attr.data-bs-target]="'#carouselExampleIndicators_' + phone?.idPhone"
+                    data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Next</span>
+                </button>
+            </div>
+        </div>
+        <div class="col-md-6 d-flex flex-column pt-2 ">
+            <div class="card-body d-flex flex-column text-center ">
+                <p class="fw-light mb-0  ">{{ phone?.brand }}</p>
+                <h5 class="card-title mt-1d-flex ">{{ phone?.model }}</h5>
+                <div class="mt-auto d-flex justify-content-center gap-2">
+                    <a [routerLink]="['../../phone/', phone?.idPhone?.toString()]"
+                        class="btn btn-dark mt-auto d-flex justify-content-end ver-button py-2">Ver</a>
                 </div>
             </div>
         </div>
     </div>
-
-  
+</div>

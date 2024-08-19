@@ -38,3 +38,46 @@
   }
 }
 
+
+/* Flecha izquierda (prev) */
+.carousel-control-prev-icon {
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><path fill="%23000000" d="M9.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l192 192c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L77.3 256 247.6 86.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-192 192z"/></svg>');
+  background-size: 100% 100%;
+}
+
+
+/* Flecha derecha (next) */
+.carousel-control-next-icon {
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><path fill="%23000000" d="M310.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-192 192c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L242.7 256 73.4 86.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l192 192z"/></svg>');
+  background-size: 100% 100%;
+}
+
+
+.ver-button{
+  background: linear-gradient(45deg, #ff0080, #cd1b1b, #8a2be2, #68b00a);
+  background-size: 300% 300%;
+  color: white;
+  border: none;
+  padding: 5px 70px;
+  font-size: 16px;
+  border-radius: 20px;
+  text-decoration: none; /* Elimina el subrayado */
+  animation: gradientBackground 3s linear infinite;
+  transition: box-shadow 0.01s ease;
+}
+
+.ver-button:hover {
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.6);
+}
+
+@keyframes gradientBackground {
+  0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
+}

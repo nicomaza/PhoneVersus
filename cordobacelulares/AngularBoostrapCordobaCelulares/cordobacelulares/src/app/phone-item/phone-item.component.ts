@@ -2,6 +2,8 @@ import { Component, Input, OnChanges, OnInit, SimpleChanges } from '@angular/cor
 import { Phone } from '../models/phone';
 import { RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { PhonesService } from '../services/phones.service';
+import { Observable, of } from 'rxjs';
 
 @Component({
   selector: 'app-phone-item',
@@ -15,16 +17,35 @@ export class PhoneItemComponent implements OnInit, OnChanges {
   ruta: string = '';
   phoneidstring: string = "";
 
+  phone2!: Phone;
+  phone$: Observable<Phone> = of();
+
+  constructor(private phoneService: PhonesService) { }
+
   ngOnInit(): void {
-
-    if (this.phone?.images[0] == undefined) {
-      this.ruta = 'error'
-    } else {
-
-      this.ruta = this.phone?.images[0];
+    if (this.phone?.idPhone !== undefined) {
+  
+      this.phone$ = this.phoneService.getPhoneById(this.phone?.idPhone);
+      this.phoneService.getPhoneById(this.phone?.idPhone).subscribe(
+        (data: Phone) => {
+          this.phone = data;
+  
+          // Si existe el array de imágenes y tiene más de un elemento
+          if (this.phone.images && this.phone.images.length > 0) {
+            // Crear un nuevo array sin el último elemento
+            const updatedImages = this.phone.images.slice(0, -1);
+            this.phone.images = updatedImages; // Asignamos el nuevo array
+          }
+  
+          console.log('Phone with updated images:', this.phone);
+        },
+        (error) => {
+          console.error('Error fetching phone', error);
+        }
+      );
     }
-
   }
+  
 
   ngOnChanges(changes: SimpleChanges): void {
 
