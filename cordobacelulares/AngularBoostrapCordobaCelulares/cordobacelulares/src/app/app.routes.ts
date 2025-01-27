@@ -7,6 +7,7 @@ import { WarrantyComponent } from './warranty/warranty.component';
 import { GlossaryComponent } from './glossary/glossary.component';
 import { ComparativesComponent } from './comparatives/comparatives.component';
 import { VersusComponent } from './versus/versus.component';
+import { LoginComponent } from './admin/login/login.component';
 
 
 export const routes: Routes = [{
@@ -51,6 +52,10 @@ export const routes: Routes = [{
 {
     path: 'glossary',
     component: GlossaryComponent
+},
+{
+    path: 'adminhorse',
+    component: LoginComponent
 },
 {
     path: '',
