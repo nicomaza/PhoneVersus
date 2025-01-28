@@ -1,1 +1,370 @@
-<p>newphone works!</p>
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6 mt-5">
+            <form [formGroup]="phoneForm" (ngSubmit)="onSubmit()">
+                <!-- Campo ID -->
+                <div class="mb-3">
+                    <label for="idPhone" class="form-label">ID del Teléfono</label>
+                    <input type="number" id="idPhone" class="form-control" formControlName="idPhone" />
+                </div>
+
+                <!-- Campo Imágenes -->
+                <div class="mb-3">
+                    <label class="form-label">Imágenes</label>
+                    <div class="mt-2" formArrayName="images">
+                        @for (imageControl of images.controls; track imageControl; let i = $index) {
+                        <div class="input-group mb-2">
+                            <input type="text" class="form-control" [formControlName]="i"
+                                placeholder="Ruta de la imagen" />
+                            <button type="button" class="btn btn-danger" (click)="removeImage(i)">Eliminar</button>
+                        </div>
+                        }
+                    </div>
+                    <button type="button" class="btn btn-success mt-2" (click)="addImage()">Agregar Link de
+                        Imagen</button>
+                </div>
+
+                <!-- Campo Cámara Principal -->
+                <div class="mb-3">
+                    <label class="form-label">Cámara Principal</label>
+                    <div class="mt-2" formArrayName="mainCamera">
+
+
+                        @for (cameraControl of mainCamera.controls;track cameraControl; let i = $index) {
+                        <div class="input-group mb-2">
+                            <input type="text" class="form-control" [formControlName]="i"
+                                placeholder="Detalle de la cámara" />
+                            <button type="button" class="btn btn-danger" (click)="removeMainCamera(i)">
+                                Eliminar
+                            </button>
+                        </div>
+                        <!-- Mensaje de error: Máximo 50 caracteres -->
+                        @if (cameraControl.touched && cameraControl.errors?.['maxlength']) {
+                        <div class="text-danger mt-1">Máximo 50 caracteres permitidos.</div>
+                        }
+                        <!-- Mensaje de error: Campo requerido -->
+                        @if (cameraControl.touched && cameraControl.errors?.['required']) {
+                        <div class="text-danger mt-1">Este campo es obligatorio.</div>
+                        }
+                        }
+                        <button type="button" class="btn btn-success mt-2" (click)="addMainCamera()">Agregar Texto
+                            Camara Principal</button>
+                    </div>
+                </div>
+
+                <!-- Campo Cámara Secundaria -->
+                <div class="mb-3">
+                    <label class="form-label">Cámara Secundaria</label>
+                    <div class="mt-2" formArrayName="secondaryCamera">
+                        @for (cameraControl of secondaryCamera.controls; track cameraControl; let i = $index) {
+                        <div class="input-group mb-2">
+                            <input type="text" class="form-control" [formControlName]="i"
+                                placeholder="Detalle de la cámara secundaria" />
+                            <button type="button" class="btn btn-danger" (click)="removeSecondaryCamera(i)">
+                                Eliminar
+                            </button>
+                        </div>
+                        <!-- Mensaje de error: Máximo 50 caracteres -->
+                        @if (secondaryCamera.touched && secondaryCamera.errors?.['maxlength']) {
+                        <div class="text-danger mt-1">Máximo 50 caracteres permitidos.</div>
+                        }
+                        <!-- Mensaje de error: Campo requerido -->
+                        @if (secondaryCamera.touched && secondaryCamera.errors?.['required']) {
+                        <div class="text-danger mt-1">Este campo es obligatorio.</div>
+                        }
+                        }
+                        <button type="button" class="btn btn-success mt-2" (click)="addSecondaryCamera()">Agregar Texto
+                            Camara Secundaria</button>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="red" class="form-label">Red</label>
+                    <input type="text" id="red" class="form-control" formControlName="red"
+                        placeholder="Ejemplo: 2G/3G/4G/5G" />
+                    <!-- Mensaje de error: Campo obligatorio -->
+                    @if (phoneForm.get('red')?.touched && phoneForm.get('red')?.errors?.['required']) {
+                    <div class="text-danger mt-1">
+                        Este campo es obligatorio.
+                    </div>
+                    }
+                </div>
+
+                <div class="mb-3">
+                    <label for="red" class="form-label">Web oficial</label>
+                    <input type="text" id="red" class="form-control" formControlName="oficialWeb"
+                        placeholder="www.xiaomi.com" />
+                    <!-- Mensaje de error: Campo obligatorio -->
+                    @if (phoneForm.get('oficialWeb')?.touched && phoneForm.get('oficialWeb')?.errors?.['required']) {
+                    <div class="text-danger mt-1">
+                        Este campo es obligatorio.
+                    </div>
+                    }
+
+                    <!-- Mensaje de error: Patrón inválido -->
+                    @if (phoneForm.get('oficialWeb')?.touched && phoneForm.get('oficialWeb')?.errors?.['pattern']) {
+                    <div class="text-danger mt-1">
+                        Formato inválido.
+                    </div>
+                    }
+                </div>
+
+
+
+
+                <!-- Campo Screen -->
+                <div class="mb-3">
+                    <label class="form-label">Pantalla</label>
+                    <div class="mt-2" formArrayName="screen">
+                        <!-- Iterar sobre los controles del FormArray -->
+                        @for( control of screen.controls; track control; let i = $index){
+                        <div class="input-group mb-2">
+                            <!-- Input dinámico para cada detalle -->
+                            <input type="text" class="form-control" [formControlName]="i"
+                                placeholder="Detalle de la pantalla" />
+                            <!-- Botón para eliminar el input -->
+                            <button type="button" class="btn btn-danger" (click)="removeScreen(i)">
+                                Eliminar
+                            </button>
+
+                            <!-- Mensajes de error -->
+                            <div *ngIf="screen.controls[i].touched && screen.controls[i].errors?.['maxlength']"
+                                class="text-danger mt-1">
+                                Máximo 50 caracteres permitidos.
+                            </div>
+                            <div *ngIf="screen.controls[i].touched && screen.controls[i].errors?.['required']"
+                                class="text-danger mt-1">
+                                Este campo es obligatorio.
+                            </div>
+
+                        </div>
+                        }
+
+
+
+                        <!-- Botón para agregar una nueva especificación -->
+                        <button type="button" class="btn btn-success mt-2" (click)="addScreen()">
+                            Agregar Texto Pantalla
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Campo Processor -->
+                <div class="mb-3">
+                    <label for="processor" class="form-label">Procesador</label>
+                    <input type="text" id="processor" class="form-control" formControlName="processor"
+                        placeholder="Ejemplo: MediaTek Dimensity 9300+" />
+                    <!-- Mensaje de error: Campo requerido -->
+                    <div *ngIf="phoneForm.get('processor')?.touched && phoneForm.get('processor')?.errors?.['required']"
+                        class="text-danger mt-1">
+                        Este campo es obligatorio.
+                    </div>
+                    <!-- Mensaje de error: Máximo 50 caracteres -->
+                    <div *ngIf="phoneForm.get('processor')?.touched && phoneForm.get('processor')?.errors?.['maxlength']"
+                        class="text-danger mt-1">
+                        Máximo 50 caracteres permitidos.
+                    </div>
+                </div>
+
+                <!-- Campo GPU -->
+                <div class="mb-3">
+                    <label for="gpu" class="form-label">GPU</label>
+                    <input type="text" id="gpu" class="form-control" formControlName="gpu"
+                        placeholder="Ejemplo: Immortalis-G720 MC12" />
+                    <!-- Mensaje de error: Campo requerido -->
+                    <div *ngIf="phoneForm.get('gpu')?.touched && phoneForm.get('gpu')?.errors?.['required']"
+                        class="text-danger mt-1">
+                        Este campo es obligatorio.
+                    </div>
+                    <!-- Mensaje de error: Máximo 50 caracteres -->
+                    <div *ngIf="phoneForm.get('gpu')?.touched && phoneForm.get('gpu')?.errors?.['maxlength']"
+                        class="text-danger mt-1">
+                        Máximo 50 caracteres permitidos.
+                    </div>
+                </div>
+
+                <!-- Campo Memory -->
+                <div class="mb-3">
+                    <label class="form-label">Memoria</label>
+                    <div class="mt-2" formArrayName="memory">
+                        @for (memoryControl of memory.controls; track memoryControl; let i = $index) {
+                        <div class="input-group mb-2">
+                            <!-- Input dinámico -->
+                            <input type="text" class="form-control" [formControlName]="i"
+                                placeholder="Ejemplo: 12GB/256GB" />
+                            <!-- Botón eliminar -->
+                            <button type="button" class="btn btn-danger" (click)="removeMemory(i)">
+                                Eliminar
+                            </button>
+                        </div>
+
+                        <!-- Mensajes de error -->
+                        @if (memoryControl.touched && memoryControl.errors?.['maxlength']) {
+                        <div class="text-danger mt-1">Máximo 20 caracteres permitidos.</div>
+                        }
+                        @if (memoryControl.touched && memoryControl.errors?.['required']) {
+                        <div class="text-danger mt-1">Este campo es obligatorio.</div>
+                        }
+                        }
+
+                        <!-- Botón para agregar una nueva opción -->
+                        <button type="button" class="btn btn-success mt-2" (click)="addMemory()">
+                            Agregar texto Memoria
+                        </button>
+                    </div>
+                </div>
+
+
+                <!-- Campo Expansion -->
+                <div class="mb-3">
+                    <label for="expansion" class="form-label">Expansión</label>
+                    <input type="text" id="expansion" class="form-control" formControlName="expansion"
+                        placeholder="Ejemplo: No" />
+                    <!-- Mensaje de error: Campo requerido -->
+                    @if (phoneForm.get('expansion')?.touched && phoneForm.get('expansion')?.errors?.['required']) {
+                    <div class="text-danger mt-1">
+                        Este campo es obligatorio.
+                    </div>
+                    }
+                    <!-- Mensaje de error: Máximo 50 caracteres -->
+                    @if (phoneForm.get('expansion')?.touched && phoneForm.get('expansion')?.errors?.['maxlength']) {
+                    <div class="text-danger mt-1">
+                        Máximo 50 caracteres permitidos.
+                    </div>
+                    }
+                </div>
+
+                <!-- Campo OS -->
+                <div class="mb-3">
+                    <label for="os" class="form-label">Sistema Operativo</label>
+                    <input type="text" id="os" class="form-control" formControlName="os"
+                        placeholder="Ejemplo: Xiaomi HyperOS" />
+                    <!-- Mensaje de error: Campo requerido -->
+                    @if (phoneForm.get('os')?.touched && phoneForm.get('os')?.errors?.['required']) {
+                    <div class="text-danger mt-1">
+                        Este campo es obligatorio.
+                    </div>
+                    }
+                    <!-- Mensaje de error: Máximo 50 caracteres -->
+                    @if (phoneForm.get('os')?.touched && phoneForm.get('os')?.errors?.['maxlength']) {
+                    <div class="text-danger mt-1">
+                        Máximo 50 caracteres permitidos.
+                    </div>
+                    }
+                </div>
+
+
+                <!-- Campo Battery -->
+                <div class="mb-3">
+                    <label class="form-label">Batería</label>
+                    <div class="mt-2" formArrayName="battery">
+                        @for (batteryControl of battery.controls; track batteryControl; let i = $index) {
+                        <div class="input-group mb-2">
+                            <!-- Input dinámico -->
+                            <input type="text" class="form-control" [formControlName]="i"
+                                placeholder="Detalle de la batería" />
+                            <!-- Botón eliminar -->
+                            <button type="button" class="btn btn-danger" (click)="removeBattery(i)">
+                                Eliminar
+                            </button>
+                        </div>
+
+                        <!-- Mensajes de error -->
+                        @if (batteryControl.touched && batteryControl.errors?.['maxlength']) {
+                        <div class="text-danger mt-1">Máximo 100 caracteres permitidos.</div>
+                        }
+                        @if (batteryControl.touched && batteryControl.errors?.['required']) {
+                        <div class="text-danger mt-1">Este campo es obligatorio.</div>
+                        }
+                        }
+
+                        <!-- Botón para agregar un nuevo detalle -->
+                        <button type="button" class="btn btn-success mt-2" (click)="addBattery()">
+                            Agregar Texto Batería
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Campo Connectivity -->
+                <div class="mb-3">
+                    <label class="form-label">Conectividad</label>
+                    <div class="mt-2" formArrayName="connectivity">
+                        @for (connectivityControl of connectivity.controls; track connectivityControl; let i = $index) {
+                        <div class="input-group mb-2">
+                            <!-- Input dinámico -->
+                            <input type="text" class="form-control" [formControlName]="i"
+                                placeholder="Ejemplo: Capacidad Wi-Fi 6" />
+                            <!-- Botón eliminar -->
+                            <button type="button" class="btn btn-danger" (click)="removeConnectivity(i)">
+                                Eliminar
+                            </button>
+                        </div>
+
+                        <!-- Mensajes de error -->
+                        @if (connectivityControl.touched && connectivityControl.errors?.['maxlength']) {
+                        <div class="text-danger mt-1">Máximo 100 caracteres permitidos.</div>
+                        }
+                        @if (connectivityControl.touched && connectivityControl.errors?.['required']) {
+                        <div class="text-danger mt-1">Este campo es obligatorio.</div>
+                        }
+                        }
+
+                        <!-- Botón para agregar un nuevo detalle -->
+                        <button type="button" class="btn btn-success mt-2" (click)="addConnectivity()">
+                            Agregar Texto Conectividad
+                        </button>
+                    </div>
+                </div>
+                <!-- Campo Dimensions -->
+                <div class="mb-3">
+                    <label for="dimensions" class="form-label">Dimensiones</label>
+                    <input type="text" id="dimensions" class="form-control" formControlName="dimensions"
+                        placeholder="Ejemplo: 160.4 x 75.1 x 8.4 mm" />
+                    <!-- Mensaje de error: Campo requerido -->
+                    @if (phoneForm.get('dimensions')?.touched && phoneForm.get('dimensions')?.errors?.['required']) {
+                    <div class="text-danger mt-1">Este campo es obligatorio.</div>
+                    }
+                    <!-- Mensaje de error: Máximo 50 caracteres -->
+                    @if (phoneForm.get('dimensions')?.touched && phoneForm.get('dimensions')?.errors?.['maxlength']) {
+                    <div class="text-danger mt-1">Máximo 50 caracteres permitidos.</div>
+                    }
+                </div>
+                <!-- Campo Security -->
+                <div class="mb-3">
+                    <label class="form-label">Seguridad</label>
+                    <div class="mt-2" formArrayName="security">
+                        @for (securityControl of security.controls; track securityControl; let i = $index) {
+                        <div class="input-group mb-2">
+                            <!-- Input dinámico -->
+                            <input type="text" class="form-control" [formControlName]="i"
+                                placeholder="Ejemplo: Sensor de huella digital" />
+                            <!-- Botón eliminar -->
+                            <button type="button" class="btn btn-danger" (click)="removeSecurity(i)">
+                                Eliminar
+                            </button>
+                        </div>
+
+                        <!-- Mensajes de error -->
+                        @if (securityControl.touched && securityControl.errors?.['maxlength']) {
+                        <div class="text-danger mt-1">Máximo 100 caracteres permitidos.</div>
+                        }
+                        @if (securityControl.touched && securityControl.errors?.['required']) {
+                        <div class="text-danger mt-1">Este campo es obligatorio.</div>
+                        }
+                        }
+
+                        <!-- Botón para agregar un nuevo detalle -->
+                        <button type="button" class="btn btn-success mt-2" (click)="addSecurity()">
+                            Agregar Seguridad
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Botón Enviar -->
+                <button type="submit" class="btn btn-primary w-100" [disabled]="phoneForm.invalid">Enviar</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Mostrar JSON -->
+<pre class="bg-light p-3 rounded border">{{ phoneForm.value | json }}</pre>

@@ -8,6 +8,7 @@ import { GlossaryComponent } from './glossary/glossary.component';
 import { ComparativesComponent } from './comparatives/comparatives.component';
 import { VersusComponent } from './versus/versus.component';
 import { LoginComponent } from './admin/login/login.component';
+import { NewphoneComponent } from './admin/newphone/newphone.component';
 
 
 export const routes: Routes = [{
@@ -56,6 +57,11 @@ export const routes: Routes = [{
 {
     path: 'adminhorse',
     component: LoginComponent
+},
+
+{
+    path: 'newphone',
+    component: NewphoneComponent
 },
 {
     path: '',
