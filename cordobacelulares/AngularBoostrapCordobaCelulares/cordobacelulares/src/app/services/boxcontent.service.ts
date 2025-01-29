@@ -12,7 +12,7 @@ export class BoxcontentService {
 
 
 
-      private apiUrl = 'http://vps-4306850-x.dattaweb.com:8080/api/boxcontent';
+      private apiUrl = 'https://www.cordobacelulares.com/api/boxcontent';
 
       //private apiUrl = 'http://localhost:8080/api/boxcontent';
 

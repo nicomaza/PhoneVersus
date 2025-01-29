@@ -9,7 +9,7 @@ import { HttpClient } from '@angular/common/http';
 export class ModelService {
 
   constructor(private http: HttpClient) { }
-    private apiUrl = 'http://vps-4306850-x.dattaweb.com:8080/api/models/dtos';
+    private apiUrl = 'https://www.cordobacelulares.com/api/models/dtos';
  //private apiUrl = 'http://localhost:8080/api/brand';
   getAllBrands(): Observable<ModelNewDto[]> {
     return this.http.get<ModelNewDto[]>(this.apiUrl);

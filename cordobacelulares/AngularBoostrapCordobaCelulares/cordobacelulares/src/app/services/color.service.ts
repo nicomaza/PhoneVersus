@@ -10,7 +10,7 @@ export class ColorService {
 
 
   constructor(private http: HttpClient) { }
-  private apiUrl = 'http://vps-4306850-x.dattaweb.com:8080/api/colors';
+  private apiUrl = 'https://www.cordobacelulares.com/api/colors';
   getAllColors(): Observable<color[]> {
     return this.http.get<color[]>(this.apiUrl);
   }
