@@ -1,6 +1,7 @@
 package celulares.cordobacelulares.services;
 
-import celulares.cordobacelulares.dtos.ModelDto;
+import celulares.cordobacelulares.dtos.model.ModelDto;
+import celulares.cordobacelulares.dtos.model.ModelNewDto;
 import celulares.cordobacelulares.entities.ModelEntity;
 import org.springframework.stereotype.Service;
 
@@ -17,4 +18,6 @@ public interface ModelService {
      ModelEntity updateModel(Long id, ModelEntity model) ;
 
      void deleteModel(Long id) ;
+
+     List<ModelNewDto> getAllModelsDto();
 }

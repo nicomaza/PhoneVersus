@@ -9,6 +9,7 @@ import { ComparativesComponent } from './comparatives/comparatives.component';
 import { VersusComponent } from './versus/versus.component';
 import { LoginComponent } from './admin/login/login.component';
 import { NewphoneComponent } from './admin/newphone/newphone.component';
+import { PhonelistComponent } from './admin/phonelist/phonelist.component';
 
 
 export const routes: Routes = [{
@@ -62,6 +63,14 @@ export const routes: Routes = [{
 {
     path: 'newphone',
     component: NewphoneComponent
+},
+{
+    path: 'newphone/edit/:idPhone',
+    component: NewphoneComponent
+},
+{
+    path: 'phonelist',
+    component: PhonelistComponent
 },
 {
     path: '',

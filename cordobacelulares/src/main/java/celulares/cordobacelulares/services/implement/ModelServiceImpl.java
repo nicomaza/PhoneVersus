@@ -1,18 +1,18 @@
 package celulares.cordobacelulares.services.implement;
 
 import celulares.cordobacelulares.config.GlobalExceptionHandler;
-import celulares.cordobacelulares.dtos.ModelDto;
+import celulares.cordobacelulares.dtos.model.ModelDto;
+import celulares.cordobacelulares.dtos.model.ModelNewDto;
 import celulares.cordobacelulares.entities.ModelEntity;
 import celulares.cordobacelulares.repository.BrandJPA;
 import celulares.cordobacelulares.repository.ModelJPA;
-import celulares.cordobacelulares.services.BrandService;
 import celulares.cordobacelulares.services.ModelService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.web.method.annotation.HandlerMethodValidationException;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class ModelServiceImpl implements ModelService {
@@ -57,4 +57,18 @@ public class ModelServiceImpl implements ModelService {
     public void deleteModel(Long id) {
         modelRepository.deleteById(id);
     }
+
+    @Override
+    public List<ModelNewDto> getAllModelsDto() {
+        return modelRepository.findAll().stream().map(model ->
+                new ModelNewDto(
+                        model.getModelName(), // model
+                        model.getIdModel(),   // idModel
+                        model.getBrand().getBrandName(), // brand
+                        model.getBrand().getIdBrand() // idBrand
+                )
+        ).collect(Collectors.toList());
+    }
+
+
 }

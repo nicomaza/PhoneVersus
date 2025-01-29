@@ -5,7 +5,8 @@
                 <!-- Campo ID -->
                 <div class="mb-3">
                     <label for="idPhone" class="form-label">ID del Teléfono</label>
-                    <input type="number" id="idPhone" class="form-control" formControlName="idPhone" />
+                    <input type="number" id="idPhone" class="form-control" formControlName="idPhone"
+                        [disabled]="true" />
                 </div>
 
                 <!-- Campo Imágenes -->
@@ -20,8 +21,7 @@
                         </div>
                         }
                     </div>
-                    <button type="button" class="btn btn-success mt-2" (click)="addImage()">Agregar Link de
-                        Imagen</button>
+                    <button type="button" class="btn btn-success mt-2" (click)="addImage()">+</button>
                 </div>
 
                 <!-- Campo Cámara Principal -->
@@ -47,8 +47,7 @@
                         <div class="text-danger mt-1">Este campo es obligatorio.</div>
                         }
                         }
-                        <button type="button" class="btn btn-success mt-2" (click)="addMainCamera()">Agregar Texto
-                            Camara Principal</button>
+                        <button type="button" class="btn btn-success mt-2" (click)="addMainCamera()">+</button>
                     </div>
                 </div>
 
@@ -73,8 +72,7 @@
                         <div class="text-danger mt-1">Este campo es obligatorio.</div>
                         }
                         }
-                        <button type="button" class="btn btn-success mt-2" (click)="addSecondaryCamera()">Agregar Texto
-                            Camara Secundaria</button>
+                        <button type="button" class="btn btn-success mt-2" (click)="addSecondaryCamera()">+</button>
                     </div>
                 </div>
                 <div class="mb-3">
@@ -143,7 +141,7 @@
 
                         <!-- Botón para agregar una nueva especificación -->
                         <button type="button" class="btn btn-success mt-2" (click)="addScreen()">
-                            Agregar Texto Pantalla
+                            +
                         </button>
                     </div>
                 </div>
@@ -208,7 +206,7 @@
 
                         <!-- Botón para agregar una nueva opción -->
                         <button type="button" class="btn btn-success mt-2" (click)="addMemory()">
-                            Agregar texto Memoria
+                            +
                         </button>
                     </div>
                 </div>
@@ -279,7 +277,7 @@
 
                         <!-- Botón para agregar un nuevo detalle -->
                         <button type="button" class="btn btn-success mt-2" (click)="addBattery()">
-                            Agregar Texto Batería
+                            +
                         </button>
                     </div>
                 </div>
@@ -310,7 +308,7 @@
 
                         <!-- Botón para agregar un nuevo detalle -->
                         <button type="button" class="btn btn-success mt-2" (click)="addConnectivity()">
-                            Agregar Texto Conectividad
+                            +
                         </button>
                     </div>
                 </div>
@@ -354,11 +352,46 @@
 
                         <!-- Botón para agregar un nuevo detalle -->
                         <button type="button" class="btn btn-success mt-2" (click)="addSecurity()">
-                            Agregar Seguridad
+                            +
                         </button>
                     </div>
                 </div>
 
+                <div class="mb-3">
+                    <label class="form-label">Colores</label>
+                    <ng-select [items]="colorList" bindLabel="name" bindValue="id" [multiple]="true"
+                        formControlName="colors" (change)="onColorChange($event)">
+                    </ng-select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Contenido de la caja</label>
+                    <ng-select [items]="boxcontentList" bindLabel="name" bindValue="id" [multiple]="true"
+                        formControlName="boxContents" (change)="onBoxChange($event)">
+                    </ng-select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Modelo</label>
+                    <ng-select [items]="models" bindLabel="model" bindValue="idModel" formControlName="idModel"
+                        (change)="onModelChange($event)">
+                    </ng-select>
+                </div>
+
+                <!-- Campo Processor -->
+                <div class="mb-3">
+                    <label for="processor" class="form-label">Video de Youtube</label>
+                    <input type="text" id="youtube" class="form-control" formControlName="videoYoutube"
+                        placeholder="Ejemplo: https://www.youtube.com/watch?v=ZwgSZ3yMHXg" />
+                    <!-- Mensaje de error: Campo requerido -->
+                    <div *ngIf="phoneForm.get('videoYoutube')?.touched && phoneForm.get('videoYoutube')?.errors?.['required']"
+                        class="text-danger mt-1">
+                        Este campo es obligatorio.
+                    </div>
+                    <!-- Mensaje de error: Máximo 50 caracteres -->
+                    <div *ngIf="phoneForm.get('videoYoutube')?.touched && phoneForm.get('videoYoutube')?.errors?.['maxlength']"
+                        class="text-danger mt-1">
+                        Máximo 50 caracteres permitidos.
+                    </div>
+                </div>
                 <!-- Botón Enviar -->
                 <button type="submit" class="btn btn-primary w-100" [disabled]="phoneForm.invalid">Enviar</button>
             </form>
@@ -367,4 +400,4 @@
 </div>
 
 <!-- Mostrar JSON -->
-<pre class="bg-light p-3 rounded border">{{ phoneForm.value | json }}</pre>
+<pre class="bg-light p-3 rounded border">{{ phoneForm.value| json }}</pre>

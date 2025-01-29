@@ -1,0 +1,31 @@
+<div class="container mt-4">
+    <h2>Listado de Teléfonos</h2>
+    
+    <!-- Botón para agregar un nuevo teléfono -->
+    <a routerLink="/phones/new" class="btn btn-primary mb-3">Nuevo Teléfono</a>
+
+    <!-- Tabla con los teléfonos -->
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Modelo</th>
+                <th>Marca</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr *ngFor="let phone of phoneList">
+                <td>{{ phone.idModel }}</td>
+                <td>{{ phone.model }}</td>
+                <td>{{ phone.brand }}</td>
+                <td>
+                    <!-- Botón para editar el teléfono seleccionado -->
+                    <a [routerLink]="['/phones/edit', phone.idModel]" class="btn btn-warning">
+                        Editar
+                    </a>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>

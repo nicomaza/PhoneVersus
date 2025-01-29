@@ -10,7 +10,7 @@ import { Observable, of } from 'rxjs';
 @Component({
   selector: 'app-features',
   standalone: true,
-  imports: [RouterOutlet, RouterLink, CommonModule, HomeComponent],
+  imports: [ RouterLink, CommonModule],
   templateUrl: './features.component.html',
   styleUrl: './features.component.css'
 })

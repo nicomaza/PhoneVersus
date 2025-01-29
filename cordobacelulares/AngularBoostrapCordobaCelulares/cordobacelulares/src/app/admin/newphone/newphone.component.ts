@@ -1,21 +1,32 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormArray, FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { color } from '../../models/color';
+import { ColorService } from '../../services/color.service';
+import { NgSelectModule } from '@ng-select/ng-select';
+import { BoxcontentService } from '../../services/boxcontent.service';
+import { boxcontent } from '../../models/boxcontent';
+import { ModelService } from '../../services/model.service';
+import { ModelNewDto } from '../../models/ModelNewDto';
 
 @Component({
   selector: 'app-newphone',
   standalone: true,
-  imports: [ReactiveFormsModule, CommonModule, FormsModule],
+  imports: [ReactiveFormsModule, CommonModule, FormsModule, NgSelectModule],
   templateUrl: './newphone.component.html',
   styleUrl: './newphone.component.css'
 })
 export class NewphoneComponent implements OnInit {
 
   phoneForm: FormGroup;
+  colorList: color[] = [];
+  boxcontentList: boxcontent[] = [];
+  models: ModelNewDto[] = [];
 
-  constructor() {
+
+  constructor(private colorservice: ColorService, private boxservices: BoxcontentService, private modelservice: ModelService) {
     this.phoneForm = new FormGroup({
-      idPhone: new FormControl(0, [Validators.required]),
+      idPhone: new FormControl({value:null, disabled: true}, [Validators.required]),
       images: new FormArray([], [Validators.required]),
       mainCamera: new FormArray([], [Validators.required]),
       secondaryCamera: new FormArray([], [Validators.required]),
@@ -29,16 +40,30 @@ export class NewphoneComponent implements OnInit {
       os: new FormControl('', [Validators.required]),
       battery: new FormArray([], Validators.required),
       connectivity: new FormArray([], Validators.required),
-      dimensions: new FormControl('', [Validators.required, Validators.maxLength(50)]), 
+      dimensions: new FormControl('', [Validators.required, Validators.maxLength(50)]),
       security: new FormArray([], Validators.required),
-      colors: new FormControl([], [Validators.required]),
+      colors: new FormControl([], Validators.required),
       boxContents: new FormControl([], [Validators.required]),
       videoYoutube: new FormControl('', [Validators.required, Validators.pattern(/^https?:\/\/.+$/)]),
       idModel: new FormControl(0, [Validators.required]),
     });
   }
 
-  ngOnInit(): void { }
+  ngOnInit(): void {
+    this.colorservice.getAllColors().subscribe(
+      (data) => { this.colorList = data },
+      (error) => { console.log(error) }
+    )
+    this.boxservices.getAllBoxContent().subscribe(
+      (next) => { this.boxcontentList = next },
+      (error) => { console.log(error) }
+    )
+    this.modelservice.getAllBrands().subscribe(
+      (data) => { this.models = data },
+      (error) => { console.log(error) }
+    )
+
+  }
   //FORM.ARRAY IMAGENES 
   get images(): FormArray {
     return this.phoneForm.get('images') as FormArray;
@@ -128,7 +153,7 @@ export class NewphoneComponent implements OnInit {
   }
   // FIN FORM.ARRAY BATERY
 
-  
+
   // INICIO FORM.ARRAY CONECTIVITY
 
   get connectivity(): FormArray {
@@ -148,8 +173,8 @@ export class NewphoneComponent implements OnInit {
   // FIN FORM.ARRAY conectivity
 
 
-  
- // FIN FORM.ARRAY security
+
+  // FIN FORM.ARRAY security
 
   get security(): FormArray {
     return this.phoneForm.get('security') as FormArray;
@@ -164,13 +189,41 @@ export class NewphoneComponent implements OnInit {
     this.security.removeAt(index);
   }
 
- // FIN FORM.ARRAY security
+  // FIN FORM.ARRAY security
 
 
+  // INICIO FORM.ARRAY color
+  get colorsArray(): FormArray {
+    return this.phoneForm.get('colors') as FormArray;
+  }
+
+  addColor(colorId: number): void {
+    if (!this.colorsArray.value.includes(colorId)) {
+      this.colorsArray.push(new FormControl(colorId));
+    }
+  }
+
+  removeColor(index: number): void {
+    this.colorsArray.removeAt(index);
+  }
+
+  // FIN FORM.ARRAY color
 
 
+  onColorChange(selectedColors: { id: number; name: string }[]): void {
+    const colorIds = selectedColors.map(color => color.id); // Extrae solo los IDs
+    console.log('IDs seleccionados:', colorIds);
+    this.phoneForm.get('colors')?.setValue(colorIds); // Guarda solo los IDs en el FormControl
+  }
 
-
+  onBoxChange(selectedBoxContent: { id: number; name: string }[]): void {
+    const idsbox = selectedBoxContent.map(color => color.id); // Extrae solo los IDs
+    console.log('IDs seleccionados:', idsbox);
+    this.phoneForm.get('boxContents')?.setValue(idsbox); // Guarda solo los IDs en el FormControl
+  }
+  onModelChange(event: any): void {
+    console.log('Modelo seleccionado:', this.phoneForm.value.idModel);
+  }
 
 
   onSubmit() {

@@ -1,9 +1,9 @@
 package celulares.cordobacelulares.controller;
 
-import celulares.cordobacelulares.dtos.ModelDto;
+import celulares.cordobacelulares.dtos.model.ModelDto;
 import celulares.cordobacelulares.dtos.common.ErrorApi;
+import celulares.cordobacelulares.dtos.model.ModelNewDto;
 import celulares.cordobacelulares.entities.ModelEntity;
-import celulares.cordobacelulares.repository.ModelJPA;
 import celulares.cordobacelulares.services.ModelService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -21,6 +21,17 @@ public class ModelController {
     public ResponseEntity<Object> getAllModels() {
         try {
             List<ModelEntity> models = modelService.getAllModels();
+            return ResponseEntity.ok(models);
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ErrorApi(LocalDateTime.now().toString(), HttpStatus.INTERNAL_SERVER_ERROR.value(), "Error obtaining models", ex.getMessage()));
+        }
+    }
+
+    @GetMapping("/dtos")
+    public ResponseEntity<Object> getAllModelsDto() {
+        try {
+            List<ModelNewDto> models = modelService.getAllModelsDto();
             return ResponseEntity.ok(models);
         } catch (Exception ex) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

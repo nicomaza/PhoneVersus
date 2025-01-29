@@ -1,4 +1,4 @@
-package celulares.cordobacelulares.dtos;
+package celulares.cordobacelulares.dtos.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
