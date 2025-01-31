@@ -1,12 +1,14 @@
 <div class="container mt-5">
     <div class="row justify-content-center">
         <div class="col-md-8 col-lg-6 mt-5">
+
+            <button class="btn btn-primary mb-3" [routerLink]="['/adminphonelist']">Volver</button>
             <form [formGroup]="phoneForm" (ngSubmit)="onSubmit()">
                 <!-- Campo ID -->
                 <div class="mb-3">
                     <label for="idPhone" class="form-label">ID del Teléfono</label>
                     <input type="number" id="idPhone" class="form-control" formControlName="idPhone"
-                        [disabled]="true" />
+                       />
                 </div>
 
                 <!-- Campo Imágenes -->
@@ -54,26 +56,14 @@
                 <!-- Campo Cámara Secundaria -->
                 <div class="mb-3">
                     <label class="form-label">Cámara Secundaria</label>
-                    <div class="mt-2" formArrayName="secondaryCamera">
-                        @for (cameraControl of secondaryCamera.controls; track cameraControl; let i = $index) {
-                        <div class="input-group mb-2">
-                            <input type="text" class="form-control" [formControlName]="i"
-                                placeholder="Detalle de la cámara secundaria" />
-                            <button type="button" class="btn btn-danger" (click)="removeSecondaryCamera(i)">
-                                Eliminar
-                            </button>
-                        </div>
-                        <!-- Mensaje de error: Máximo 50 caracteres -->
-                        @if (secondaryCamera.touched && secondaryCamera.errors?.['maxlength']) {
-                        <div class="text-danger mt-1">Máximo 50 caracteres permitidos.</div>
-                        }
-                        <!-- Mensaje de error: Campo requerido -->
-                        @if (secondaryCamera.touched && secondaryCamera.errors?.['required']) {
-                        <div class="text-danger mt-1">Este campo es obligatorio.</div>
-                        }
-                        }
-                        <button type="button" class="btn btn-success mt-2" (click)="addSecondaryCamera()">+</button>
+                    <input type="text" id="red" class="form-control" formControlName="secondaryCamera"
+                        placeholder="60Mp" />
+                    <!-- Mensaje de error: Campo obligatorio -->
+                    @if (phoneForm.get('secondaryCamera')?.touched && phoneForm.get('secondaryCamera')?.errors?.['required']) {
+                    <div class="text-danger mt-1">
+                        Este campo es obligatorio.
                     </div>
+                    }
                 </div>
                 <div class="mb-3">
                     <label for="red" class="form-label">Red</label>
@@ -399,5 +389,3 @@
     </div>
 </div>
 
-<!-- Mostrar JSON -->
-<pre class="bg-light p-3 rounded border">{{ phoneForm.value| json }}</pre>

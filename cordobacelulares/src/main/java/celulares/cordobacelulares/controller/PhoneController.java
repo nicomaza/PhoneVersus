@@ -66,6 +66,13 @@ public class PhoneController {
                     .body(new ErrorApi(LocalDateTime.now().toString(), HttpStatus.INTERNAL_SERVER_ERROR.value(), "Error obtaining phone by ID", ex.getMessage()));
         }
     }
+
+
+    @GetMapping("/edit/{id}")
+    public ResponseEntity<PostNewPhone> getPhoneByIdDto(@PathVariable Long id) {
+        PostNewPhone phoneDto = phoneService.getPhoneByIdEditDto(id);
+        return ResponseEntity.ok(phoneDto);
+    }
     @GetMapping("/brand/{brand}")
     public ResponseEntity<Object> getPhoneByBrand(@PathVariable String brand) {
         try {

@@ -15,7 +15,9 @@ import celulares.cordobacelulares.services.BrandService;
 import celulares.cordobacelulares.services.PhoneService;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -192,5 +194,34 @@ public class PhoneServiceImpl implements PhoneService {
 
         return onePhoneDtoList;
     }
+
+    @Override
+    public PostNewPhone getPhoneByIdEditDto(Long id) {
+        return phoneRepository.findById(id)
+                .map(phone -> new PostNewPhone(
+                        phone.getIdPhone(),
+                        phone.getImages(),
+                        phone.getMainCamera(),
+                        phone.getSecondaryCamera(),
+                        phone.getRed(),
+                        phone.getOficialWeb(),
+                        phone.getScreen(),
+                        phone.getProcessor(),
+                        phone.getGpu(),
+                        phone.getMemory(),
+                        phone.getExpansion(),
+                        phone.getOs(),
+                        phone.getBattery(),
+                        phone.getConnectivity(),
+                        phone.getDimensions(),
+                        phone.getSecurity(),
+                        phone.getColors().stream().map(ColorEntity::getIdColor).collect(Collectors.toList()), // Convertir colores a nombres
+                        phone.getBoxContents().stream().map(BoxContentsEntity::getIdContent).collect(Collectors.toList()), // Convertir boxContents a nombres
+                        phone.getVideoYoutube(),
+                        phone.getModel().getIdModel() // Obtener el ID del modelo
+                ))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Teléfono no encontrado"));
+    }
+
 
 }

@@ -9,7 +9,7 @@ import { ComparativesComponent } from './comparatives/comparatives.component';
 import { VersusComponent } from './versus/versus.component';
 import { LoginComponent } from './admin/login/login.component';
 import { NewphoneComponent } from './admin/newphone/newphone.component';
-import { PhonelistComponent } from './admin/phonelist/phonelist.component';
+import { AdminphonelistComponent } from './admin/adminphonelist/adminphonelist.component';
 
 
 export const routes: Routes = [{
@@ -69,8 +69,8 @@ export const routes: Routes = [{
     component: NewphoneComponent
 },
 {
-    path: 'phonelist',
-    component: PhonelistComponent
+    path: 'adminphonelist',
+    component: AdminphonelistComponent
 },
 {
     path: '',

@@ -21,4 +21,6 @@ public interface PhoneService {
      void deletePhone(Long id);
 
     List<OnePhoneDto> getPhonesByBrand(String brand);
+
+    PostNewPhone getPhoneByIdEditDto(Long id);
 }

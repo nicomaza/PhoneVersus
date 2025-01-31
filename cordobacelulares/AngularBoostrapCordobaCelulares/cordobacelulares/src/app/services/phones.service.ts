@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { Phone } from '../models/phone';
 import { searchedPhone } from '../models/searchedPhone';
+import { PostNewPhone } from '../models/PostNewPhone';
 
 @Injectable({
   providedIn: 'root'
@@ -12,7 +13,7 @@ import { searchedPhone } from '../models/searchedPhone';
 export class PhonesService {
 
   private apiUrl = 'https://www.cordobacelulares.com/api/phones';
-  //private apiUrl = 'http://localhost:8080/api/phones';
+  //private apiUrl = 'http://localhost:8080/api/phones/edit/';
   productos: Phone[] = [];
 
 
@@ -32,8 +33,15 @@ export class PhonesService {
   phoneSearcher(textSearch:string):Observable<searchedPhone[]>{
     return this.http.get<searchedPhone[]>(`${this.apiUrl}/search?textsearch=${textSearch}`);
   }
-
-
+  postPhone(newphone:PostNewPhone):Observable<any>{
+    return this.http.post<PostNewPhone>(`${this.apiUrl}`, newphone);
+  }
+  getPhoneDtoById(id:string): Observable<PostNewPhone>{
+    return this.http.get<PostNewPhone>(`${this.apiUrl}/edit/${id}`)
+  }
+  deletePhoneById(id:string): Observable<any>{
+    return this.http.delete<PostNewPhone>(`${this.apiUrl}/${id}`)
+  }
 }
 
 

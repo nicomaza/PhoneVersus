@@ -1,0 +1,42 @@
+<div class="container mt-4">
+    <h2>Listado de Teléfonos</h2>
+
+    <!-- Botón para agregar un nuevo teléfono -->
+    <a routerLink="/newphone" class="btn btn-primary mb-3">Nuevo Teléfono</a>
+
+    <ng-select 
+    [items]="phoneList"
+    bindLabel="model"
+    bindValue="idModel"
+    (change)="search($event)">
+  </ng-select>
+  
+
+    <!-- Tabla con los teléfonos -->
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Modelo</th>
+                <th>Marca</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr *ngFor="let phone of filteredList">
+                <td>{{ phone.brand }}</td>
+                <td>{{ phone.model }}</td>
+                <td>
+                    <div class="d-flex justify-content-center">
+                        <a [routerLink]="['/newphone/edit', phone.idModel]" class="btn btn-warning">
+                            Editar
+                        </a>
+
+                        <button class="btn btn-danger mx-1" (click)="deletephone(phone.idModel)">Eliminar</button>
+                    </div>
+
+
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>

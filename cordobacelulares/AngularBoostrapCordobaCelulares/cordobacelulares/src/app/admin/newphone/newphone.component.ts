@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, Input, OnInit, signal } from '@angular/core';
 import { FormArray, FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { color } from '../../models/color';
 import { ColorService } from '../../services/color.service';
@@ -8,28 +8,46 @@ import { BoxcontentService } from '../../services/boxcontent.service';
 import { boxcontent } from '../../models/boxcontent';
 import { ModelService } from '../../services/model.service';
 import { ModelNewDto } from '../../models/ModelNewDto';
+import { PhonesService } from '../../services/phones.service';
+import { PostNewPhone } from '../../models/PostNewPhone';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-newphone',
   standalone: true,
-  imports: [ReactiveFormsModule, CommonModule, FormsModule, NgSelectModule],
+  imports: [ReactiveFormsModule, CommonModule, FormsModule, NgSelectModule, RouterLink],
   templateUrl: './newphone.component.html',
   styleUrl: './newphone.component.css'
 })
 export class NewphoneComponent implements OnInit {
 
+
+  @Input() set idPhone(idPhone: string | null) {
+    if (idPhone) {
+      this._id = idPhone;
+      this.isEditMode.set(true);
+      this.getById(idPhone);
+    } else {
+      this.isEditMode.set(false);
+      this.phoneForm.reset();
+    }
+  }
+
   phoneForm: FormGroup;
   colorList: color[] = [];
   boxcontentList: boxcontent[] = [];
   models: ModelNewDto[] = [];
+  editphone!: PostNewPhone;
 
+  isEditMode = signal<boolean>(false); // Modo edición
+  private _id: string | null = null;
 
-  constructor(private colorservice: ColorService, private boxservices: BoxcontentService, private modelservice: ModelService) {
+  constructor(private colorservice: ColorService, private boxservices: BoxcontentService, private modelservice: ModelService, private phoneservice: PhonesService) {
     this.phoneForm = new FormGroup({
-      idPhone: new FormControl({value:null, disabled: true}, [Validators.required]),
+      idPhone: new FormControl({ value: null, disabled: true }),
       images: new FormArray([], [Validators.required]),
       mainCamera: new FormArray([], [Validators.required]),
-      secondaryCamera: new FormArray([], [Validators.required]),
+      secondaryCamera: new FormControl([], [Validators.required]),
       red: new FormControl('', [Validators.required]),
       oficialWeb: new FormControl('', [Validators.required, Validators.pattern(/^https?:\/\/.+$/)]),
       screen: new FormArray([], [Validators.required]),
@@ -64,6 +82,13 @@ export class NewphoneComponent implements OnInit {
     )
 
   }
+
+  
+
+  
+  
+  
+  
   //FORM.ARRAY IMAGENES 
   get images(): FormArray {
     return this.phoneForm.get('images') as FormArray;
@@ -226,11 +251,89 @@ export class NewphoneComponent implements OnInit {
   }
 
 
+
+  getById(id: string) {
+    this.phoneservice.getPhoneDtoById(id).subscribe(
+      (data) => {
+        console.log('📥 Datos recibidos desde la API:', data);
+  
+        if (!data) {
+          console.warn('❌ No se encontraron datos para el ID:', id);
+          return;
+        }
+  
+        this.editphone = data;
+  
+        // ✅ Cargar valores en el formulario
+        this.phoneForm.patchValue({
+          idPhone: data.idPhone,
+          secondaryCamera: data.secondaryCamera,
+          red: data.red,
+          oficialWeb: data.oficialWeb,
+          processor: data.processor,
+          gpu: data.gpu,
+          expansion: data.expansion,
+          os: data.os,
+          dimensions: data.dimensions,
+          videoYoutube: data.videoYoutube,
+          idModel: data.idModel,
+          colors: data.colors, // Cargar colores
+          boxContents: data.boxContents, // Cargar contenido de caja
+        });
+  
+        // 🔄 Limpiar y cargar los `FormArray`
+        this.setFormArrayValues(this.images, data.images);
+        this.setFormArrayValues(this.mainCamera, data.mainCamera);
+        this.setFormArrayValues(this.screen, data.screen);
+        this.setFormArrayValues(this.memory, data.memory);
+        this.setFormArrayValues(this.battery, data.battery);
+        this.setFormArrayValues(this.connectivity, data.connectivity);
+        this.setFormArrayValues(this.security, data.security);
+      },
+      (error) => {
+        console.error('❌ Error en la API:', error);
+      }
+    );
+  }
+  private setFormArrayValues(formArray: FormArray, values: any[]) {
+    formArray.clear(); // 🗑️ Limpiar FormArray antes de cargar datos nuevos
+    values.forEach(value => {
+      formArray.push(new FormControl(value, Validators.required));
+    });
+  }
+  
   onSubmit() {
+    if (this.phoneForm.invalid) {
+      console.warn('⚠️ Formulario inválido. Mostrando errores...');
+      
+      // Recorremos cada control del formulario y mostramos los errores
+      Object.keys(this.phoneForm.controls).forEach(field => {
+        const control = this.phoneForm.get(field);
+        if (control && control.invalid) {
+          console.error(`❌ Error en "${field}":`, control.errors);
+        }
+      });
+  
+      return; // Detiene la ejecución para que no se intente enviar el formulario inválido
+    }
+  
+    console.log('✅ Formulario enviado correctamente:', this.phoneForm.value);
+  
+    this.phoneservice.postPhone(this.phoneForm.value).subscribe(
+      (data) => { console.log('📥 Respuesta del servidor:', data) },
+      (error) => { console.error('❌ Error en el servidor:', error) }
+    );
+  }
+  
+  /*onSubmit() {
     if (this.phoneForm.valid) {
       console.log('Formulario enviado:', this.phoneForm.value);
+      this.phoneservice.postPhone(this.phoneForm.value).subscribe(
+        (data)=>{console.log(data)},
+        (error)=>{console.log(error)}
+      )
     } else {
       console.log('Formulario inválido');
     }
-  }
+  }*/
 }
