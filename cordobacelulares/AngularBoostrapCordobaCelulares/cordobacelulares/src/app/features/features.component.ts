@@ -27,7 +27,6 @@ export class FeaturesComponent implements OnInit {
     this.phoneService.getPhoneById(numericId).subscribe(
       (data: Phone) => {
         this.phone = data;
-        console.log(this.phone)
       },
       (error) => {
         console.error('Error fetching phones', error);
@@ -36,7 +35,7 @@ export class FeaturesComponent implements OnInit {
 
   }
   getColorForImage(image: string): string {
-    console.log('image', image);
+  
     
     // Obtener solo el nombre del archivo de la imagen (sin la ruta)
     const imageNameWithExtension = image.split('/').pop() || '';
@@ -45,21 +44,20 @@ export class FeaturesComponent implements OnInit {
     const imageNameParts = imageNameWithExtension.split('.');
     const colorPart = imageNameParts[0].split('_').pop() || '';
   
-    console.log('colorPart', colorPart);
+   
   
     // Normalizar el color obtenido de la imagen
     const normalizedImageColor = this.normalizeString(colorPart);
-    console.log('normalizedImageColor', normalizedImageColor);
+   
     
     // Buscar el color correspondiente en el array `colors`
     const matchedColor = this.phone.colors.find(color => {
       const normalizedColor = this.normalizeString(color);
-      console.log('Comparing:', normalizedImageColor, 'with', normalizedColor);
+      
       return normalizedColor === normalizedImageColor;
     });
   
-    console.log('matchedColor', matchedColor);
-    
+   
     // Retornar el color coincidente o vacío si no hay coincidencia
     return matchedColor || '';
   }

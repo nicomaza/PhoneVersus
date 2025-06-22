@@ -237,17 +237,17 @@ export class NewphoneComponent implements OnInit {
 
   onColorChange(selectedColors: { id: number; name: string }[]): void {
     const colorIds = selectedColors.map(color => color.id); // Extrae solo los IDs
-    console.log('IDs seleccionados:', colorIds);
+
     this.phoneForm.get('colors')?.setValue(colorIds); // Guarda solo los IDs en el FormControl
   }
 
   onBoxChange(selectedBoxContent: { id: number; name: string }[]): void {
     const idsbox = selectedBoxContent.map(color => color.id); // Extrae solo los IDs
-    console.log('IDs seleccionados:', idsbox);
+
     this.phoneForm.get('boxContents')?.setValue(idsbox); // Guarda solo los IDs en el FormControl
   }
   onModelChange(event: any): void {
-    console.log('Modelo seleccionado:', this.phoneForm.value.idModel);
+
   }
 
 
@@ -255,7 +255,7 @@ export class NewphoneComponent implements OnInit {
   getById(id: string) {
     this.phoneservice.getPhoneDtoById(id).subscribe(
       (data) => {
-        console.log('📥 Datos recibidos desde la API:', data);
+   
   
         if (!data) {
           console.warn('❌ No se encontraron datos para el ID:', id);
@@ -317,10 +317,10 @@ export class NewphoneComponent implements OnInit {
       return; // Detiene la ejecución para que no se intente enviar el formulario inválido
     }
   
-    console.log('✅ Formulario enviado correctamente:', this.phoneForm.value);
+
   
     this.phoneservice.postPhone(this.phoneForm.value).subscribe(
-      (data) => { console.log('📥 Respuesta del servidor:', data) },
+      (data) => {  },
       (error) => { console.error('❌ Error en el servidor:', error) }
     );
   }

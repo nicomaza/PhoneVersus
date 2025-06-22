@@ -11,7 +11,10 @@ RUN npm install
 COPY . .
 
 # Construye la aplicación Angular
-RUN npm run build
+RUN npm run build -- --configuration=production
 
-# Establece el comando para iniciar la aplicación
-CMD ["npx", "ng", "serve", "--host", "0.0.0.0", "--port", "80", "--disable-host-check"]
+# Etapa de producción (Nginx)
+FROM nginx:alpine
+COPY --from=build /app/dist/cordobacelulares /usr/share/nginx/html
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]

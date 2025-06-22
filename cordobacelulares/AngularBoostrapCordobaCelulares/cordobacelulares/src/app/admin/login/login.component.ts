@@ -15,11 +15,7 @@ export class LoginComponent {
     password: new FormControl('', [Validators.required, Validators.minLength(6)]) 
   });
   onSubmit() {
-    if (this.loginForm.valid) {
-      console.log('Formulario válido:', this.loginForm.value);
-    } else {
-      console.log('Formulario inválido');
-    }
+
   }
 
 

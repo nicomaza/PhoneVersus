@@ -176,7 +176,7 @@ export class ComparativesComponent implements OnInit {
       )
     );
 
-    this.phones$.subscribe((data) => console.log(data))
+    this.phones$.subscribe((data) => )
   }
 
 }

@@ -36,8 +36,7 @@ export class PhoneItemComponent implements OnInit, OnChanges {
             const updatedImages = this.phone.images.slice(0, -1);
             this.phone.images = updatedImages; // Asignamos el nuevo array
           }
-  
-          console.log('Phone with updated images:', this.phone);
+ 
         },
         (error) => {
           console.error('Error fetching phone', error);

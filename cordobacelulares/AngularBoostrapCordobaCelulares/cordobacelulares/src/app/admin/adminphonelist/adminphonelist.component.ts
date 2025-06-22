@@ -39,7 +39,6 @@ export class AdminphonelistComponent implements OnInit {
       return;
     }
 
-    console.log('🔎 Modelo seleccionado:', selectedId);
 
     this.filteredList = this.phoneList.filter(phone => phone.idModel === selectedId.idModel);
   }
