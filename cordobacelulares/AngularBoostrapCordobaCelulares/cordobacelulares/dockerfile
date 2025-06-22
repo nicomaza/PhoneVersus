@@ -1,19 +1,12 @@
-FROM node:20
-
-# Establece el directorio de trabajo en la raíz del proyecto
+# Etapa 1: Build de Angular
+FROM node:20 AS build
 WORKDIR /app
-
-# Copia los archivos de configuración
 COPY package*.json ./
 RUN npm install
-
-# Copia todo el resto del código
 COPY . .
-
-# Construye la aplicación Angular
 RUN npm run build -- --configuration=production
 
-# Etapa de producción (Nginx)
+# Etapa 2: Producción con Nginx
 FROM nginx:alpine
 COPY --from=build /app/dist/cordobacelulares /usr/share/nginx/html
 EXPOSE 80
