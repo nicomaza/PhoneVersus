@@ -1,0 +1,158 @@
+/* lista-precios.component.css */
+
+.lp-container {
+  padding: 12px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.lp-search {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: white;
+  padding: 8px 0 10px;
+}
+
+.lp-search-hint {
+  font-size: 12px;
+  color: #6c757d;
+  margin-top: 6px;
+}
+
+.lp-loading, .lp-empty {
+  padding: 14px 4px;
+  color: #6c757d;
+}
+
+.lp-brand-block {
+  margin-top: 14px;
+}
+
+.lp-brand-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 10px 10px;
+  border-radius: 12px;
+  background: #f6f7f9;
+  border: 1px solid #eef0f3;
+  margin-bottom: 10px;
+}
+
+.lp-brand-title {
+  font-weight: 700;
+  letter-spacing: .2px;
+}
+
+.lp-brand-count {
+  font-size: 12px;
+  color: #6c757d;
+}
+
+.lp-card {
+  border: 1px solid #eef0f3;
+  border-radius: 14px;
+  transition: transform .08s ease, box-shadow .08s ease;
+}
+
+.lp-card:active {
+  transform: scale(0.99);
+}
+
+.lp-model {
+  font-weight: 650;
+  font-size: 15px;
+  line-height: 1.25;
+  margin-bottom: 10px;
+}
+
+.lp-price-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.lp-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #eaf7ee;
+  color: #1f7a3a;
+  font-weight: 600;
+}
+
+.lp-price {
+  font-weight: 800; /* efectivo bien marcado */
+  font-size: 16px;
+}
+
+.lp-subhint {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #6c757d;
+}
+
+/* Modal */
+.lp-modal-title {
+  font-weight: 750;
+  font-size: 15px;
+}
+
+.lp-modal-sub {
+  font-size: 12px;
+  color: #6c757d;
+}
+
+.lp-prices {
+  border: 1px solid #eef0f3;
+  border-radius: 12px;
+  padding: 10px;
+  background: #fbfbfc;
+}
+
+.lp-price-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px dashed #e6e8ec;
+}
+
+.lp-price-row:last-child {
+  border-bottom: 0;
+}
+
+.lp-k {
+  color: #6c757d;
+}
+
+.lp-v {
+  text-align: right;
+}
+
+/* Evita scroll de body cuando el modal está abierto */
+:global(body.modal-open) {
+  overflow: hidden;
+}
+.lp-container{
+  padding-top: var(--lp-top-offset, 0px);
+}
+
+/* buscador siempre visible pero sin “pisar” contenido */
+.lp-search{
+  position: sticky;
+  top: var(--lp-top-offset, 0px);
+  z-index: 50;
+  background: #fff;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(0,0,0,.06);
+}
+
+
+.lp-legend {
+  border-top: 1px solid #eef0f3;
+  padding-top: 10px;
+}
