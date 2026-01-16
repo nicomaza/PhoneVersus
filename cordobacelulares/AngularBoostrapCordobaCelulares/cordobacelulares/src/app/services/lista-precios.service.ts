@@ -47,10 +47,18 @@ export class ListaPreciosService {
 
     const isSeparator = (v: string) => /^-+$/.test(v.trim());
     const isCategory = (v: string) => v.trim().startsWith('➡️');
-    const isModel = (v: string) => /^\*.*\*$/.test(v.trim()); // *MODELO*
+    const isModel = (v: string) => /^\*[^*]+\*/.test(v.trim());
     const isColors = (v: string) => /^_.*_$/.test(v.trim());  // _Black,Blue_
 
-    const cleanModel = (v: string) => v.trim().replace(/^\*|\*$/g, '').trim();
+    const cleanModel = (v: string) => {
+  const s = v.trim();
+  const m = s.match(/^\*(.*?)\*(.*)$/); // 1=entre *, 2=lo de después
+  if (!m) return s.replace(/^\*|\*$/g, '').trim();
+
+  const core = (m[1] ?? '').trim();
+  const rest = (m[2] ?? '').trim(); // ej "(8GB+8GB)"
+  return rest ? `${core} ${rest}` : core;
+};
     const cleanColors = (v: string) =>
       v.trim()
         .replace(/^_+|_+$/g, '')

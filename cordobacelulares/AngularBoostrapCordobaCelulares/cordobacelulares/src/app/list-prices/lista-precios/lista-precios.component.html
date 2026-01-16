@@ -24,10 +24,18 @@
 
     <!-- Grupos por marca -->
     <div *ngFor="let g of grupos" class="lp-brand-block">
-      <div class="lp-brand-header">
-        <div class="lp-brand-title">{{ g.marca }}</div>
-        <div class="lp-brand-count">{{ g.items.length }} modelos</div>
-      </div>
+     <div class="lp-brand-header" [attr.data-brand]="g.marca">
+  <div class="lp-brand-left">
+    <div class="lp-brand-icon" aria-hidden="true">
+      <span class="lp-brand-monogram">{{ g.marca | slice:0:2 | uppercase }}</span>
+    </div>
+
+    <div class="lp-brand-title">{{ g.marca }}</div>
+  </div>
+
+  <div class="lp-brand-count">{{ g.items.length }} modelos</div>
+</div>
+
 
       <!-- Grid responsive de cards -->
       <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-2">

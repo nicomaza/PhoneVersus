@@ -271,3 +271,153 @@
   color: rgba(0,0,0,.50);
   margin-top: 2px;
 }
+/* --- BRAND HEADER: más visible, moderno, sin logos --- */
+.lp-brand-header{
+  --brand-accent: #6b7280;          /* default */
+  position: relative;
+  overflow: hidden;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  padding: 10px 12px 10px 10px;
+  border-radius: 14px;
+
+  background: #f6f7f9;
+  border: 1px solid #eef0f3;
+}
+
+.lp-brand-left{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+/* Acento lateral (muy “app”) */
+.lp-brand-header::after{
+  content:"";
+  position:absolute;
+  left:0; top:0; bottom:0;
+  width: 5px;
+  background: var(--brand-accent);
+  opacity: .9;
+}
+
+/* Degradado suave hacia la derecha (más jerarquía sin “tosquedad”) */
+.lp-brand-header::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background: linear-gradient(90deg,
+    rgba(0,0,0,0) 0%,
+    rgba(0,0,0,0) 35%,
+    rgba(0,0,0,0) 100%
+  );
+  /* si el navegador soporta color-mix, se ve todavía mejor */
+}
+@supports (background: color-mix(in srgb, #000 10%, #fff)) {
+  .lp-brand-header::before{
+    background: linear-gradient(90deg,
+      color-mix(in srgb, var(--brand-accent) 14%, transparent),
+      transparent 55%
+    );
+  }
+}
+
+/* Asegurar que contenido quede arriba del “glass” */
+.lp-brand-left, .lp-brand-count, .lp-brand-title{
+  position: relative;
+  z-index: 1;
+}
+
+/* Icono/monograma */
+.lp-brand-icon{
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  background: rgba(255,255,255,.9);
+  border: 1px solid rgba(0,0,0,.06);
+  box-shadow: 0 8px 18px rgba(0,0,0,.06);
+  flex: 0 0 auto;
+}
+@supports (background: color-mix(in srgb, #000 10%, #fff)) {
+  .lp-brand-icon{
+    background: color-mix(in srgb, var(--brand-accent) 12%, #fff);
+    border-color: color-mix(in srgb, var(--brand-accent) 32%, rgba(0,0,0,.06));
+  }
+}
+
+.lp-brand-monogram{
+  font-size: .72rem;
+  font-weight: 850;
+  letter-spacing: .6px;
+  color: rgba(0,0,0,.78);
+}
+@supports (color: color-mix(in srgb, #000 10%, #fff)) {
+  .lp-brand-monogram{
+    color: color-mix(in srgb, var(--brand-accent) 70%, #111);
+  }
+}
+
+.lp-brand-title{
+  font-weight: 800;
+  letter-spacing: .2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lp-brand-count{
+  font-size: 12px;
+  color: rgba(0,0,0,.55);
+  background: rgba(255,255,255,.65);
+  border: 1px solid rgba(0,0,0,.06);
+  padding: 4px 8px;
+  border-radius: 999px;
+}
+
+/* Desktop hover sutil */
+@media (hover:hover) {
+  .lp-brand-header{
+    transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+  }
+  .lp-brand-header:hover{
+    transform: translateY(-1px);
+    box-shadow: 0 10px 26px rgba(0,0,0,.06);
+    border-color: rgba(0,0,0,.08);
+  }
+}
+
+/* --- Colores por marca (case-insensitive con i) --- */
+.lp-brand-header[data-brand*="APPLE" i],
+.lp-brand-header[data-brand*="IPHONE" i]{ --brand-accent:#111827; }
+
+.lp-brand-header[data-brand*="SAMSUNG" i]{ --brand-accent:#1d4ed8; }
+
+.lp-brand-header[data-brand*="XIAOMI" i],
+.lp-brand-header[data-brand*="REDMI" i],
+.lp-brand-header[data-brand*="POCO" i]{ --brand-accent:#f97316; }
+
+.lp-brand-header[data-brand*="MOTOROLA" i],
+.lp-brand-header[data-brand*="MOTO" i]{ --brand-accent:#dc2626; }
+
+.lp-brand-header[data-brand*="HUAWEI" i],
+.lp-brand-header[data-brand*="HONOR" i]{ --brand-accent:#b91c1c; }
+
+.lp-brand-header[data-brand*="OPPO" i]{ --brand-accent:#16a34a; }
+.lp-brand-header[data-brand*="VIVO" i]{ --brand-accent:#2563eb; }
+.lp-brand-header[data-brand*="REALME" i]{ --brand-accent:#ca8a04; }
+
+.lp-brand-header[data-brand*="GOOGLE" i],
+.lp-brand-header[data-brand*="PIXEL" i]{ --brand-accent:#0ea5e9; }
+
+.lp-brand-header[data-brand*="NOKIA" i]{ --brand-accent:#0f766e; }
