@@ -9,7 +9,10 @@ RUN npm run build -- --configuration=production
 # Etapa 2: Producción con Nginx
 FROM nginx:alpine
 
-# Importante: borrar el contenido default de nginx (incluye el index.html "Welcome to nginx!")
+# Reemplaza la config default por una con SPA fallback
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Limpiar html default (bien)
 RUN rm -rf /usr/share/nginx/html/*
 
 # Copiar el build real (en tu caso está en /browser)
