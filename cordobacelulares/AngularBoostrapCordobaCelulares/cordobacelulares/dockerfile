@@ -8,6 +8,12 @@ RUN npm run build -- --configuration=production
 
 # Etapa 2: Producción con Nginx
 FROM nginx:alpine
-COPY --from=build /app/dist/cordobacelulares /usr/share/nginx/html
+
+# Importante: borrar el contenido default de nginx (incluye el index.html "Welcome to nginx!")
+RUN rm -rf /usr/share/nginx/html/*
+
+# Copiar el build real (en tu caso está en /browser)
+COPY --from=build /app/dist/cordobacelulares/browser /usr/share/nginx/html
+
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
