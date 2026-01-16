@@ -53,11 +53,12 @@
 </div>
 
 <!-- Modal (sin dependencia extra, bootstrap-friendly) -->
-<div *ngIf="modalOpen" class="modal-backdrop fade show" (click)="closeModal()"></div>
+<div *ngIf="modalOpen" class="modal-backdrop fade show lp-backdrop" (click)="closeModal()"></div>
 
-<div *ngIf="modalOpen" class="modal fade show d-block" tabindex="-1" role="dialog" aria-modal="true">
-  <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
-    <div class="modal-content" (click)="$event.stopPropagation()">
+<div *ngIf="modalOpen" class="modal fade show d-block lp-modal" tabindex="-1" role="dialog" aria-modal="true">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content lp-modal-content" (click)="$event.stopPropagation()">
+     <div class="lp-sheet-handle" aria-hidden="true"></div>
       <div class="modal-header">
         <div class="w-100">
           <div class="lp-modal-title" *ngIf="selected as p">{{ p.marca }} · {{ p.modelo }}</div>
@@ -76,10 +77,14 @@
             <div class="lp-k">Transferencia</div>
             <div class="lp-v">$ {{ fmtMoney(p.transferencia) }}</div>
           </div>
-          <div class="lp-price-row">
-            <div class="lp-k">Tarjeta</div>
-            <div class="lp-v">$ {{ fmtMoney(p.tarjeta) }}</div>
-          </div>
+        <div class="lp-price-row">
+  <div class="lp-k">Tarjeta</div>
+  <div class="lp-v">
+    <div>$ {{ fmtMoney(p.tarjeta) }}</div>
+    <div class="lp-subprice">Hasta 6 pagos</div>
+  </div>
+</div>
+
         </div>
 
         <div class="mt-3">
@@ -93,14 +98,21 @@
         </div>
 
 <div class="lp-legend mt-3">
-  <div class="small text-muted">
-    Pueden existir otros colores disponibles.
+  <div class="lp-legend-note">
+    Los colores pueden variar según disponibilidad.
   </div>
 
-  <div class="small fw-semibold mt-2">
-    Solo se atiende con turno asignado. Equipos nuevos sellados de fábrica con garantía.
-    PRECIOS EN PESOS ARGENTINOS. Se aceptan dolares y criptomonedas.
+  <div class="lp-legend-title mt-2">
+    Condiciones
   </div>
+
+  <ul class="lp-legend-list">
+    <li>Atención únicamente con turno asignado.</li>
+    <li>Equipos nuevos, sellados de fábrica y con garantía.</li>
+    <li>Precios en pesos argentinos (ARS).</li>
+    <li>Aceptamos dólares y criptomonedas.</li>
+    <li>Tarjetas: Se reciben TODAS las tarjetas.</li>
+  </ul>
 </div>
 
 

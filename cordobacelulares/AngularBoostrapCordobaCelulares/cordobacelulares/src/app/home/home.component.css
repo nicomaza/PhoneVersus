@@ -77,9 +77,57 @@ width: 100%;
 
 /* fondo violeta */
 
-#hero {
-    width: 100%;
-    height: 100vh;
-    background: linear-gradient(130deg, rgba(255, 255, 255, 0.9) 30%, rgba(235, 235, 235, 0.9) 70%), url(../../assets/img/fondoxiaomi.jpg) center center no-repeat;
-    background-size: cover;
+#hero.hero{
+  min-height: 92vh;
+  background:
+    radial-gradient(900px 420px at 10% 10%, rgba(220,53,69,.10), transparent 60%),
+    linear-gradient(130deg, rgba(255,255,255,.94) 35%, rgba(245,245,245,.90) 70%),
+    url(../../assets/img/fondoxiaomi.jpg) center / cover no-repeat;
 }
+
+.hero-kicker{
+  font-weight: 800;
+  letter-spacing: .14em;
+  font-size: .78rem;
+  color: rgba(0,0,0,.55);
+  margin-bottom: 1rem;
+}
+
+.hero-title{
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1.02;
+  font-size: clamp(2.3rem, 3.6vw, 3.6rem);
+  margin: 0 0 1rem 0;
+  color: #111;
+}
+
+.hero-lead{
+  font-size: clamp(1.05rem, 1.3vw, 1.2rem);
+  line-height: 1.55;
+  color: rgba(0,0,0,.72);
+  max-width: 52ch;
+}
+
+.hero-btn{
+  border-radius: 14px;
+  min-height: 46px;
+}
+
+.hero-meta{
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  color: rgba(0,0,0,.62);
+  font-weight: 650;
+}
+
+.hero-meta .dot{
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #dc3545;
+  display: inline-block;
+}
+
+.hero-meta .sep{ opacity: .6; }

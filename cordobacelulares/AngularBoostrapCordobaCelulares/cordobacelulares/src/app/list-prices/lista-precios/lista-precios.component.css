@@ -156,3 +156,118 @@
   border-top: 1px solid #eef0f3;
   padding-top: 10px;
 }
+/* Asegurá jerarquía sobre tu buscador sticky */
+.lp-backdrop { z-index: 1040; }
+.lp-modal { z-index: 1050; }
+
+/* Backdrop moderno: oscurece + blur */
+.lp-backdrop {
+  background: rgba(15, 15, 18, .55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Modal: no “pantalla blanca”, sino contenido con forma */
+.lp-modal .modal-dialog {
+  max-width: 520px;
+  width: calc(100% - 24px);
+  margin: 12px auto;
+  transition: transform .18s ease, opacity .18s ease;
+  transform: translateY(10px);
+  opacity: 0;
+}
+
+.lp-modal.fade.show .modal-dialog {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.lp-modal-content {
+  border: 0;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow:
+    0 24px 60px rgba(0,0,0,.35),
+    0 8px 18px rgba(0,0,0,.20);
+}
+
+/* Header/footer más “app” */
+.lp-modal .modal-header {
+  border-bottom: 1px solid rgba(0,0,0,.06);
+  background: rgba(255,255,255,.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.lp-modal .modal-footer {
+  border-top: 1px solid rgba(0,0,0,.06);
+  background: rgba(255,255,255,.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Handle del sheet (solo mobile) */
+.lp-sheet-handle {
+  display: none;
+  width: 46px;
+  height: 5px;
+  border-radius: 999px;
+  margin: 10px auto 2px auto;
+  background: rgba(0,0,0,.16);
+}
+
+/* Mobile: comportamiento tipo bottom-sheet (se nota MUCHO que es modal) */
+@media (max-width: 575.98px) {
+  .lp-sheet-handle { display: block; }
+
+  .lp-modal .modal-dialog {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    margin: 0;
+    width: 100%;
+    max-width: none;
+    transform: translateY(18px);
+  }
+
+  .lp-modal.fade.show .modal-dialog {
+    transform: translateY(0);
+  }
+
+  .lp-modal-content {
+    border-radius: 18px 18px 0 0;
+    max-height: 86vh; /* deja “aire” arriba para que se note modal */
+  }
+}
+.lp-legend {
+  border-top: 1px solid rgba(0,0,0,.06);
+  padding-top: 12px;
+}
+
+.lp-legend-note{
+  font-size: .85rem;
+  color: rgba(0,0,0,.55);
+}
+
+.lp-legend-title{
+  font-size: .9rem;
+  font-weight: 700;
+  color: rgba(0,0,0,.78);
+  letter-spacing: .2px;
+}
+
+.lp-legend-list{
+  margin: 8px 0 0 0;
+  padding-left: 18px;
+  color: rgba(0,0,0,.70);
+  font-size: .9rem;
+  line-height: 1.35rem;
+}
+
+.lp-legend-list li{
+  margin-bottom: 6px;
+}
+.lp-subprice{
+  font-size: .78rem;
+  color: rgba(0,0,0,.50);
+  margin-top: 2px;
+}

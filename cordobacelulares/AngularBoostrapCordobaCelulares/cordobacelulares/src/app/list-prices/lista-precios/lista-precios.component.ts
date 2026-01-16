@@ -105,13 +105,21 @@ private applyFilter(qRaw: string) {
   const qNorm = this.normalizeQ(qRaw ?? '');
 
   if (!qNorm) {
-    this.grupos = this.groupByBrand(this.all); // orden sheet
-    return;
+    this.grupos = this.groupByBrand(this.all);
+  } else {
+    const ranked = this.smartSearch(this.all, qRaw);
+    this.grupos = this.groupByBrand(ranked);
   }
 
-  const ranked = this.smartSearch(this.all, qRaw); // orden por relevancia
-  this.grupos = this.groupByBrand(ranked);
+  // Volver arriba si el usuario estaba scrolleado
+  // (umbral para que no sea molesto si ya estás arriba)
+  if (window.scrollY > 120) {
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  }
 }
+
 
 
 private groupByBrand(list: ProductoLista[]): GrupoMarca[] {
