@@ -11,6 +11,7 @@ import { LoginComponent } from './admin/login/login.component';
 import { NewphoneComponent } from './admin/newphone/newphone.component';
 import { AdminphonelistComponent } from './admin/adminphonelist/adminphonelist.component';
 import { ListaPreciosComponent } from './list-prices/lista-precios/lista-precios.component';
+import { NuevosPreciosComponent } from './list-prices/nuevos-precios/nuevos-precios.component';
 
 
 export const routes: Routes = [{
@@ -77,6 +78,10 @@ export const routes: Routes = [{
 {
     path: 'listapreciosactual',
     component: ListaPreciosComponent
+},
+{
+    path: 'nuevosprecios',
+    component: NuevosPreciosComponent
 },
 {
     path: '',

@@ -1,0 +1,198 @@
+<!-- nuevos-precios.component.html -->
+<div class="lp-container" style="--lp-top-offset: 60px;">
+
+  <!-- Buscador -->
+  <div class="lp-search">
+    <input
+      class="form-control form-control-lg"
+      [formControl]="searchCtrl"
+      placeholder="Buscar (ej: Xiaomi Note 14)..."
+      autocomplete="off"
+      inputmode="search"
+    />
+    <div class="lp-search-hint">
+      Tip: busca por marca (MOTO) o modelo (EDGE 60).
+    </div>
+  </div>
+
+  <div *ngIf="catalogLoading" class="lp-loading">Cargando cat&aacute;logo actualizado...</div>
+  <div *ngIf="catalogErrorMessage && !hasSearch" class="lp-empty">{{ catalogErrorMessage }}</div>
+
+  <ng-container *ngIf="hasSearch; else categoriasContenido">
+    <div *ngIf="grupos.length === 0" class="lp-empty">
+      No hay resultados para tu b&uacute;squeda.
+    </div>
+
+    <!-- Grupos por marca -->
+    <div *ngFor="let g of grupos" class="lp-brand-block">
+      <div class="lp-brand-header" [attr.data-brand]="g.marca">
+        <div class="lp-brand-left">
+          <div class="lp-brand-icon" aria-hidden="true">
+            <span class="lp-brand-monogram">{{ g.marca | slice:0:2 | uppercase }}</span>
+          </div>
+
+          <div class="lp-brand-title">{{ g.marca }}</div>
+        </div>
+
+        <div class="lp-brand-count">{{ g.items.length }} modelos</div>
+      </div>
+
+      <!-- Grid responsive de cards -->
+      <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-2">
+        <div class="col" *ngFor="let p of g.items">
+          <button type="button" class="card lp-card w-100 text-start" (click)="openDetails(p)">
+            <div class="card-body">
+              <div class="lp-model">{{ p.modelo }}</div>
+
+              <div class="lp-price-line">
+                <span class="lp-badge">Efectivo</span>
+                <span class="lp-price">$ {{ fmtMoney(p.efectivo) }}</span>
+              </div>
+
+              <div class="lp-subhint">
+                Tocar para ver transferencia, tarjeta y colores
+              </div>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+  <ng-template #categoriasContenido>
+    <div *ngFor="let categoria of categorias" class="lp-brand-block lp-category-block">
+      <button
+        type="button"
+        class="lp-brand-header lp-category-header"
+        [class.lp-category-open]="isExpanded(categoria)"
+        [attr.data-brand]="categoria"
+        (click)="toggleCategory(categoria)"
+      >
+        <div class="lp-brand-left">
+          <div class="lp-brand-icon" aria-hidden="true">
+            <span class="lp-brand-monogram">{{ categoria | slice:0:2 | uppercase }}</span>
+          </div>
+
+          <div class="lp-brand-title">{{ categoria }}</div>
+        </div>
+
+        <div class="lp-brand-count">
+          {{ categoryCountLabel(categoria) }}
+          <span class="lp-category-chevron" aria-hidden="true">{{ isExpanded(categoria) ? '-' : '+' }}</span>
+        </div>
+      </button>
+
+      <div *ngIf="isExpanded(categoria)" class="lp-category-body">
+        <div *ngIf="isCategoryLoading(categoria)" class="lp-loading">
+          Cargando {{ categoria }}...
+        </div>
+
+        <div *ngIf="categoryError(categoria)" class="lp-empty">
+          No se pudo cargar esta categor&iacute;a.
+        </div>
+
+        <ng-container *ngIf="!isCategoryLoading(categoria) && !categoryError(categoria)">
+          <div *ngIf="categoryItems(categoria).length === 0" class="lp-empty">
+            No hay productos en esta categor&iacute;a.
+          </div>
+
+          <div *ngIf="categoryItems(categoria).length > 0" class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-2">
+            <div class="col" *ngFor="let p of categoryItems(categoria)">
+              <button type="button" class="card lp-card w-100 text-start" (click)="openDetails(p)">
+                <div class="card-body">
+                  <div class="lp-model">{{ p.modelo }}</div>
+
+                  <div class="lp-price-line">
+                    <span class="lp-badge">Efectivo</span>
+                    <span class="lp-price">$ {{ fmtMoney(p.efectivo) }}</span>
+                  </div>
+
+                  <div class="lp-subhint">
+                    Tocar para ver transferencia, tarjeta y colores
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <div *ngIf="isCategoryLoadingMore(categoria)" class="lp-loading">
+            Cargando m&aacute;s modelos...
+          </div>
+        </ng-container>
+      </div>
+    </div>
+  </ng-template>
+</div>
+
+<!-- Modal (sin dependencia extra, bootstrap-friendly) -->
+<div *ngIf="modalOpen" class="modal-backdrop fade show lp-backdrop" (click)="closeModal()"></div>
+
+<div *ngIf="modalOpen" class="modal fade show d-block lp-modal" tabindex="-1" role="dialog" aria-modal="true">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content lp-modal-content" (click)="$event.stopPropagation()">
+      <div class="lp-sheet-handle" aria-hidden="true"></div>
+      <div class="modal-header">
+        <div class="w-100">
+          <div class="lp-modal-title" *ngIf="selected as p">{{ p.marca }} &middot; {{ p.modelo }}</div>
+          <div class="lp-modal-sub">Precios y colores</div>
+        </div>
+        <button type="button" class="btn-close" aria-label="Close" (click)="closeModal()"></button>
+      </div>
+
+      <div class="modal-body" *ngIf="selected as p">
+        <div class="lp-prices">
+          <div class="lp-price-row">
+            <div class="lp-k">Efectivo</div>
+            <div class="lp-v fw-bold">{{ fmtPrice(p.precioPesos) }}</div>
+          </div>
+          <div class="lp-price-row">
+            <div class="lp-k">Transferencia</div>
+            <div class="lp-v">{{ fmtPriceNoCents(p.precioTransferenciaBancaria) }}</div>
+          </div>
+          <div class="lp-price-row">
+            <div class="lp-k">Tarjeta 6 pagos</div>
+            <div class="lp-v">
+              <div>{{ fmtPrice(p.precioTarjeta6Pagos) }}</div>
+              <div *ngIf="hasCuotaTarjeta6(p)" class="lp-subprice">
+                6 cuotas de {{ fmtPrice(cuotaTarjeta6(p)) }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-3">
+          <div class="text-muted small mb-1">Colores</div>
+          <ng-container *ngIf="colorNames(p).length; else sinColores">
+            <span *ngFor="let color of colorNames(p)" class="badge text-bg-secondary me-1 mb-1">{{ color }}</span>
+          </ng-container>
+          <ng-template #sinColores>
+            <div class="text-muted">No especificado / a confirmar</div>
+          </ng-template>
+        </div>
+
+        <div class="lp-legend mt-3">
+          <div class="lp-legend-note">
+            Pueden haber otros colores disponibles.
+          </div>
+
+          <div class="lp-legend-title mt-2">
+            Condiciones
+          </div>
+
+          <ul class="lp-legend-list">
+            <li>Atenci&oacute;n &uacute;nicamente con turno asignado.</li>
+            <li>Equipos nuevos, sellados de f&aacute;brica y con garant&iacute;a.</li>
+            <li>Precios en pesos argentinos (ARS).</li>
+            <li>Aceptamos d&oacute;lares y criptomonedas.</li>
+            <li>Tarjetas: Se reciben TODAS las tarjetas.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="modal-footer" *ngIf="selected as p">
+        <button type="button" class="btn btn-outline-secondary" (click)="closeModal()">Cerrar</button>
+        <button type="button" class="btn btn-success" (click)="abrirWhatsApp(p)">Consultar por WhatsApp</button>
+      </div>
+    </div>
+  </div>
+</div>
