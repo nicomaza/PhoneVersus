@@ -7,8 +7,17 @@ export interface TiendaPorteBrandResponse {
   modelos?: TiendaPorteModelResponse[] | null;
 }
 
+export type CatalogProductOrigin = 'TIENDA_PORTE' | 'GOOGLE_SHEET' | string;
+
 export interface TiendaPorteModelResponse {
   modeloNombre?: string | null;
+  origen?: CatalogProductOrigin | null;
+  source?: CatalogProductOrigin | boolean | null;
+  origin?: CatalogProductOrigin | boolean | null;
+  provider?: CatalogProductOrigin | boolean | null;
+  proveedor?: CatalogProductOrigin | boolean | null;
+  fromSupplierSheet?: boolean | string | null;
+  fromGoogleSheet?: boolean | string | null;
   colores?: TiendaPorteColorStockResponse[] | null;
   precioUsd?: number | null;
   precioPesos?: number | null;
@@ -221,7 +230,7 @@ export class NuevosPreciosService {
     incoming: TiendaPorteBrandResponse[]
   ): TiendaPorteBrandResponse[] {
     const brands = new Map<string, TiendaPorteBrandResponse>();
-    const modelKeys = new Map<string, Set<string>>();
+    const modelKeys = new Map<string, Map<string, TiendaPorteModelResponse>>();
 
     const addBrand = (brand: TiendaPorteBrandResponse): void => {
       const marca = (brand?.marca ?? '').trim() || 'Sin marca';
@@ -229,7 +238,7 @@ export class NuevosPreciosService {
 
       if (!brands.has(brandKey)) {
         brands.set(brandKey, { marca, modelos: [] });
-        modelKeys.set(brandKey, new Set<string>());
+        modelKeys.set(brandKey, new Map<string, TiendaPorteModelResponse>());
       }
 
       const target = brands.get(brandKey)!;
@@ -238,11 +247,17 @@ export class NuevosPreciosService {
 
       for (const model of modelos) {
         const modelKey = this.categoryKey(model?.modeloNombre ?? '');
-        if (!modelKey || knownModels.has(modelKey)) {
+        if (!modelKey) {
+          continue;
+        }
+
+        const existing = knownModels.get(modelKey);
+        if (existing) {
+          this.copyMissingOriginFields(existing, model);
           continue;
         }
         target.modelos = [...(target.modelos ?? []), model];
-        knownModels.add(modelKey);
+        knownModels.set(modelKey, model);
       }
     };
 
@@ -250,6 +265,23 @@ export class NuevosPreciosService {
     incoming.forEach(addBrand);
 
     return Array.from(brands.values());
+  }
+
+  private copyMissingOriginFields(
+    target: TiendaPorteModelResponse,
+    source: TiendaPorteModelResponse | null | undefined
+  ): void {
+    if (!source) {
+      return;
+    }
+
+    target.origen ??= source.origen;
+    target.source ??= source.source;
+    target.origin ??= source.origin;
+    target.provider ??= source.provider;
+    target.proveedor ??= source.proveedor;
+    target.fromSupplierSheet ??= source.fromSupplierSheet;
+    target.fromGoogleSheet ??= source.fromGoogleSheet;
   }
 
   private categoryKey(value: string): string {

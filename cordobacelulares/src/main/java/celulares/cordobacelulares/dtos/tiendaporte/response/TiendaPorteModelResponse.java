@@ -13,6 +13,7 @@ import java.util.List;
 public class TiendaPorteModelResponse {
 
     private String modeloNombre;
+    private CatalogProductOrigin origen;
     private List<TiendaPorteColorStockResponse> colores;
     private BigDecimal precioUsd;
     private BigDecimal precioPesos;

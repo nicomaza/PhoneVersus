@@ -1,8 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, isDevMode } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { debounceTime, distinctUntilChanged, Subscription } from 'rxjs';
 import {
+  CatalogProductOrigin,
   NuevosPreciosService,
   TiendaPorteBrandResponse,
   TiendaPorteColorStockResponse,
@@ -15,6 +16,13 @@ type ColorStockLista = { color: string; stock: number | null };
 export interface NuevoProductoLista {
   marca: string;
   modelo: string;
+  origen?: CatalogProductOrigin | null;
+  source?: CatalogProductOrigin | boolean | null;
+  origin?: CatalogProductOrigin | boolean | null;
+  provider?: CatalogProductOrigin | boolean | null;
+  proveedor?: CatalogProductOrigin | boolean | null;
+  fromSupplierSheet?: boolean | string | null;
+  fromGoogleSheet?: boolean | string | null;
   efectivo?: number | null;
   transferencia?: number | null;
   tarjeta?: number | null;
@@ -43,7 +51,7 @@ export interface NuevoProductoLista {
   styleUrl: './nuevos-precios.component.css'
 })
 export class NuevosPreciosComponent implements OnDestroy {
-  readonly categorias = [
+  private readonly baseCategorias = [
     'IPHONE',
     'XIAOMI',
     'SAMSUNG',
@@ -54,6 +62,10 @@ export class NuevosPreciosComponent implements OnDestroy {
     'ARTICULOS VARIOS',
     'PERFUMES'
   ];
+  private readonly extraCategoriaOrden = ['HUAWEI', 'HONOR', 'OPPO'];
+  readonly SHEET_EMOJI = String.fromCodePoint(0x1F4F2);
+
+  categorias = [...this.baseCategorias];
 
   catalogLoading = false;
   catalogLoaded = false;
@@ -67,6 +79,10 @@ export class NuevosPreciosComponent implements OnDestroy {
 
   selected: NuevoProductoLista | null = null;
   modalOpen = false;
+  warningModalOpen = false;
+  pendingWhatsappProduct: NuevoProductoLista | null = null;
+  warningTitle = '';
+  warningMessage = '';
 
   private readonly WHATSAPP_PHONE = '5493512129922';
   private readonly CATEGORY_LIMIT = 50;
@@ -140,6 +156,29 @@ export class NuevosPreciosComponent implements OnDestroy {
     return this.cuotaTarjeta6(p) !== null;
   }
 
+  isGoogleSheetProduct(p: NuevoProductoLista | null | undefined): boolean {
+    const raw = String(
+      p?.origen ??
+      p?.source ??
+      p?.origin ??
+      p?.provider ??
+      p?.proveedor ??
+      ''
+    ).trim().toUpperCase();
+    const normalized = this.normalizeOriginSignal(raw);
+
+    return raw === 'GOOGLE_SHEET'
+      || normalized === 'GOOGLESHEET'
+      || raw === 'SUPPLIER_SHEET'
+      || normalized === 'SUPPLIERSHEET'
+      || raw === 'SHEET'
+      || normalized === 'SHEET';
+  }
+
+  getSheetEmoji(p: NuevoProductoLista | null | undefined): string {
+    return this.isGoogleSheetProduct(p) ? this.SHEET_EMOJI : '';
+  }
+
   openDetails(p: NuevoProductoLista): void {
     this.selected = p;
     this.modalOpen = true;
@@ -149,26 +188,114 @@ export class NuevosPreciosComponent implements OnDestroy {
   closeModal(): void {
     this.modalOpen = false;
     this.selected = null;
-    document.body.classList.remove('modal-open');
+    if (!this.warningModalOpen) {
+      document.body.classList.remove('modal-open');
+    }
   }
 
   abrirWhatsApp(p: NuevoProductoLista): void {
-    const phone = this.WHATSAPP_PHONE.replace(/[^\d]/g, '');
+    const warning = this.warningForProduct(p);
+    if (warning) {
+      this.openWarningModal(p, warning);
+      return;
+    }
+
+    this.openWhatsApp(p);
+  }
+
+  cancelWarningModal(): void {
+    this.closeWarningModal();
+  }
+
+  confirmWarningWhatsapp(): void {
+    const product = this.pendingWhatsappProduct;
+    this.closeWarningModal();
+
+    if (product) {
+      this.openWhatsApp(product);
+    }
+  }
+
+  private openWhatsApp(p: NuevoProductoLista): void {
+    const url = this.buildWhatsappUrl(p);
+
+    if (isDevMode()) {
+      const msg = this.buildWhatsappMessage(p);
+      console.debug('[nuevosprecios][wa-msg]', msg);
+      console.debug(
+        '[nuevosprecios][wa-emoji]',
+        this.SHEET_EMOJI,
+        this.SHEET_EMOJI.codePointAt(0)?.toString(16)
+      );
+      console.debug('[nuevosprecios][wa-url]', url);
+    }
+
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
+
+  private buildWhatsappMessage(p: NuevoProductoLista): string {
     const colores = this.formatColorsForMessage(p);
     const cuota = this.cuotaTarjeta6(p);
-    const cuotaLine = cuota === null ? '' : `\n- 6 cuotas de: ${this.fmtPrice(cuota)}`;
+    const sheetEmoji = this.isGoogleSheetProduct(p) ? ` ${this.SHEET_EMOJI}` : '';
 
-    const msg =
-`Hola! Quiero consultar disponibilidad del *${p.marca} ${p.modelo}*.
-- Efectivo: ${this.fmtPrice(p.precioPesos)}
-- Transferencia: ${this.fmtPriceNoCents(p.precioTransferenciaBancaria)}
-- Tarjeta 6 pagos: ${this.fmtPrice(p.precioTarjeta6Pagos)}
-Colores: ${colores}`;
+    return [
+      `Hola! Quiero consultar disponibilidad del *${p.marca} ${p.modelo}*.${sheetEmoji}`,
+      `- Efectivo: $ ${this.fmtMoney(p.precioPesos)}`,
+      `- Transferencia: $ ${this.fmtMoney(p.precioTransferenciaBancaria)}`,
+      `- Tarjeta 6 pagos: $ ${this.fmtMoney(p.precioTarjeta6Pagos)}`,
+      `- 6 cuotas de: $ ${this.fmtMoney(cuota)}`,
+      `Colores: ${colores}`
+    ].join('\n');
+  }
 
-    const url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+  private buildWhatsappUrl(p: NuevoProductoLista): string {
+    const phone = this.WHATSAPP_PHONE.replace(/[^\d]/g, '');
+    const msg = this.buildWhatsappMessage(p);
 
-    const win = window.open(url, '_blank');
-    if (!win) window.location.assign(url);
+    const encodedText = encodeURIComponent(msg);
+    return `https://wa.me/${phone}?text=${encodedText}`;
+  }
+
+  private warningForProduct(p: NuevoProductoLista): { title: string; message: string } | null {
+    const marca = this.normalizeCategory(p.marca);
+
+    if (marca === 'articulosvarios') {
+      return {
+        title: 'Confirmar consulta',
+        message: 'Este art\u00EDculo en particular requiere pago anticipado. \u00BFDesea continuar?'
+      };
+    }
+
+    if (marca === 'perfumes') {
+      return {
+        title: 'Confirmar consulta',
+        message: 'Los perfumes requieren pago completo anticipado. \u00BFDesea continuar?'
+      };
+    }
+
+    return null;
+  }
+
+  private openWarningModal(
+    product: NuevoProductoLista,
+    warning: { title: string; message: string }
+  ): void {
+    this.pendingWhatsappProduct = product;
+    this.warningTitle = warning.title;
+    this.warningMessage = warning.message;
+    this.warningModalOpen = true;
+    document.body.classList.add('modal-open');
+  }
+
+  private closeWarningModal(): void {
+    this.warningModalOpen = false;
+    this.pendingWhatsappProduct = null;
+    this.warningTitle = '';
+    this.warningMessage = '';
+
+    if (!this.modalOpen) {
+      document.body.classList.remove('modal-open');
+    }
   }
 
   toggleCategory(categoria: string): void {
@@ -242,6 +369,7 @@ Colores: ${colores}`;
         next: data => {
           const products = this.mapResponse(data);
           this.replaceMemory(products);
+          this.refreshDynamicCategories();
           this.refreshCategoriesFromCatalog();
           this.catalogLoaded = true;
           this.catalogLoading = false;
@@ -387,6 +515,13 @@ Colores: ${colores}`;
     return {
       marca,
       modelo,
+      origen: model?.origen ?? null,
+      source: model?.source ?? null,
+      origin: model?.origin ?? null,
+      provider: model?.provider ?? null,
+      proveedor: model?.proveedor ?? null,
+      fromSupplierSheet: model?.fromSupplierSheet ?? null,
+      fromGoogleSheet: model?.fromGoogleSheet ?? null,
       efectivo: precioPesos,
       transferencia: precioTransferenciaBancaria,
       tarjeta: precioTarjeta6Pagos,
@@ -470,8 +605,14 @@ Colores: ${colores}`;
     let changed = false;
     for (const product of products) {
       const key = this.productKey(product);
-      if (!this.allByKey.has(key)) {
+      const existing = this.allByKey.get(key);
+      if (!existing) {
         this.allByKey.set(key, product);
+        changed = true;
+        continue;
+      }
+
+      if (this.copyMissingOriginFields(existing, product)) {
         changed = true;
       }
     }
@@ -498,6 +639,39 @@ Colores: ${colores}`;
     }
   }
 
+  private refreshDynamicCategories(): void {
+    const baseKeys = new Set(this.baseCategorias.map(categoria => this.normalizeCategory(categoria)));
+    const extrasByKey = new Map<string, string>();
+
+    for (const product of this.all) {
+      const marca = this.cleanText(product.marca);
+      const key = this.normalizeCategory(marca);
+      if (!key || baseKeys.has(key) || extrasByKey.has(key)) {
+        continue;
+      }
+      extrasByKey.set(key, marca);
+    }
+
+    const extras = Array.from(extrasByKey.values()).sort((a, b) => this.compareExtraCategories(a, b));
+    this.categorias = [...this.baseCategorias, ...extras];
+  }
+
+  private compareExtraCategories(a: string, b: string): number {
+    const aIndex = this.extraCategoryIndex(a);
+    const bIndex = this.extraCategoryIndex(b);
+
+    if (aIndex !== bIndex) {
+      return aIndex - bIndex;
+    }
+    return a.localeCompare(b, 'es', { sensitivity: 'base' });
+  }
+
+  private extraCategoryIndex(categoria: string): number {
+    const normalized = this.normalizeCategory(categoria);
+    const index = this.extraCategoriaOrden.findIndex(item => this.normalizeCategory(item) === normalized);
+    return index === -1 ? Number.MAX_SAFE_INTEGER : index;
+  }
+
   private productsForCategory(products: NuevoProductoLista[], categoria: string): NuevoProductoLista[] {
     const target = this.normalizeQ(categoria);
     return products.filter(product => this.normalizeQ(product.marca) === target);
@@ -506,9 +680,51 @@ Colores: ${colores}`;
   private dedupeProducts(products: NuevoProductoLista[]): NuevoProductoLista[] {
     const map = new Map<string, NuevoProductoLista>();
     for (const product of products) {
-      map.set(this.productKey(product), product);
+      const key = this.productKey(product);
+      const existing = map.get(key);
+      if (!existing) {
+        map.set(key, product);
+        continue;
+      }
+
+      this.copyMissingOriginFields(existing, product);
     }
     return Array.from(map.values());
+  }
+
+  private copyMissingOriginFields(target: NuevoProductoLista, source: NuevoProductoLista): boolean {
+    let changed = false;
+
+    if (target.origen == null && source.origen != null) {
+      target.origen = source.origen;
+      changed = true;
+    }
+    if (target.source == null && source.source != null) {
+      target.source = source.source;
+      changed = true;
+    }
+    if (target.origin == null && source.origin != null) {
+      target.origin = source.origin;
+      changed = true;
+    }
+    if (target.provider == null && source.provider != null) {
+      target.provider = source.provider;
+      changed = true;
+    }
+    if (target.proveedor == null && source.proveedor != null) {
+      target.proveedor = source.proveedor;
+      changed = true;
+    }
+    if (target.fromSupplierSheet == null && source.fromSupplierSheet != null) {
+      target.fromSupplierSheet = source.fromSupplierSheet;
+      changed = true;
+    }
+    if (target.fromGoogleSheet == null && source.fromGoogleSheet != null) {
+      target.fromGoogleSheet = source.fromGoogleSheet;
+      changed = true;
+    }
+
+    return changed;
   }
 
   private productKey(product: NuevoProductoLista): string {
@@ -542,6 +758,16 @@ Colores: ${colores}`;
       .replace(/[^a-z0-9\s]/g, ' ')
       .replace(/\s+/g, ' ')
       .trim();
+  }
+
+  private normalizeCategory(txt: string | null | undefined): string {
+    return this.normalizeQ(txt ?? '').replace(/\s/g, '');
+  }
+
+  private normalizeOriginSignal(value: unknown): string {
+    return String(value ?? '')
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, '');
   }
 
   private buildTokens(qNorm: string): string[] {

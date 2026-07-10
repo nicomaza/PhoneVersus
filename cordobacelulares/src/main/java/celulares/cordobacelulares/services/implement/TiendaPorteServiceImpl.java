@@ -6,6 +6,7 @@ import celulares.cordobacelulares.dtos.tiendaporte.external.TiendaPorteCategory;
 import celulares.cordobacelulares.dtos.tiendaporte.external.TiendaPorteExternalProduct;
 import celulares.cordobacelulares.dtos.tiendaporte.external.TiendaPorteProductsResponse;
 import celulares.cordobacelulares.dtos.tiendaporte.external.TiendaPorteProductReference;
+import celulares.cordobacelulares.dtos.tiendaporte.response.CatalogProductOrigin;
 import celulares.cordobacelulares.dtos.tiendaporte.response.TiendaPorteBrandResponse;
 import celulares.cordobacelulares.dtos.tiendaporte.response.TiendaPorteCategoryPageResponse;
 import celulares.cordobacelulares.dtos.tiendaporte.response.TiendaPorteColorStockResponse;
@@ -60,6 +61,7 @@ public class TiendaPorteServiceImpl implements TiendaPorteService {
             "XIAOMI",
             "SAMSUNG"
     );
+    private static final List<String> SUPPLIER_ONLY_CATEGORIES = List.of("HUAWEI", "HONOR", "OPPO");
     private static final Map<String, String> ALLOWED_CATEGORIES_BY_KEY = allowedCategoriesByKey();
 
     private final TiendaPorteClient tiendaPorteClient;
@@ -132,6 +134,10 @@ public class TiendaPorteServiceImpl implements TiendaPorteService {
 
         PriceConfiguration configuration = priceConfigurationService.getRequiredForCatalog();
         BigDecimal dolarBilleteAplicado = dollarQuotationResolver.resolve(cotizacionDolarHeader, cotizacionDolar, configuration);
+        if (isSupplierOnlyCategory(normalizedCategory)) {
+            return supplierOnlyCategoryResponse(normalizedCategory, safePage, safeLimit, configuration, dolarBilleteAplicado);
+        }
+
         TiendaPorteProductsResponse productsResponse = tiendaPorteClient.getProductsByCategoryPage(normalizedCategory, safePage, safeLimit);
         List<TiendaPorteExternalProduct> products = safeProducts(productsResponse);
         List<TiendaPorteBrandResponse> data = buildCatalog(products, configuration, dolarBilleteAplicado);
@@ -190,6 +196,41 @@ public class TiendaPorteServiceImpl implements TiendaPorteService {
             throw new TiendaPorteBadRequestException("Categoria no permitida: " + categoria);
         }
         return allowedCategory;
+    }
+
+    private boolean isSupplierOnlyCategory(String category) {
+        return SUPPLIER_ONLY_CATEGORIES.contains(category);
+    }
+
+    private TiendaPorteCategoryPageResponse supplierOnlyCategoryResponse(
+            String category,
+            int page,
+            int limit,
+            PriceConfiguration configuration,
+            BigDecimal dolarBilleteAplicado
+    ) {
+        List<TiendaPorteBrandResponse> sheetData = addSupplierSheetMissingProducts(List.of(), configuration, dolarBilleteAplicado, category);
+        int total = countModels(sheetData);
+        List<TiendaPorteBrandResponse> data = page == 1 ? sheetData : List.of();
+        return new TiendaPorteCategoryPageResponse(
+                category,
+                page,
+                limit,
+                total,
+                1,
+                false,
+                data
+        );
+    }
+
+    private int countModels(List<TiendaPorteBrandResponse> data) {
+        if (data == null || data.isEmpty()) {
+            return 0;
+        }
+        return data.stream()
+                .filter(brand -> brand != null && brand.getModelos() != null)
+                .mapToInt(brand -> brand.getModelos().size())
+                .sum();
     }
 
     private int validatePage(Integer page) {
@@ -442,6 +483,7 @@ public class TiendaPorteServiceImpl implements TiendaPorteService {
 
         return new TiendaPorteModelResponse(
                 product.modelName(),
+                CatalogProductOrigin.GOOGLE_SHEET,
                 colors,
                 prices.getPrecioUsd(),
                 prices.getPrecioPesos(),
@@ -677,6 +719,9 @@ public class TiendaPorteServiceImpl implements TiendaPorteService {
         for (String category : ALLOWED_CATEGORIES) {
             categories.put(TiendaPorteTextUtils.normalize(category), category);
         }
+        for (String category : SUPPLIER_ONLY_CATEGORIES) {
+            categories.put(TiendaPorteTextUtils.normalize(category), category);
+        }
         return Map.copyOf(categories);
     }
 
@@ -801,6 +846,7 @@ public class TiendaPorteServiceImpl implements TiendaPorteService {
                     .toList();
             return new TiendaPorteModelResponse(
                     modelName,
+                    CatalogProductOrigin.TIENDA_PORTE,
                     colors,
                     prices.getPrecioUsd(),
                     prices.getPrecioPesos(),

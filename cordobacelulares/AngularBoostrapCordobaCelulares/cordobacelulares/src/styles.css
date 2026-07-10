@@ -3,6 +3,534 @@
 }
 html, body{ font-family: var(--font-sans); }
 
+app-nuevos-precios{
+  display:block;
+  min-height:100%;
+  background:radial-gradient(circle at 14% 0%,rgba(239,68,68,.055),transparent 28rem),radial-gradient(circle at 90% 12%,rgba(59,130,246,.045),transparent 30rem),#fbfbfd;
+  color:#111827;
+  font-family:Inter,-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif;
+}
+app-nuevos-precios .lp-container{
+  width:min(100%,960px);
+  max-width:960px;
+  margin:0 auto;
+  padding:calc(var(--lp-top-offset,0px) + 16px) 16px 34px;
+}
+app-nuevos-precios .lp-search{
+  position:sticky;
+  top:var(--lp-top-offset,0px);
+  z-index:60;
+  margin:-16px -16px 22px;
+  padding:14px 16px 16px;
+  background:rgba(251,251,253,.88);
+  border-bottom:1px solid rgba(17,24,39,.07);
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+}
+app-nuevos-precios .lp-search-card{
+  display:block;
+}
+app-nuevos-precios .lp-search-field,
+app-nuevos-precios .lp-brand-header,
+app-nuevos-precios .lp-card{border-radius:18px}
+app-nuevos-precios .lp-search-field{
+  min-height:64px;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:10px 16px;
+  margin:0;
+  background:rgba(255,255,255,.94);
+  border:1px solid rgba(17,24,39,.09);
+  box-shadow:0 14px 34px rgba(15,23,42,.045);
+}
+app-nuevos-precios .lp-search-icon{
+  flex:0 0 auto;
+  color:#374151;
+  font-size:1.48rem;
+}
+app-nuevos-precios .lp-search-copy{
+  min-width:0;
+  display:grid;
+  gap:2px;
+}
+app-nuevos-precios .lp-search input.form-control{
+  min-height:24px;
+  padding:0;
+  border:0;
+  box-shadow:none;
+  background:transparent;
+  color:#111827;
+  font-size:1rem;
+  font-weight:560;
+  line-height:1.2;
+}
+app-nuevos-precios .lp-search input.form-control::placeholder{
+  color:#4b5563;
+  opacity:1;
+}
+app-nuevos-precios .lp-search-hint{
+  margin:0;
+  color:#7b8190;
+  font-size:.82rem;
+  line-height:1.2;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+app-nuevos-precios .lp-section-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin:0 0 12px;
+}
+app-nuevos-precios .lp-section-head h2{
+  margin:0;
+  color:#171b26;
+  font-size:1.08rem;
+  font-weight:760;
+  letter-spacing:0;
+}
+app-nuevos-precios .lp-section-head span{
+  color:#7b8190;
+  font-size:.92rem;
+  font-weight:560;
+}
+app-nuevos-precios .lp-category-header:active,
+app-nuevos-precios .lp-card:active{
+  transform:scale(.98);
+  box-shadow:0 18px 42px rgba(15,23,42,.075);
+}
+app-nuevos-precios .lp-all-brands-head{margin-top:0}
+app-nuevos-precios .lp-brand-block{margin-top:12px}
+app-nuevos-precios .lp-category-header,
+app-nuevos-precios .lp-brand-header{
+  --brand-accent:#9ca3af;
+  --brand-tint:rgba(156,163,175,.07);
+  position:relative;
+  min-height:72px;
+  width:100%;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  padding:10px 14px 10px 18px;
+  overflow:hidden;
+  text-align:left;
+  color:#121722;
+  background:linear-gradient(90deg,var(--brand-tint),rgba(255,255,255,.96) 58%),#fff;
+  border:1px solid rgba(17,24,39,.08);
+  box-shadow:0 15px 34px rgba(15,23,42,.045);
+  cursor:pointer;
+  transition:transform 200ms ease,box-shadow 200ms ease,border-color 200ms ease;
+}
+app-nuevos-precios .lp-brand-header::after{
+  content:"";
+  position:absolute;
+  inset:0 auto 0 0;
+  width:3px;
+  background:var(--brand-accent);
+}
+app-nuevos-precios .lp-category-header:hover{
+  border-color:rgba(17,24,39,.12);
+  box-shadow:0 18px 42px rgba(15,23,42,.065);
+}
+app-nuevos-precios .lp-category-header:focus-visible,
+app-nuevos-precios .lp-card:focus-visible{
+  outline:3px solid rgba(59,130,246,.28);
+  outline-offset:3px;
+}
+app-nuevos-precios .lp-brand-left{
+  position:relative;
+  z-index:1;
+  min-width:0;
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+app-nuevos-precios .lp-brand-icon{
+  width:54px;
+  height:54px;
+  flex:0 0 54px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+  border-radius:16px;
+  background:rgba(255,255,255,.92);
+  border:1px solid rgba(17,24,39,.07);
+  box-shadow:0 10px 24px rgba(15,23,42,.055);
+}
+app-nuevos-precios .lp-brand-monogram{display:none}
+app-nuevos-precios .lp-brand-icon::before{
+  content:"CC";
+  color:#273044;
+  font-size:.86rem;
+  font-weight:850;
+  letter-spacing:.04em;
+}
+app-nuevos-precios .lp-brand-copy{
+  min-width:0;
+  display:grid;
+  gap:2px;
+}
+app-nuevos-precios .lp-brand-title{
+  color:#111827;
+  font-size:1.06rem;
+  font-weight:720;
+  letter-spacing:0;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+app-nuevos-precios .lp-brand-subtitle{
+  color:#6b7280;
+  font-size:.78rem;
+  line-height:1.2;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+app-nuevos-precios .lp-brand-count{
+  position:relative;
+  z-index:1;
+  flex:0 0 auto;
+  display:inline-flex;
+  align-items:center;
+  gap:14px;
+  color:#596173;
+  font-size:.82rem;
+  font-weight:610;
+  white-space:nowrap;
+}
+app-nuevos-precios .lp-count-badge{
+  display:inline-flex;
+  align-items:center;
+  min-height:34px;
+  padding:0 13px;
+  border-radius:999px;
+  color:#596173;
+  background:rgba(255,255,255,.76);
+  border:1px solid rgba(17,24,39,.08);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.9);
+}
+app-nuevos-precios .lp-category-chevron{
+  color:#374151;
+  font-size:1.05rem;
+  transition:transform 200ms ease;
+}
+app-nuevos-precios .lp-category-chevron-open{transform:rotate(90deg)}
+app-nuevos-precios .lp-category-body{padding:12px 2px 4px}
+app-nuevos-precios .lp-loading,
+app-nuevos-precios .lp-empty{
+  padding:16px 4px;
+  color:#6b7280;
+  font-weight:540;
+}
+app-nuevos-precios .lp-card{
+  border:1px solid rgba(17,24,39,.08);
+  background:rgba(255,255,255,.98);
+  box-shadow:0 14px 30px rgba(15,23,42,.045);
+  transition:transform 200ms ease,box-shadow 200ms ease,border-color 200ms ease;
+}
+app-nuevos-precios .lp-card .card-body{padding:16px}
+app-nuevos-precios .lp-model{
+  margin-bottom:12px;
+  color:#111827;
+  font-size:.96rem;
+  font-weight:690;
+  line-height:1.28;
+}
+app-nuevos-precios .lp-price-line{align-items:center}
+app-nuevos-precios .lp-badge{
+  color:#176b38;
+  background:rgba(34,197,94,.09);
+  border:1px solid rgba(34,197,94,.14);
+  font-weight:680;
+}
+app-nuevos-precios .lp-price{
+  color:#111827;
+  font-weight:760;
+}
+app-nuevos-precios .lp-subhint{color:#7b8190}
+app-nuevos-precios .lp-brand-header[data-brand*="XIAOMI" i]{--brand-accent:#ff6900;--brand-tint:rgba(255,105,0,.07)}
+app-nuevos-precios .lp-brand-header[data-brand*="SAMSUNG" i]{--brand-accent:#2563eb;--brand-tint:rgba(37,99,235,.06)}
+app-nuevos-precios .lp-brand-header[data-brand*="MOTOROLA" i],
+app-nuevos-precios .lp-brand-header[data-brand*="MOTO" i]{--brand-accent:#ef4444;--brand-tint:rgba(239,68,68,.06)}
+app-nuevos-precios .lp-brand-header[data-brand*="REALME" i]{--brand-accent:#f2c400;--brand-tint:rgba(242,196,0,.075)}
+app-nuevos-precios .lp-brand-header[data-brand*="INFINIX" i]{--brand-accent:#14b8a6;--brand-tint:rgba(20,184,166,.065)}
+app-nuevos-precios .lp-brand-header[data-brand*="APPLE" i],
+app-nuevos-precios .lp-brand-header[data-brand*="IPHONE" i]{--brand-accent:#8b95a5;--brand-tint:rgba(139,149,165,.065)}
+app-nuevos-precios .lp-brand-header[data-brand*="ARTICULOS" i]{--brand-accent:#8b5cf6;--brand-tint:rgba(139,92,246,.06)}
+app-nuevos-precios .lp-brand-header[data-brand*="PERFUMES" i]{--brand-accent:#ec4899;--brand-tint:rgba(236,72,153,.06)}
+app-nuevos-precios .lp-brand-header[data-brand*="HUAWEI" i],
+app-nuevos-precios .lp-brand-header[data-brand*="HONOR" i]{--brand-accent:#ef4444;--brand-tint:rgba(239,68,68,.055)}
+app-nuevos-precios .lp-brand-header[data-brand*="OPPO" i]{--brand-accent:#16a34a;--brand-tint:rgba(22,163,74,.06)}
+app-nuevos-precios .lp-brand-header[data-brand*="GOOGLE" i],
+app-nuevos-precios .lp-brand-header[data-brand*="PIXEL" i]{--brand-accent:#4285f4;--brand-tint:rgba(66,133,244,.06)}
+app-nuevos-precios .lp-brand-header[data-brand*="XIAOMI" i] .lp-brand-icon::before{
+  content:"mi";
+  width:30px;
+  height:30px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:8px;
+  color:#fff;
+  background:#ff6900;
+  font-size:1.05rem;
+  font-weight:850;
+  letter-spacing:-.05em;
+}
+app-nuevos-precios .lp-brand-header[data-brand*="SAMSUNG" i] .lp-brand-icon::before{
+  content:"SAMSUNG";
+  color:#1428a0;
+  font-size:.66rem;
+  font-weight:900;
+  letter-spacing:-.04em;
+}
+app-nuevos-precios .lp-brand-header[data-brand*="MOTOROLA" i] .lp-brand-icon::before,
+app-nuevos-precios .lp-brand-header[data-brand*="MOTO" i] .lp-brand-icon::before{
+  content:"M";
+  width:32px;
+  height:32px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:50%;
+  color:#fff;
+  background:#111;
+  font-size:1rem;
+  font-weight:900;
+}
+app-nuevos-precios .lp-brand-header[data-brand*="HUAWEI" i] .lp-brand-icon::before{
+  content:"HUAWEI";
+  color:#c8102e;
+  font-size:.58rem;
+  font-weight:900;
+  letter-spacing:.02em;
+}
+app-nuevos-precios .lp-brand-header[data-brand*="HONOR" i] .lp-brand-icon::before{
+  content:"HONOR";
+  color:#111827;
+  font-size:.66rem;
+  font-weight:850;
+  letter-spacing:.04em;
+}
+app-nuevos-precios .lp-brand-header[data-brand*="OPPO" i] .lp-brand-icon::before{
+  content:"OPPO";
+  color:#00843d;
+  font-size:.72rem;
+  font-weight:900;
+  letter-spacing:.06em;
+}
+app-nuevos-precios .lp-brand-header[data-brand*="GOOGLE" i] .lp-brand-icon::before,
+app-nuevos-precios .lp-brand-header[data-brand*="PIXEL" i] .lp-brand-icon::before{
+  content:"G";
+  font-size:1.32rem;
+  font-weight:850;
+  background:conic-gradient(from 35deg,#4285f4 0 24%,#34a853 0 48%,#fbbc05 0 72%,#ea4335 0);
+  -webkit-background-clip:text;
+  background-clip:text;
+  color:transparent;
+}
+app-nuevos-precios .lp-brand-header[data-brand*="REALME" i] .lp-brand-icon::before{
+  content:"realme";
+  color:#111;
+  background:#ffd400;
+  padding:8px 5px;
+  font-size:.66rem;
+  font-weight:760;
+}
+app-nuevos-precios .lp-brand-header[data-brand*="INFINIX" i] .lp-brand-icon::before{
+  content:"Infinix";
+  color:#111;
+  font-size:.78rem;
+  font-weight:760;
+  letter-spacing:.02em;
+}
+app-nuevos-precios .lp-brand-header[data-brand*="APPLE" i] .lp-brand-icon::before,
+app-nuevos-precios .lp-brand-header[data-brand*="IPHONE" i] .lp-brand-icon::before{
+  content:"\f65b";
+  font-family:bootstrap-icons;
+  color:#050505;
+  font-size:1.72rem;
+  font-weight:400;
+}
+app-nuevos-precios .lp-brand-header[data-brand*="ARTICULOS" i] .lp-brand-icon::before{
+  content:"\f5ae";
+  font-family:bootstrap-icons;
+  color:#7c3aed;
+  font-size:1.42rem;
+}
+app-nuevos-precios .lp-brand-header[data-brand*="PERFUMES" i] .lp-brand-icon::before{
+  content:"\f30d";
+  font-family:bootstrap-icons;
+  color:#db2777;
+  font-size:1.42rem;
+}
+app-nuevos-precios .lp-modal-title{
+  color:#111827;
+  font-size:1rem;
+  font-weight:760;
+}
+app-nuevos-precios .lp-modal-sub,
+app-nuevos-precios .lp-subprice{color:#6b7280;font-size:.78rem}
+app-nuevos-precios .lp-prices{
+  padding:10px;
+  border:1px solid rgba(17,24,39,.08);
+  border-radius:18px;
+  background:#fbfbfc;
+}
+app-nuevos-precios .lp-price-row{
+  display:flex;
+  justify-content:space-between;
+  gap:14px;
+  padding:9px 0;
+  border-bottom:1px dashed rgba(17,24,39,.12);
+}
+app-nuevos-precios .lp-price-row:last-child{border-bottom:0}
+app-nuevos-precios .lp-k{color:#6b7280}
+app-nuevos-precios .lp-v{text-align:right}
+app-nuevos-precios .lp-legend{
+  padding-top:12px;
+  border-top:1px solid rgba(17,24,39,.08);
+}
+app-nuevos-precios .lp-legend-note,
+app-nuevos-precios .lp-legend-list{color:#5f6675;font-size:.9rem}
+app-nuevos-precios .lp-legend-title{
+  color:#202633;
+  font-size:.9rem;
+  font-weight:720;
+}
+app-nuevos-precios .lp-legend-list{
+  margin:8px 0 0;
+  padding-left:18px;
+  line-height:1.35rem;
+}
+app-nuevos-precios .lp-legend-list li{margin-bottom:6px}
+app-nuevos-precios .lp-backdrop{
+  z-index:1040;
+  background:rgba(15,15,18,.55);
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+}
+app-nuevos-precios .lp-modal{z-index:1050}
+app-nuevos-precios .lp-modal .modal-dialog{
+  max-width:520px;
+  width:calc(100% - 24px);
+  margin:12px auto;
+  transition:transform 180ms ease,opacity 180ms ease;
+  transform:translateY(10px);
+  opacity:0;
+}
+app-nuevos-precios .lp-modal.fade.show .modal-dialog{
+  transform:translateY(0);
+  opacity:1;
+}
+app-nuevos-precios .lp-modal-content{
+  overflow:hidden;
+  border:0;
+  border-radius:18px;
+  box-shadow:0 24px 60px rgba(0,0,0,.32),0 8px 18px rgba(0,0,0,.16);
+}
+app-nuevos-precios .lp-modal .modal-header,
+app-nuevos-precios .lp-modal .modal-footer{
+  border-color:rgba(17,24,39,.08);
+  background:rgba(255,255,255,.92);
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+}
+app-nuevos-precios .lp-sheet-handle{
+  display:none;
+  width:46px;
+  height:5px;
+  border-radius:999px;
+  margin:10px auto 2px;
+  background:rgba(0,0,0,.16);
+}
+app-nuevos-precios .lp-sheet-origin-icon{
+  display:inline-flex;
+  align-items:center;
+  margin-left:4px;
+  font-size:16px;
+  line-height:1;
+  vertical-align:middle;
+  font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;
+}
+app-nuevos-precios .lp-warning-backdrop{
+  position:fixed;
+  inset:0;
+  z-index:1060;
+  background:rgba(15,23,42,.48);
+  backdrop-filter:blur(3px);
+}
+app-nuevos-precios .lp-warning-modal{
+  position:fixed;
+  inset:0;
+  z-index:1070;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:18px;
+  pointer-events:none;
+}
+app-nuevos-precios .lp-warning-content{
+  width:min(100%,420px);
+  padding:22px;
+  border-radius:18px;
+  background:#fff;
+  box-shadow:0 24px 70px rgba(15,23,42,.25);
+  pointer-events:auto;
+}
+app-nuevos-precios .lp-warning-title{
+  color:#111827;
+  font-size:1.05rem;
+  font-weight:800;
+  line-height:1.25;
+}
+app-nuevos-precios .lp-warning-message{
+  margin-top:10px;
+  color:#4b5563;
+  font-size:.95rem;
+  line-height:1.45;
+}
+app-nuevos-precios .lp-warning-actions{
+  display:flex;
+  justify-content:flex-end;
+  gap:10px;
+  margin-top:20px;
+}
+@media (max-width:640px){
+  app-nuevos-precios .lp-container{padding-left:14px;padding-right:14px}
+  app-nuevos-precios .lp-search{margin-left:-14px;margin-right:-14px;padding-left:14px;padding-right:14px}
+  app-nuevos-precios .lp-category-header{min-height:68px;padding-right:12px}
+  app-nuevos-precios .lp-brand-icon{width:50px;height:50px;flex-basis:50px}
+  app-nuevos-precios .lp-brand-count{gap:10px;font-size:.78rem}
+  app-nuevos-precios .lp-brand-subtitle{max-width:172px}
+  app-nuevos-precios .lp-sheet-handle{display:block}
+  app-nuevos-precios .lp-modal .modal-dialog{
+    position:fixed;
+    left:0;
+    right:0;
+    bottom:0;
+    width:100%;
+    max-width:none;
+    margin:0;
+    transform:translateY(18px);
+  }
+  app-nuevos-precios .lp-modal-content{
+    max-height:86vh;
+    border-radius:18px 18px 0 0;
+  }
+}
+@media (max-width:420px){
+  app-nuevos-precios .lp-warning-content{padding:18px;border-radius:16px}
+  app-nuevos-precios .lp-warning-actions{flex-direction:column-reverse}
+  app-nuevos-precios .lp-warning-actions .btn{width:100%}
+}
+
 
 
 @keyframes myAnim {

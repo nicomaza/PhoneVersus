@@ -3,15 +3,24 @@
 
   <!-- Buscador -->
   <div class="lp-search">
-    <input
-      class="form-control form-control-lg"
-      [formControl]="searchCtrl"
-      placeholder="Buscar (ej: Xiaomi Note 14)..."
-      autocomplete="off"
-      inputmode="search"
-    />
-    <div class="lp-search-hint">
-      Tip: busca por marca (MOTO) o modelo (EDGE 60).
+    <div class="lp-search-card">
+      <label class="lp-search-field">
+        <i class="bi bi-search lp-search-icon" aria-hidden="true"></i>
+        <span class="lp-search-copy">
+          <input
+            class="form-control form-control-lg"
+            [formControl]="searchCtrl"
+            placeholder="Buscar marca o modelo"
+            autocomplete="off"
+            inputmode="search"
+            aria-label="Buscar marca o modelo"
+          />
+          <span class="lp-search-hint">
+            Ej: Xiaomi Note 14, Motorola Edge 60...
+          </span>
+        </span>
+      </label>
+
     </div>
   </div>
 
@@ -34,7 +43,9 @@
           <div class="lp-brand-title">{{ g.marca }}</div>
         </div>
 
-        <div class="lp-brand-count">{{ g.items.length }} modelos</div>
+        <div class="lp-brand-count">
+          <span class="lp-count-badge">{{ g.items.length }} modelos</span>
+        </div>
       </div>
 
       <!-- Grid responsive de cards -->
@@ -60,6 +71,11 @@
   </ng-container>
 
   <ng-template #categoriasContenido>
+    <div class="lp-section-head lp-all-brands-head">
+      <h2>Todas las marcas</h2>
+      <span>{{ categorias.length }} marcas</span>
+    </div>
+
     <div *ngFor="let categoria of categorias" class="lp-brand-block lp-category-block">
       <button
         type="button"
@@ -73,12 +89,31 @@
             <span class="lp-brand-monogram">{{ categoria | slice:0:2 | uppercase }}</span>
           </div>
 
-          <div class="lp-brand-title">{{ categoria }}</div>
+          <div class="lp-brand-copy">
+            <div class="lp-brand-title">
+              <ng-container [ngSwitch]="categoria">
+                <span *ngSwitchCase="'PRODUCTOS APPLE'">Productos Apple</span>
+                <span *ngSwitchCase="'ARTICULOS VARIOS'">Tablets y m&aacute;s</span>
+                <span *ngSwitchDefault>{{ categoria }}</span>
+              </ng-container>
+            </div>
+
+            <div *ngIf="categoria === 'PRODUCTOS APPLE'" class="lp-brand-subtitle">
+              iPhone, iPad, MacBook, Apple Watch, AirPods y m&aacute;s
+            </div>
+            <div *ngIf="categoria === 'ARTICULOS VARIOS'" class="lp-brand-subtitle">
+              Tablets, consolas, joysticks, parlantes y m&aacute;s
+            </div>
+          </div>
         </div>
 
         <div class="lp-brand-count">
-          {{ categoryCountLabel(categoria) }}
-          <span class="lp-category-chevron" aria-hidden="true">{{ isExpanded(categoria) ? '-' : '+' }}</span>
+          <span class="lp-count-badge">{{ categoryCountLabel(categoria) }}</span>
+          <i
+            class="bi bi-chevron-right lp-category-chevron"
+            [class.lp-category-chevron-open]="isExpanded(categoria)"
+            aria-hidden="true">
+          </i>
         </div>
       </button>
 
@@ -133,7 +168,14 @@
       <div class="lp-sheet-handle" aria-hidden="true"></div>
       <div class="modal-header">
         <div class="w-100">
-          <div class="lp-modal-title" *ngIf="selected as p">{{ p.marca }} &middot; {{ p.modelo }}</div>
+          <div class="lp-modal-title" *ngIf="selected as p">
+            {{ p.marca }} &middot; {{ p.modelo }}<span
+              *ngIf="getSheetEmoji(p) as sheetEmoji"
+              class="lp-sheet-origin-icon"
+              [textContent]="sheetEmoji"
+              title="Producto cargado desde lista externa">
+            </span>
+          </div>
           <div class="lp-modal-sub">Precios y colores</div>
         </div>
         <button type="button" class="btn-close" aria-label="Close" (click)="closeModal()"></button>
@@ -193,6 +235,30 @@
         <button type="button" class="btn btn-outline-secondary" (click)="closeModal()">Cerrar</button>
         <button type="button" class="btn btn-success" (click)="abrirWhatsApp(p)">Consultar por WhatsApp</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<div
+  *ngIf="warningModalOpen"
+  class="lp-warning-backdrop"
+  (click)="cancelWarningModal()"
+></div>
+
+<div
+  *ngIf="warningModalOpen"
+  class="lp-warning-modal"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="lp-warning-title"
+>
+  <div class="lp-warning-content" (click)="$event.stopPropagation()">
+    <div id="lp-warning-title" class="lp-warning-title">{{ warningTitle }}</div>
+    <div class="lp-warning-message">{{ warningMessage }}</div>
+
+    <div class="lp-warning-actions">
+      <button type="button" class="btn btn-outline-secondary" (click)="cancelWarningModal()">Cancelar</button>
+      <button type="button" class="btn btn-success" (click)="confirmWarningWhatsapp()">Continuar</button>
     </div>
   </div>
 </div>

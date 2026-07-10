@@ -5,6 +5,7 @@ celulares\cordobacelulares\dtos\tiendaporte\external\TiendaPorteCategory.class
 celulares\cordobacelulares\dtos\tiendaporte\response\TiendaPorteBrandResponse.class
 celulares\cordobacelulares\services\implement\SupplierSheetServiceImpl.class
 celulares\cordobacelulares\repository\PriceConfigurationRepository.class
+celulares\cordobacelulares\dtos\tiendaporte\response\CatalogProductOrigin.class
 celulares\cordobacelulares\services\ColorService.class
 celulares\cordobacelulares\dtos\common\ErrorApi.class
 celulares\cordobacelulares\exceptions\ApiNotFoundException.class

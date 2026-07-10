@@ -4,6 +4,7 @@ import celulares.cordobacelulares.config.SupplierSheetProperties;
 import celulares.cordobacelulares.dtos.suppliersheet.SupplierSheetProduct;
 import celulares.cordobacelulares.dtos.suppliersheet.SupplierSheetPreviewProductResponse;
 import celulares.cordobacelulares.dtos.suppliersheet.SupplierSheetPreviewResponse;
+import celulares.cordobacelulares.dtos.tiendaporte.response.CatalogProductOrigin;
 import celulares.cordobacelulares.services.SupplierSheetService;
 import celulares.cordobacelulares.utils.TiendaPorteTextUtils;
 import org.slf4j.Logger;
@@ -88,6 +89,7 @@ public class SupplierSheetServiceImpl implements SupplierSheetService {
                         product.originalBrand(),
                         product.responseBrand(),
                         product.modelName(),
+                        CatalogProductOrigin.GOOGLE_SHEET,
                         product.colors(),
                         product.priceUsd()
                 ))
@@ -477,6 +479,9 @@ public class SupplierSheetServiceImpl implements SupplierSheetService {
         putMapping(mappings, "PRODUCTOS APPLE", "PRODUCTOS APPLE");
         putMapping(mappings, "ARTICULOS VARIOS", "ARTICULOS VARIOS");
         putMapping(mappings, "PERFUMES", "PERFUMES");
+        putMapping(mappings, "HUAWEI", "HUAWEI");
+        putMapping(mappings, "HONOR", "HONOR");
+        putMapping(mappings, "OPPO", "OPPO");
         return Map.copyOf(mappings);
     }
 
