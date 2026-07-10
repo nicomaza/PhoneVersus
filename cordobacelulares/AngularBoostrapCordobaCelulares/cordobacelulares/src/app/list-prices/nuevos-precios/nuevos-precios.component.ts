@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, isDevMode } from '@angular/core';
+import { Component, ElementRef, OnDestroy, ViewChild, isDevMode } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { debounceTime, distinctUntilChanged, Subscription } from 'rxjs';
 import {
@@ -73,6 +73,7 @@ export class NuevosPreciosComponent implements OnDestroy {
 
   searchCtrl = new FormControl<string>('', { nonNullable: true });
   hasSearch = false;
+  @ViewChild('searchInput') private searchInput?: ElementRef<HTMLInputElement>;
 
   grupos: GrupoMarca[] = [];
   expandedCategory: string | null = null;
@@ -201,6 +202,12 @@ export class NuevosPreciosComponent implements OnDestroy {
     }
 
     this.openWhatsApp(p);
+  }
+
+  clearSearch(): void {
+    this.searchCtrl.setValue('');
+    this.applyFilter('');
+    setTimeout(() => this.searchInput?.nativeElement?.focus?.());
   }
 
   cancelWarningModal(): void {

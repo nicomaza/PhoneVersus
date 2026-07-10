@@ -7,14 +7,26 @@
       <label class="lp-search-field">
         <i class="bi bi-search lp-search-icon" aria-hidden="true"></i>
         <span class="lp-search-copy">
-          <input
-            class="form-control form-control-lg"
-            [formControl]="searchCtrl"
-            placeholder="Buscar marca o modelo"
-            autocomplete="off"
-            inputmode="search"
-            aria-label="Buscar marca o modelo"
-          />
+          <span class="lp-search-input-wrap">
+            <input
+              #searchInput
+              class="form-control form-control-lg"
+              [formControl]="searchCtrl"
+              placeholder="Buscar marca o modelo"
+              autocomplete="off"
+              inputmode="search"
+              aria-label="Buscar marca o modelo"
+            />
+            <button
+              *ngIf="searchCtrl.value"
+              type="button"
+              class="lp-search-clear"
+              aria-label="Limpiar b&uacute;squeda"
+              (click)="clearSearch()"
+            >
+              &times;
+            </button>
+          </span>
           <span class="lp-search-hint">
             Ej: Xiaomi Note 14, Motorola Edge 60...
           </span>

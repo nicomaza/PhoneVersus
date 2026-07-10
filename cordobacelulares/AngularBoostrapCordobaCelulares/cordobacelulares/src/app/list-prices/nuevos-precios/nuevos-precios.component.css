@@ -1,0 +1,34 @@
+.lp-search-input-wrap {
+  position: relative;
+  display: block;
+}
+
+.lp-search-input-wrap input {
+  padding-right: 44px;
+}
+
+.lp-search-clear {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 999px;
+  background: #f1f3f5;
+  color: #6c757d;
+  font-size: 20px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 180ms ease, color 180ms ease;
+}
+
+.lp-search-clear:hover,
+.lp-search-clear:focus-visible {
+  background: #e9ecef;
+  color: #212529;
+}
