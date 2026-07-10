@@ -45,7 +45,7 @@ export interface TiendaPorteCategoryPageState {
   providedIn: 'root'
 })
 export class NuevosPreciosService {
-  private readonly API_URL = 'http://localhost:8080/api/tiendaporte/equipos';
+  private readonly API_URL = 'https://www.cordobacelulares.com/api/tiendaporte/equipos';
 
   private allCatalogCache: TiendaPorteBrandResponse[] | null = null;
   private allCatalogLoading$?: Observable<TiendaPorteBrandResponse[]>;
