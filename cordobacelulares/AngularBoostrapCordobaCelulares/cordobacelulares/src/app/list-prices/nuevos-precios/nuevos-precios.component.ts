@@ -118,7 +118,12 @@ export class NuevosPreciosComponent implements OnDestroy {
   }
 
   fmtMoney(n?: number | null): string {
-    return this.hasValidMoney(n) ? n.toLocaleString('es-AR') : '-';
+    return this.hasValidMoney(n)
+      ? n.toLocaleString('es-AR', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      })
+      : '-';
   }
 
   fmtPrice(n?: number | null): string {
@@ -126,9 +131,7 @@ export class NuevosPreciosComponent implements OnDestroy {
   }
 
   fmtPriceNoCents(n?: number | null): string {
-    return this.hasValidMoney(n)
-      ? `$ ${n.toLocaleString('es-AR', { maximumFractionDigits: 0 })}`
-      : '-';
+    return this.fmtPrice(n);
   }
 
   formatColorStock(c: ColorStockLista): string {
@@ -155,6 +158,40 @@ export class NuevosPreciosComponent implements OnDestroy {
 
   hasCuotaTarjeta6(p: NuevoProductoLista): boolean {
     return this.cuotaTarjeta6(p) !== null;
+  }
+
+  isPerfume(p: NuevoProductoLista | null | undefined): boolean {
+    return this.normalizeCategory(p?.marca) === 'perfumes';
+  }
+
+  isArticulosVarios(p: NuevoProductoLista | null | undefined): boolean {
+    return this.normalizeCategory(p?.marca) === 'articulosvarios';
+  }
+
+  shouldShowColors(p: NuevoProductoLista | null | undefined): boolean {
+    return !!p && !this.isPerfume(p) && this.colorNames(p).length > 0;
+  }
+
+  modalSubtitle(p: NuevoProductoLista | null | undefined): string {
+    return this.shouldShowColors(p) ? 'Precios y colores' : 'Precios';
+  }
+
+  cardHint(p: NuevoProductoLista | null | undefined): string {
+    return this.shouldShowColors(p)
+      ? 'Tocar para ver transferencia, tarjeta y colores'
+      : 'Tocar para ver transferencia y tarjeta';
+  }
+
+  productConditionLabel(p: NuevoProductoLista | null | undefined): string {
+    if (this.isPerfume(p)) {
+      return 'En caja sellada de f\u00E1brica, sin abrir.';
+    }
+
+    if (this.isArticulosVarios(p)) {
+      return 'Dispositivos nuevos, sellados de f\u00E1brica y con garant\u00EDa.';
+    }
+
+    return 'Equipos nuevos, sellados de f\u00E1brica y con garant\u00EDa.';
   }
 
   isGoogleSheetProduct(p: NuevoProductoLista | null | undefined): boolean {
@@ -241,18 +278,20 @@ export class NuevosPreciosComponent implements OnDestroy {
   }
 
   private buildWhatsappMessage(p: NuevoProductoLista): string {
-    const colores = this.formatColorsForMessage(p);
     const cuota = this.cuotaTarjeta6(p);
     const sheetEmoji = this.isGoogleSheetProduct(p) ? ` ${this.SHEET_EMOJI}` : '';
-
-    return [
-      `Hola! Quiero consultar disponibilidad del *${p.marca} ${p.modelo}*.${sheetEmoji}`,
+    const lines = [
+      `Hola! Quiero consultar disponibilidad del ${p.marca} ${p.modelo}.${sheetEmoji}`,
       `- Efectivo: $ ${this.fmtMoney(p.precioPesos)}`,
       `- Transferencia: $ ${this.fmtMoney(p.precioTransferenciaBancaria)}`,
-      `- Tarjeta 6 pagos: $ ${this.fmtMoney(p.precioTarjeta6Pagos)}`,
-      `- 6 cuotas de: $ ${this.fmtMoney(cuota)}`,
-      `Colores: ${colores}`
-    ].join('\n');
+      `- 6 cuotas sin interes de: $ ${this.fmtMoney(cuota)}`
+    ];
+
+    if (this.shouldShowColors(p)) {
+      lines.push(`Colores: ${this.formatColorsForMessage(p)}`);
+    }
+
+    return lines.join('\n');
   }
 
   private buildWhatsappUrl(p: NuevoProductoLista): string {
@@ -264,16 +303,14 @@ export class NuevosPreciosComponent implements OnDestroy {
   }
 
   private warningForProduct(p: NuevoProductoLista): { title: string; message: string } | null {
-    const marca = this.normalizeCategory(p.marca);
-
-    if (marca === 'articulosvarios') {
+    if (this.isArticulosVarios(p)) {
       return {
         title: 'Confirmar consulta',
         message: 'Este art\u00EDculo en particular requiere pago anticipado. \u00BFDesea continuar?'
       };
     }
 
-    if (marca === 'perfumes') {
+    if (this.isPerfume(p)) {
       return {
         title: 'Confirmar consulta',
         message: 'Los perfumes requieren pago completo anticipado. \u00BFDesea continuar?'
@@ -574,11 +611,7 @@ export class NuevosPreciosComponent implements OnDestroy {
   }
 
   private formatColorsForMessage(p: NuevoProductoLista): string {
-    const colors = this.colorNames(p);
-    if (!colors.length) {
-      return 'a confirmar';
-    }
-    return colors.join(', ');
+    return this.colorNames(p).join(', ');
   }
 
   private applyFilter(qRaw: string, scrollToTop = true): void {
