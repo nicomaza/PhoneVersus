@@ -20,6 +20,8 @@ public class ModelServiceImpl implements ModelService {
     ModelJPA modelRepository;
     @Autowired
     BrandJPA brandJPA;
+    @Autowired
+    CatalogProductPolicy catalogProductPolicy;
 
     @Override
     public ModelEntity saveModel(ModelDto modelDto) {
@@ -38,11 +40,15 @@ public class ModelServiceImpl implements ModelService {
     }
 
     public List<ModelEntity> getAllModels() {
-        return modelRepository.findAll();
+        return modelRepository.findAll().stream()
+                .filter(this::isAllowedModel)
+                .collect(Collectors.toList());
     }
 
     public ModelEntity getModelById(Long id) {
-        return modelRepository.findById(id).orElse(null);
+        return modelRepository.findById(id)
+                .filter(this::isAllowedModel)
+                .orElse(null);
     }
 
 
@@ -60,15 +66,26 @@ public class ModelServiceImpl implements ModelService {
 
     @Override
     public List<ModelNewDto> getAllModelsDto() {
-        return modelRepository.findAll().stream().map(model ->
-                new ModelNewDto(
-                        model.getModelName(), // model
-                        model.getIdModel(),   // idModel
-                        model.getBrand().getBrandName(), // brand
-                        model.getBrand().getIdBrand() // idBrand
-                )
-        ).collect(Collectors.toList());
+        return modelRepository.findAll().stream()
+                .filter(this::isAllowedModel)
+                .map(model ->
+                        new ModelNewDto(
+                                model.getModelName(), // model
+                                model.getIdModel(),   // idModel
+                                displayCategory(model), // brand
+                                model.getBrand().getIdBrand() // idBrand
+                        )
+                ).collect(Collectors.toList());
     }
 
+    private boolean isAllowedModel(ModelEntity model) {
+        return model != null && !catalogProductPolicy.isExcludedProduct(model.getModelName());
+    }
+
+    private String displayCategory(ModelEntity model) {
+        String brandName = model.getBrand() == null ? null : model.getBrand().getBrandName();
+        String canonical = catalogProductPolicy.resolveCanonicalCategory(model.getModelName(), brandName);
+        return canonical == null ? brandName : canonical;
+    }
 
 }

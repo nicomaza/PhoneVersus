@@ -1,0 +1,200 @@
+:host {
+  display: block;
+}
+
+.admin-panel {
+  background: #fff;
+  border: 1px solid #dfe3ea;
+  border-radius: 8px;
+  padding: 18px;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, .05);
+}
+
+.toolbar,
+.filters,
+.table-meta,
+.pager {
+  display: flex;
+  align-items: center;
+}
+
+.toolbar {
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.toolbar h3 {
+  margin: 0;
+  color: #111827;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.toolbar p {
+  margin: 4px 0 0;
+  color: #64748b;
+}
+
+.secondary-button {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  color: #334155;
+  font-weight: 700;
+}
+
+button:disabled {
+  opacity: .62;
+  cursor: not-allowed;
+}
+
+.filters {
+  align-items: end;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.filters label {
+  display: grid;
+  gap: 6px;
+  color: #334155;
+  font-weight: 700;
+}
+
+.filters label:first-child {
+  flex: 1 1 280px;
+}
+
+.filters label:not(:first-child) {
+  flex: 0 0 190px;
+}
+
+.search-box {
+  position: relative;
+}
+
+.search-box i {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #64748b;
+}
+
+.search-box input {
+  padding-left: 38px;
+}
+
+.compact-alert {
+  margin-bottom: 14px;
+}
+
+.table-meta {
+  min-height: 28px;
+  justify-content: space-between;
+  color: #64748b;
+  font-weight: 650;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.admin-table {
+  width: 100%;
+  min-width: 1280px;
+  border-collapse: collapse;
+}
+
+.admin-table th,
+.admin-table td {
+  padding: 12px;
+  border-bottom: 1px solid #e5e7eb;
+  color: #334155;
+  vertical-align: middle;
+}
+
+.admin-table th {
+  background: #f8fafc;
+  color: #64748b;
+  font-size: .76rem;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.admin-table th button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+}
+
+.model-cell,
+.price-cell {
+  color: #111827 !important;
+  font-weight: 750;
+}
+
+.brand-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #334155;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.empty-cell {
+  text-align: center;
+  color: #64748b !important;
+}
+
+.pager {
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 14px;
+  color: #475569;
+  font-weight: 700;
+}
+
+@media (max-width: 760px) {
+  .toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .filters {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .filters label,
+  .filters label:first-child,
+  .filters label:not(:first-child) {
+    flex: auto;
+  }
+
+  .pager {
+    justify-content: stretch;
+    flex-direction: column;
+  }
+}

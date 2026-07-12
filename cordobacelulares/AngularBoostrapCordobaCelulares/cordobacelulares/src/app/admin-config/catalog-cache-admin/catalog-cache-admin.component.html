@@ -1,0 +1,71 @@
+<section class="admin-panel">
+  <div class="toolbar">
+    <div>
+      <h3>Actualizacion de catalogo</h3>
+      <p>Control manual del snapshot cacheado que usa el catalogo publico y la grilla administrativa.</p>
+    </div>
+    <button type="button" class="primary-button" (click)="refreshCatalog()" [disabled]="refreshing || status?.refreshing">
+      <i class="bi bi-arrow-repeat" aria-hidden="true"></i>
+      <span>{{ status?.refreshing ? 'Actualizando' : 'Actualizar cache' }}</span>
+    </button>
+  </div>
+
+  <div *ngIf="error" class="alert alert-danger compact-alert">{{ error }}</div>
+  <div *ngIf="message" class="alert alert-info compact-alert">{{ message }}</div>
+
+  <div class="status-card" *ngIf="status; else loadingState">
+    <div class="state-line">
+      <span class="state-pill" [ngClass]="stateClass()">{{ stateLabel() }}</span>
+      <button type="button" class="secondary-button" (click)="loadStatus()" [disabled]="loading">
+        <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
+        <span>Releer estado</span>
+      </button>
+    </div>
+
+    <div class="metrics-grid">
+      <div>
+        <span>Version</span>
+        <strong>{{ status.version }}</strong>
+      </div>
+      <div>
+        <span>Productos</span>
+        <strong>{{ status.productCount }}</strong>
+      </div>
+      <div>
+        <span>Antiguedad</span>
+        <strong>{{ snapshotAge() }}</strong>
+      </div>
+      <div>
+        <span>Single-flight</span>
+        <strong>{{ status.refreshing ? 'En curso' : 'Libre' }}</strong>
+      </div>
+    </div>
+
+    <dl class="details-list">
+      <div>
+        <dt>Ultima actualizacion correcta</dt>
+        <dd>{{ formatDate(status.lastSuccessfulRefreshAt) }}</dd>
+      </div>
+      <div>
+        <dt>Ultimo intento</dt>
+        <dd>{{ formatDate(status.lastAttemptAt) }}</dd>
+      </div>
+      <div>
+        <dt>Expira</dt>
+        <dd>{{ formatDate(status.expiresAt) }}</dd>
+      </div>
+      <div>
+        <dt>Proximo refresh permitido</dt>
+        <dd>{{ formatDate(status.nextAllowedRefreshAt) }}</dd>
+      </div>
+      <div>
+        <dt>Ultimo error</dt>
+        <dd>{{ status.lastError || '-' }}</dd>
+      </div>
+    </dl>
+  </div>
+
+  <ng-template #loadingState>
+    <div class="empty-state">{{ loading ? 'Cargando estado del cache...' : 'No se pudo leer el estado.' }}</div>
+  </ng-template>
+</section>

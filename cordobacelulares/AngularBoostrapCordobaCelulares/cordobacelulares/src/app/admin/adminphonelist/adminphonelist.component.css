@@ -1,0 +1,12 @@
+.catalog-cache-panel {
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  padding: 16px;
+  background: #f8f9fa;
+}
+
+.cache-status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 6px 16px;
+}

@@ -2,9 +2,7 @@ package celulares.cordobacelulares.services.implement;
 
 import celulares.cordobacelulares.dtos.tiendaporte.internal.TiendaPorteCalculatedPrices;
 import celulares.cordobacelulares.dtos.suppliersheet.SupplierSheetProduct;
-import celulares.cordobacelulares.dtos.tiendaporte.external.TiendaPorteCategory;
 import celulares.cordobacelulares.dtos.tiendaporte.external.TiendaPorteExternalProduct;
-import celulares.cordobacelulares.dtos.tiendaporte.external.TiendaPorteProductsResponse;
 import celulares.cordobacelulares.dtos.tiendaporte.external.TiendaPorteProductReference;
 import celulares.cordobacelulares.dtos.tiendaporte.response.CatalogProductOrigin;
 import celulares.cordobacelulares.dtos.tiendaporte.response.TiendaPorteBrandResponse;
@@ -17,7 +15,6 @@ import celulares.cordobacelulares.services.PriceConfigurationService;
 import celulares.cordobacelulares.services.SupplierSheetService;
 import celulares.cordobacelulares.services.TiendaPorteService;
 import celulares.cordobacelulares.utils.TiendaPorteTextUtils;
-import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -25,10 +22,6 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -49,8 +42,7 @@ public class TiendaPorteServiceImpl implements TiendaPorteService {
     private static final int DEFAULT_CATEGORY_PAGE = 1;
     private static final int DEFAULT_CATEGORY_LIMIT = 50;
     private static final int MAX_CATEGORY_LIMIT = 100;
-    private static final int CATEGORY_CONCURRENCY = 4;
-    private static final List<String> ALLOWED_CATEGORIES = List.of(
+    private static final List<String> MAIN_TIENDA_PORTE_CATEGORIES = List.of(
             "ARTICULOS VARIOS",
             "INFINIX",
             "IPHONE",
@@ -61,40 +53,50 @@ public class TiendaPorteServiceImpl implements TiendaPorteService {
             "XIAOMI",
             "SAMSUNG"
     );
+    private static final List<String> ALLOWED_CATEGORIES = List.of(
+            "ARTICULOS VARIOS",
+            "HUAWEI",
+            "HONOR",
+            "INFINIX",
+            "IPHONE",
+            "MOTOROLA",
+            "OPPO",
+            "PRODUCTOS APPLE",
+            "PERFUMES",
+            "REALME",
+            "XIAOMI",
+            "SAMSUNG",
+            "OTROS"
+    );
     private static final List<String> SUPPLIER_ONLY_CATEGORIES = List.of("HUAWEI", "HONOR", "OPPO");
-    private static final Map<String, String> ALLOWED_CATEGORIES_BY_KEY = allowedCategoriesByKey();
-
-    private final TiendaPorteClient tiendaPorteClient;
+    private final TiendaPorteCatalogCacheService catalogCacheService;
     private final PriceConfigurationService priceConfigurationService;
     private final SupplierSheetService supplierSheetService;
     private final DollarQuotationResolver dollarQuotationResolver;
     private final TiendaPortePriceCalculator priceCalculator;
-    private final ExecutorService categoryExecutor = Executors.newFixedThreadPool(CATEGORY_CONCURRENCY);
+    private final CatalogProductPolicy catalogProductPolicy;
 
     public TiendaPorteServiceImpl(
-            TiendaPorteClient tiendaPorteClient,
+            TiendaPorteCatalogCacheService catalogCacheService,
             PriceConfigurationService priceConfigurationService,
             SupplierSheetService supplierSheetService,
             DollarQuotationResolver dollarQuotationResolver,
-            TiendaPortePriceCalculator priceCalculator
+            TiendaPortePriceCalculator priceCalculator,
+            CatalogProductPolicy catalogProductPolicy
     ) {
-        this.tiendaPorteClient = tiendaPorteClient;
+        this.catalogCacheService = catalogCacheService;
         this.priceConfigurationService = priceConfigurationService;
         this.supplierSheetService = supplierSheetService;
         this.dollarQuotationResolver = dollarQuotationResolver;
         this.priceCalculator = priceCalculator;
-    }
-
-    @PreDestroy
-    public void shutdownCategoryExecutor() {
-        categoryExecutor.shutdown();
+        this.catalogProductPolicy = catalogProductPolicy;
     }
 
     @Override
     public List<TiendaPorteBrandResponse> getAll(BigDecimal cotizacionDolar, String cotizacionDolarHeader) {
         PriceConfiguration configuration = priceConfigurationService.getRequiredForCatalog();
         BigDecimal dolarBilleteAplicado = dollarQuotationResolver.resolve(cotizacionDolarHeader, cotizacionDolar, configuration);
-        List<TiendaPorteBrandResponse> catalog = buildCatalog(tiendaPorteClient.getProducts(), configuration, dolarBilleteAplicado);
+        List<TiendaPorteBrandResponse> catalog = buildCatalog(catalogCacheService.getProducts(), configuration, dolarBilleteAplicado, null);
         return addSupplierSheetMissingProducts(catalog, configuration, dolarBilleteAplicado, null);
     }
 
@@ -107,7 +109,7 @@ public class TiendaPorteServiceImpl implements TiendaPorteService {
 
         PriceConfiguration configuration = priceConfigurationService.getRequiredForCatalog();
         BigDecimal dolarBilleteAplicado = dollarQuotationResolver.resolve(cotizacionDolarHeader, cotizacionDolar, configuration);
-        List<TiendaPorteBrandResponse> catalog = buildCatalog(tiendaPorteClient.getProducts(), configuration, dolarBilleteAplicado);
+        List<TiendaPorteBrandResponse> catalog = buildCatalog(catalogCacheService.getProducts(), configuration, dolarBilleteAplicado, null);
         catalog = addSupplierSheetMissingProducts(catalog, configuration, dolarBilleteAplicado, null);
         return filterBySearch(catalog, normalizedQuery);
     }
@@ -116,7 +118,7 @@ public class TiendaPorteServiceImpl implements TiendaPorteService {
     public List<TiendaPorteBrandResponse> getAllowedCategories(BigDecimal cotizacionDolar, String cotizacionDolarHeader) {
         PriceConfiguration configuration = priceConfigurationService.getRequiredForCatalog();
         BigDecimal dolarBilleteAplicado = dollarQuotationResolver.resolve(cotizacionDolarHeader, cotizacionDolar, configuration);
-        List<TiendaPorteBrandResponse> catalog = buildCatalog(fetchAllowedCategoryProducts(), configuration, dolarBilleteAplicado);
+        List<TiendaPorteBrandResponse> catalog = buildCatalog(mainCategoryProducts(catalogCacheService.getProducts()), configuration, dolarBilleteAplicado, null);
         return addSupplierSheetMissingProducts(catalog, configuration, dolarBilleteAplicado, null);
     }
 
@@ -138,15 +140,12 @@ public class TiendaPorteServiceImpl implements TiendaPorteService {
             return supplierOnlyCategoryResponse(normalizedCategory, safePage, safeLimit, configuration, dolarBilleteAplicado);
         }
 
-        TiendaPorteProductsResponse productsResponse = tiendaPorteClient.getProductsByCategoryPage(normalizedCategory, safePage, safeLimit);
-        List<TiendaPorteExternalProduct> products = safeProducts(productsResponse);
-        List<TiendaPorteBrandResponse> data = buildCatalog(products, configuration, dolarBilleteAplicado);
-        if (safePage == 1) {
-            data = addSupplierSheetMissingProducts(data, configuration, dolarBilleteAplicado, normalizedCategory);
-        }
+        List<TiendaPorteExternalProduct> products = productsByCategory(catalogCacheService.getProducts(), normalizedCategory);
+        List<TiendaPorteBrandResponse> data = buildCatalog(products, configuration, dolarBilleteAplicado, null);
+        data = addSupplierSheetMissingProducts(data, configuration, dolarBilleteAplicado, normalizedCategory);
 
-        int total = total(productsResponse, products.size());
-        int totalPages = totalPages(productsResponse);
+        int total = countModels(data);
+        int totalPages = totalPages(total, safeLimit);
         return new TiendaPorteCategoryPageResponse(
                 normalizedCategory,
                 safePage,
@@ -154,45 +153,16 @@ public class TiendaPorteServiceImpl implements TiendaPorteService {
                 total,
                 totalPages,
                 safePage < totalPages,
-                data
+                paginateCatalog(data, safePage, safeLimit)
         );
-    }
-
-    private List<TiendaPorteExternalProduct> fetchAllowedCategoryProducts() {
-        List<CompletableFuture<List<TiendaPorteExternalProduct>>> futures = ALLOWED_CATEGORIES.stream()
-                .map(category -> CompletableFuture.supplyAsync(
-                        () -> tiendaPorteClient.getProductsByCategory(category, DEFAULT_CATEGORY_LIMIT),
-                        categoryExecutor
-                ))
-                .toList();
-
-        List<TiendaPorteExternalProduct> products = new ArrayList<>();
-        for (CompletableFuture<List<TiendaPorteExternalProduct>> future : futures) {
-            products.addAll(joinProducts(future));
-        }
-        return products;
-    }
-
-    private List<TiendaPorteExternalProduct> joinProducts(CompletableFuture<List<TiendaPorteExternalProduct>> future) {
-        try {
-            List<TiendaPorteExternalProduct> products = future.join();
-            return products == null ? List.of() : products;
-        } catch (CompletionException ex) {
-            Throwable cause = ex.getCause();
-            if (cause instanceof RuntimeException runtimeException) {
-                throw runtimeException;
-            }
-            throw ex;
-        }
     }
 
     private String normalizeAllowedCategory(String categoria) {
         if (isBlank(categoria)) {
             throw new TiendaPorteBadRequestException("La categoria es obligatoria");
         }
-        String normalized = TiendaPorteTextUtils.normalize(categoria);
-        String allowedCategory = ALLOWED_CATEGORIES_BY_KEY.get(normalized);
-        if (allowedCategory == null) {
+        String allowedCategory = catalogProductPolicy.canonicalizeRequestedCategory(categoria);
+        if (allowedCategory == null || !ALLOWED_CATEGORIES.contains(allowedCategory)) {
             throw new TiendaPorteBadRequestException("Categoria no permitida: " + categoria);
         }
         return allowedCategory;
@@ -211,16 +181,36 @@ public class TiendaPorteServiceImpl implements TiendaPorteService {
     ) {
         List<TiendaPorteBrandResponse> sheetData = addSupplierSheetMissingProducts(List.of(), configuration, dolarBilleteAplicado, category);
         int total = countModels(sheetData);
-        List<TiendaPorteBrandResponse> data = page == 1 ? sheetData : List.of();
+        int totalPages = totalPages(total, limit);
         return new TiendaPorteCategoryPageResponse(
                 category,
                 page,
                 limit,
                 total,
-                1,
-                false,
-                data
+                totalPages,
+                page < totalPages,
+                paginateCatalog(sheetData, page, limit)
         );
+    }
+
+    private List<TiendaPorteExternalProduct> mainCategoryProducts(List<TiendaPorteExternalProduct> products) {
+        if (products == null || products.isEmpty()) {
+            return List.of();
+        }
+        return products.stream()
+                .filter(product -> product != null && !catalogProductPolicy.isExcludedProduct(product))
+                .filter(product -> MAIN_TIENDA_PORTE_CATEGORIES.contains(brandName(product, null)))
+                .toList();
+    }
+
+    private List<TiendaPorteExternalProduct> productsByCategory(List<TiendaPorteExternalProduct> products, String category) {
+        if (products == null || products.isEmpty()) {
+            return List.of();
+        }
+        return products.stream()
+                .filter(product -> product != null && !catalogProductPolicy.isExcludedProduct(product))
+                .filter(product -> category.equals(brandName(product, null)))
+                .toList();
     }
 
     private int countModels(List<TiendaPorteBrandResponse> data) {
@@ -249,27 +239,47 @@ public class TiendaPorteServiceImpl implements TiendaPorteService {
         return Math.min(safeLimit, MAX_CATEGORY_LIMIT);
     }
 
-    private List<TiendaPorteExternalProduct> safeProducts(TiendaPorteProductsResponse response) {
-        if (response == null || response.getData() == null) {
+    private int totalPages(int total, int limit) {
+        if (total <= 0) {
+            return 1;
+        }
+        return (int) Math.ceil((double) total / limit);
+    }
+
+    private List<TiendaPorteBrandResponse> paginateCatalog(List<TiendaPorteBrandResponse> catalog, int page, int limit) {
+        if (catalog == null || catalog.isEmpty()) {
             return List.of();
         }
-        return response.getData();
+        List<ModelPageEntry> entries = new ArrayList<>();
+        for (TiendaPorteBrandResponse brand : catalog) {
+            if (brand == null || brand.getModelos() == null) {
+                continue;
+            }
+            for (TiendaPorteModelResponse model : brand.getModelos()) {
+                if (model != null) {
+                    entries.add(new ModelPageEntry(brand.getMarca(), model));
+                }
+            }
+        }
+        int fromIndex = Math.max(0, (page - 1) * limit);
+        if (fromIndex >= entries.size()) {
+            return List.of();
+        }
+        int toIndex = Math.min(entries.size(), fromIndex + limit);
+        Map<String, List<TiendaPorteModelResponse>> modelsByBrand = new LinkedHashMap<>();
+        for (ModelPageEntry entry : entries.subList(fromIndex, toIndex)) {
+            modelsByBrand.computeIfAbsent(entry.brandName(), key -> new ArrayList<>()).add(entry.model());
+        }
+        return modelsByBrand.entrySet().stream()
+                .map(entry -> new TiendaPorteBrandResponse(entry.getKey(), entry.getValue()))
+                .toList();
     }
 
-    private int total(TiendaPorteProductsResponse response, int fallback) {
-        Integer total = response == null || response.getMeta() == null ? null : response.getMeta().getTotal();
-        return total == null || total < 0 ? Math.max(0, fallback) : total;
-    }
-
-    private int totalPages(TiendaPorteProductsResponse response) {
-        Integer totalPages = response == null || response.getMeta() == null ? null : response.getMeta().getTotalPages();
-        return totalPages == null || totalPages < 1 ? 1 : totalPages;
-    }
-
-    private List<TiendaPorteBrandResponse> buildCatalog(
+    List<TiendaPorteBrandResponse> buildCatalog(
             List<TiendaPorteExternalProduct> products,
             PriceConfiguration configuration,
-            BigDecimal dolarBilleteAplicado
+            BigDecimal dolarBilleteAplicado,
+            String requestedCategory
     ) {
         Map<String, BrandAccumulator> brandsByKey = new HashMap<>();
         Map<String, ModelAccumulator> modelsByKey = new HashMap<>();
@@ -277,17 +287,17 @@ public class TiendaPorteServiceImpl implements TiendaPorteService {
             return List.of();
         }
 
-        for (TiendaPorteExternalProduct product : products) {
-            if (product == null || isUnwantedProduct(product)) {
-                continue;
-            }
+        CatalogProductPolicy.SelectionResult selectionResult = catalogProductPolicy.selectPublishableTiendaPorteProducts(products, requestedCategory);
+        logProcessingSummary(selectionResult.stats());
 
+        for (CatalogProductPolicy.ProductSelection selection : selectionResult.selections()) {
+            TiendaPorteExternalProduct product = selection.product();
             String modelName = modelName(product);
             if (isBlank(modelName)) {
                 continue;
             }
 
-            String brandName = brandName(product);
+            String brandName = selection.canonicalCategory();
             String brandKey = normalizedKey(brandName, DEFAULT_BRAND);
             List<ModelPriceGroup> modelPriceGroups = priceGroups(product, priceUsd(product));
             for (ModelPriceGroup priceGroup : modelPriceGroups) {
@@ -309,6 +319,21 @@ public class TiendaPorteServiceImpl implements TiendaPorteService {
                 .toList();
     }
 
+    private void logProcessingSummary(CatalogProductPolicy.SelectionStats stats) {
+        if (stats == null) {
+            return;
+        }
+        LOGGER.info(
+                "Catalog processing summary: totalReceived={} excludedProducts={} excludedCajaManchada={} preservedArticulosVarios={} deduplicatedProducts={} totalPublished={}",
+                stats.totalReceived(),
+                stats.excludedProducts(),
+                stats.excludedCajaManchada(),
+                stats.preservedArticulosVarios(),
+                stats.deduplicatedProducts(),
+                stats.totalPublished()
+        );
+    }
+
     private List<TiendaPorteBrandResponse> addSupplierSheetMissingProducts(
             List<TiendaPorteBrandResponse> catalog,
             PriceConfiguration configuration,
@@ -324,28 +349,33 @@ public class TiendaPorteServiceImpl implements TiendaPorteService {
         Map<String, TiendaPorteBrandResponse> brandsByKey = brandsByKey(response);
         Map<String, Set<String>> duplicateKeysByBrand = duplicateKeysByBrand(response);
         String normalizedCategoryFilter = TiendaPorteTextUtils.normalize(categoryFilter);
+        Set<String> addedSupplierKeys = new LinkedHashSet<>();
         int added = 0;
 
         for (SupplierSheetProduct product : supplierProducts) {
-            if (product == null || TiendaPorteTextUtils.containsUnwantedProductPattern(product.modelName())) {
+            if (catalogProductPolicy.isExcludedProduct(product)) {
                 continue;
             }
 
-            String brandKey = normalizedKey(product.responseBrand(), DEFAULT_BRAND);
+            String brandName = supplierBrandName(product);
+            String brandKey = normalizedKey(brandName, DEFAULT_BRAND);
             if (!normalizedCategoryFilter.isBlank() && !brandKey.equals(normalizedCategoryFilter)) {
                 continue;
             }
 
-            Set<String> productKeys = duplicateKeys(product.responseBrand(), product.originalBrand(), product.modelName());
+            Set<String> productKeys = duplicateKeys(brandName, product.originalBrand(), product.modelName());
             Set<String> existingKeys = duplicateKeysByBrand.computeIfAbsent(brandKey, key -> new LinkedHashSet<>());
             if (productKeys.stream().anyMatch(existingKeys::contains)) {
+                continue;
+            }
+            if (!addedSupplierKeys.add(supplierUniqueKey(brandName, product.modelName(), product.priceUsd()))) {
                 continue;
             }
 
             TiendaPorteBrandResponse brandResponse = brandsByKey.computeIfAbsent(
                     brandKey,
                     key -> {
-                        TiendaPorteBrandResponse created = new TiendaPorteBrandResponse(product.responseBrand(), new ArrayList<>());
+                        TiendaPorteBrandResponse created = new TiendaPorteBrandResponse(brandName, new ArrayList<>());
                         response.add(created);
                         return created;
                     }
@@ -403,6 +433,10 @@ public class TiendaPorteServiceImpl implements TiendaPorteService {
         return keysByBrand;
     }
 
+    private String supplierBrandName(SupplierSheetProduct product) {
+        return catalogProductPolicy.resolveCanonicalCategory(product, null);
+    }
+
     private Set<String> duplicateKeys(String responseBrand, String originalBrand, String modelName) {
         Set<String> keys = new LinkedHashSet<>();
         String normalizedModel = TiendaPorteTextUtils.normalize(modelName);
@@ -426,6 +460,16 @@ public class TiendaPorteServiceImpl implements TiendaPorteService {
         }
 
         return keys;
+    }
+
+    private String supplierUniqueKey(String brandName, String modelName, BigDecimal priceUsd) {
+        return normalizedKey(brandName, DEFAULT_BRAND)
+                + "|"
+                + TiendaPorteTextUtils.normalize(modelName)
+                + "|"
+                + normalizedPriceKey(priceUsd)
+                + "|"
+                + CatalogProductOrigin.GOOGLE_SHEET;
     }
 
     private String stripKnownBrandPrefix(String normalizedModel, String responseBrandKey, String originalBrandKey) {
@@ -582,16 +626,8 @@ public class TiendaPorteServiceImpl implements TiendaPorteService {
                 .anyMatch(candidate -> TiendaPorteTextUtils.isWithinLevenshteinDistance(normalizedQuery, candidate, maxDistance));
     }
 
-    private boolean isUnwantedProduct(TiendaPorteExternalProduct product) {
-        return TiendaPorteTextUtils.containsUnwantedProductPattern(product.getName())
-                || TiendaPorteTextUtils.containsUnwantedProductPattern(product.getProductReference() == null ? null : product.getProductReference().getName());
-    }
-
-    private String brandName(TiendaPorteExternalProduct product) {
-        String productReferenceBrand = categoryName(product.getProductReference() == null ? null : product.getProductReference().getCategory());
-        String productBrand = categoryName(product.getCategory());
-        String selected = firstNonBlank(productReferenceBrand, productBrand, DEFAULT_BRAND);
-        return isBlank(selected) ? DEFAULT_BRAND : selected.trim();
+    private String brandName(TiendaPorteExternalProduct product, String requestedCategory) {
+        return catalogProductPolicy.resolveCanonicalCategory(product, requestedCategory);
     }
 
     private String modelName(TiendaPorteExternalProduct product) {
@@ -712,21 +748,6 @@ public class TiendaPorteServiceImpl implements TiendaPorteService {
             return normalized;
         }
         return colorName.trim().toLowerCase(Locale.ROOT);
-    }
-
-    private static Map<String, String> allowedCategoriesByKey() {
-        Map<String, String> categories = new HashMap<>();
-        for (String category : ALLOWED_CATEGORIES) {
-            categories.put(TiendaPorteTextUtils.normalize(category), category);
-        }
-        for (String category : SUPPLIER_ONLY_CATEGORIES) {
-            categories.put(TiendaPorteTextUtils.normalize(category), category);
-        }
-        return Map.copyOf(categories);
-    }
-
-    private String categoryName(TiendaPorteCategory category) {
-        return category == null ? null : category.getName();
     }
 
     private String modelKey(TiendaPorteExternalProduct product, String brandKey, String modelName, BigDecimal priceUsd) {
@@ -885,5 +906,8 @@ public class TiendaPorteServiceImpl implements TiendaPorteService {
     }
 
     private record SearchMatch(int priority, String brandName, TiendaPorteModelResponse model) {
+    }
+
+    private record ModelPageEntry(String brandName, TiendaPorteModelResponse model) {
     }
 }

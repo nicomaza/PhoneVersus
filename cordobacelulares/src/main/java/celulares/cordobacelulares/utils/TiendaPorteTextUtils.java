@@ -9,8 +9,6 @@ import java.util.Set;
 
 public final class TiendaPorteTextUtils {
 
-    private static final List<String> UNWANTED_PRODUCT_PATTERNS = List.of("aboll", "usad", "roto", "sinactivar", "activad");
-
     private TiendaPorteTextUtils() {
     }
 
@@ -22,11 +20,6 @@ public final class TiendaPorteTextUtils {
                 .replaceAll("\\p{M}", "");
         return withoutDiacritics.toLowerCase(Locale.ROOT)
                 .replaceAll("[^\\p{IsAlphabetic}\\p{IsDigit}]", "");
-    }
-
-    public static boolean containsUnwantedProductPattern(String value) {
-        String normalized = normalize(value);
-        return UNWANTED_PRODUCT_PATTERNS.stream().anyMatch(normalized::contains);
     }
 
     public static List<String> normalizedTokens(String value) {

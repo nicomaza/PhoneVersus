@@ -1,0 +1,20 @@
+
+> cordobacelulares@0.0.0 start
+> ng serve --disable-host-check --port 4201
+
+Initial chunk files | Names            |  Raw size
+main.js             | main             | 402.18 kB | 
+styles.css          | styles           | 397.36 kB | 
+scripts.js          | scripts          | 106.35 kB | 
+polyfills.js        | polyfills        |  88.12 kB | 
+chunk-SHAOKUVO.js   | -                | 938 bytes | 
+
+                    | Initial total    | 994.93 kB
+
+Lazy chunk files    | Names            |  Raw size
+chunk-A7NZU536.js   | footer-component |  15.45 kB | 
+
+Application bundle generation complete. [9.022 seconds]
+
+Watch mode enabled. Watching for file changes...
+  ➜  Local:   http://localhost:4201/

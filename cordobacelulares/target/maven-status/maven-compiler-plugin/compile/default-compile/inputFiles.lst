@@ -1,3 +1,4 @@
+C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\config\CorrelationIdFilter.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\config\CORSConfig.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\config\GlobalExceptionHandler.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\config\MappersConfig.java
@@ -6,8 +7,10 @@ C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\cel
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\config\SupplierSheetProperties.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\config\TiendaPorteHttpClientConfig.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\config\TiendaPorteProperties.java
+C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\controller\AdminCatalogController.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\controller\BoxContentController.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\controller\BrandController.java
+C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\controller\CatalogCacheAdminController.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\controller\ColorController.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\controller\ModelController.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\controller\PhoneController.java
@@ -35,6 +38,10 @@ C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\cel
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\dtos\suppliersheet\SupplierSheetPreviewResponse.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\dtos\suppliersheet\SupplierSheetProduct.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\dtos\suppliersheet\SupplierSheetReloadResponse.java
+C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\dtos\tiendaporte\admin\AdminCatalogPageResponse.java
+C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\dtos\tiendaporte\admin\AdminCatalogProductRowResponse.java
+C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\dtos\tiendaporte\cache\CatalogCacheRefreshResponse.java
+C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\dtos\tiendaporte\cache\CatalogCacheStatusResponse.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\dtos\tiendaporte\credentials\TiendaPorteCredentialCreateRequest.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\dtos\tiendaporte\credentials\TiendaPorteCredentialPatchRequest.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\dtos\tiendaporte\credentials\TiendaPorteCredentialResponse.java
@@ -69,6 +76,7 @@ C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\cel
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\exceptions\TiendaPorteAuthenticationException.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\exceptions\TiendaPorteBadRequestException.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\exceptions\TiendaPorteIntegrationException.java
+C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\exceptions\TiendaPorteRateLimitException.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\exceptions\TiendaPorteTimeoutException.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\repository\BoxContentJPA.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\repository\BrandJPA.java
@@ -80,15 +88,20 @@ C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\cel
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\services\BoxContentService.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\services\BrandService.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\services\ColorService.java
+C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\services\implement\AdminCatalogService.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\services\implement\BoxContentServiceImpl.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\services\implement\BrandServiceImpl.java
+C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\services\implement\CatalogCategoryResolver.java
+C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\services\implement\CatalogProductPolicy.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\services\implement\ColorServiceImpl.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\services\implement\DollarQuotationResolver.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\services\implement\ModelServiceImpl.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\services\implement\PhoneServiceImpl.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\services\implement\PriceConfigurationServiceImpl.java
+C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\services\implement\ProductType.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\services\implement\SupplierSheetServiceImpl.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\services\implement\TiendaPorteAuthService.java
+C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\services\implement\TiendaPorteCatalogCacheService.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\services\implement\TiendaPorteClient.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\services\implement\TiendaPorteCredentialCipher.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\services\implement\TiendaPorteCredentialServiceImpl.java
@@ -102,4 +115,5 @@ C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\cel
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\services\TiendaPorteAuthenticationInvalidator.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\services\TiendaPorteCredentialService.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\services\TiendaPorteService.java
+C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\utils\TiendaPorteDiagnostics.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\utils\TiendaPorteTextUtils.java

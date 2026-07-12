@@ -8,6 +8,10 @@ import celulares.cordobacelulares.exceptions.TiendaPorteAuthenticationException;
 import celulares.cordobacelulares.exceptions.TiendaPorteBadRequestException;
 import celulares.cordobacelulares.exceptions.TiendaPorteIntegrationException;
 import celulares.cordobacelulares.exceptions.TiendaPorteTimeoutException;
+import celulares.cordobacelulares.utils.TiendaPorteDiagnostics;
+import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,6 +26,8 @@ import java.time.LocalDateTime;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorApi> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
@@ -92,13 +98,28 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler({TiendaPorteAuthenticationException.class, TiendaPorteIntegrationException.class})
-    public ResponseEntity<ErrorApi> handleTiendaPorteIntegrationException(RuntimeException ex) {
+    public ResponseEntity<ErrorApi> handleTiendaPorteIntegrationException(RuntimeException ex, HttpServletRequest request) {
+        logTiendaPorteException("Error de integracion con Tienda Porte", ex, request);
         return buildError(HttpStatus.BAD_GATEWAY, "Bad Gateway", ex.getMessage());
     }
 
     @ExceptionHandler(TiendaPorteTimeoutException.class)
-    public ResponseEntity<ErrorApi> handleTiendaPorteTimeoutException(TiendaPorteTimeoutException ex) {
+    public ResponseEntity<ErrorApi> handleTiendaPorteTimeoutException(TiendaPorteTimeoutException ex, HttpServletRequest request) {
+        logTiendaPorteException("Timeout de integracion con Tienda Porte", ex, request);
         return buildError(HttpStatus.GATEWAY_TIMEOUT, "Gateway Timeout", ex.getMessage());
+    }
+
+    private void logTiendaPorteException(String message, RuntimeException ex, HttpServletRequest request) {
+        String path = request == null ? "-" : request.getRequestURI();
+        LOGGER.error(
+                "{}. cid={} path={} exception={} rootCause={}",
+                message,
+                TiendaPorteDiagnostics.currentCorrelationId(),
+                path,
+                ex.getClass().getSimpleName(),
+                TiendaPorteDiagnostics.rootCauseLabel(ex),
+                ex
+        );
     }
 
     private ResponseEntity<ErrorApi> buildError(HttpStatus status, String error, String message) {
@@ -108,7 +129,9 @@ public class GlobalExceptionHandler {
                 error,
                 message
         );
-        return new ResponseEntity<>(errorApi, status);
+        return ResponseEntity.status(status)
+                .header(TiendaPorteDiagnostics.CORRELATION_ID_HEADER, TiendaPorteDiagnostics.currentCorrelationId())
+                .body(errorApi);
     }
 
     public static class DuplicateModelException extends RuntimeException {

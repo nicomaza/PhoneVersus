@@ -1,18 +1,43 @@
 <div class="container mt-4">
-    <h2>Listado de Teléfonos</h2>
+    <h2>Listado de Tel&eacute;fonos</h2>
 
-    <!-- Botón para agregar un nuevo teléfono -->
-    <a routerLink="/newphone" class="btn btn-primary mb-3">Nuevo Teléfono</a>
+    <section class="catalog-cache-panel mb-3">
+        <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
+            <div>
+                <h5 class="mb-2">Cache de cat&aacute;logo Tienda Porte</h5>
+                <div class="cache-status-grid">
+                    <span>Estado: <strong>{{ cacheStateLabel() }}</strong></span>
+                    <span>Ultima actualizacion: <strong>{{ formatDate(cacheStatus?.lastSuccessfulRefreshAt) }}</strong></span>
+                    <span>Edad: <strong>{{ snapshotAgeLabel() }}</strong></span>
+                    <span>Productos: <strong>{{ cacheStatus?.productCount ?? 0 }}</strong></span>
+                    <span>Version: <strong>{{ cacheStatus?.version ?? 0 }}</strong></span>
+                    <span>Proximo intento: <strong>{{ formatDate(cacheStatus?.nextAllowedRefreshAt) }}</strong></span>
+                </div>
+                <div *ngIf="cacheStatus?.lastError" class="text-danger mt-2">
+                    Ultimo error: {{ cacheStatus?.lastError }}
+                </div>
+            </div>
+            <div class="d-flex align-items-start">
+                <button
+                    type="button"
+                    class="btn btn-outline-primary"
+                    (click)="refreshCatalogCache()"
+                    [disabled]="cacheRefreshSubmitting || cacheStatus?.refreshing">
+                    {{ cacheStatus?.refreshing ? 'Actualizando...' : 'Actualizar catalogo' }}
+                </button>
+            </div>
+        </div>
+    </section>
 
-    <ng-select 
-    [items]="phoneList"
-    bindLabel="model"
-    bindValue="idModel"
-    (change)="search($event)">
-  </ng-select>
-  
+    <a routerLink="/newphone" class="btn btn-primary mb-3">Nuevo Tel&eacute;fono</a>
 
-    <!-- Tabla con los teléfonos -->
+    <ng-select
+        [items]="phoneList"
+        bindLabel="model"
+        bindValue="idModel"
+        (change)="search($event)">
+    </ng-select>
+
     <table class="table table-bordered">
         <thead>
             <tr>
@@ -33,8 +58,6 @@
 
                         <button class="btn btn-danger mx-1" (click)="deletephone(phone.idModel)">Eliminar</button>
                     </div>
-
-
                 </td>
             </tr>
         </tbody>

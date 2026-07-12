@@ -1,0 +1,56 @@
+<div class="admin-shell">
+  <aside class="admin-sidebar" [class.admin-sidebar-open]="menuOpen">
+    <div class="brand-block">
+      <span class="brand-mark">B</span>
+      <div>
+        <p class="brand-kicker">Cordoba Celulares</p>
+        <h1>Bombai</h1>
+      </div>
+    </div>
+
+    <nav class="admin-nav" aria-label="Navegacion de administracion">
+      <a
+        *ngFor="let item of navItems"
+        [routerLink]="item.path"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: true }"
+        (click)="closeMenu()">
+        <i class="bi" [ngClass]="item.icon" aria-hidden="true"></i>
+        <span>{{ item.label }}</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-note">
+      <i class="bi bi-shield-lock" aria-hidden="true"></i>
+      <span>TODO: proteger este panel con Nginx Basic Auth.</span>
+    </div>
+  </aside>
+
+  <div class="mobile-bar">
+    <button type="button" class="icon-button" (click)="toggleMenu()" [attr.aria-expanded]="menuOpen">
+      <i class="bi bi-list" aria-hidden="true"></i>
+      <span class="visually-hidden">Abrir menu</span>
+    </button>
+    <strong>Bombai</strong>
+  </div>
+
+  <button
+    *ngIf="menuOpen"
+    type="button"
+    class="admin-backdrop"
+    aria-label="Cerrar menu"
+    (click)="closeMenu()">
+  </button>
+
+  <main class="admin-main">
+    <header class="admin-header">
+      <div>
+        <p class="eyebrow">Panel interno</p>
+        <h2>{{ sectionTitle }}</h2>
+        <p>{{ sectionDescription }}</p>
+      </div>
+    </header>
+
+    <router-outlet></router-outlet>
+  </main>
+</div>

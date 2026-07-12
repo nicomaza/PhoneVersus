@@ -42,6 +42,7 @@ public class SupplierSheetServiceImpl implements SupplierSheetService {
 
     private final SupplierSheetProperties properties;
     private final HttpClient httpClient;
+    private final CatalogProductPolicy catalogProductPolicy;
     private final Object cacheLock = new Object();
 
     private List<SupplierSheetProduct> cachedProducts = List.of();
@@ -49,9 +50,14 @@ public class SupplierSheetServiceImpl implements SupplierSheetService {
     private Instant cacheExpiresAt = Instant.EPOCH;
     private boolean cacheLoaded = false;
 
-    public SupplierSheetServiceImpl(SupplierSheetProperties properties, HttpClient tiendaPorteHttpClient) {
+    public SupplierSheetServiceImpl(
+            SupplierSheetProperties properties,
+            HttpClient tiendaPorteHttpClient,
+            CatalogProductPolicy catalogProductPolicy
+    ) {
         this.properties = properties;
         this.httpClient = tiendaPorteHttpClient;
+        this.catalogProductPolicy = catalogProductPolicy;
     }
 
     @Override
@@ -240,7 +246,7 @@ public class SupplierSheetServiceImpl implements SupplierSheetService {
         }
 
         String modelName = buildModelName(brandMapping.originalBrand(), brandMapping.responseBrand(), modelValue);
-        if (TiendaPorteTextUtils.containsUnwantedProductPattern(modelName)) {
+        if (catalogProductPolicy.isExcludedProduct(modelName)) {
             return null;
         }
 

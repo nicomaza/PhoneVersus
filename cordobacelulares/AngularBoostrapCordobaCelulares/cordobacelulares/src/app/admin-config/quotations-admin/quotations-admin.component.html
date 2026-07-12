@@ -1,0 +1,100 @@
+<section class="admin-panel">
+  <div class="toolbar">
+    <div>
+      <h3>Cotizaciones y recargos</h3>
+      <p>Valores usados por el backend para calcular precios del catalogo.</p>
+    </div>
+    <button
+      *ngIf="configuration"
+      type="button"
+      class="danger-outline"
+      (click)="askDelete()"
+      [disabled]="saving">
+      <i class="bi bi-trash" aria-hidden="true"></i>
+      <span>Eliminar</span>
+    </button>
+  </div>
+
+  <div *ngIf="error" class="alert alert-danger compact-alert">{{ error }}</div>
+  <div *ngIf="success" class="alert alert-success compact-alert">{{ success }}</div>
+
+  <div class="summary-grid">
+    <div class="summary-card">
+      <span>Dolar billete</span>
+      <strong>{{ formatMoney(configuration?.dolarBillete) }}</strong>
+    </div>
+    <div class="summary-card">
+      <span>USDT</span>
+      <strong>{{ formatMoney(configuration?.usdt) }}</strong>
+    </div>
+    <div class="summary-card">
+      <span>Transferencia</span>
+      <strong>{{ formatPercent(configuration?.transferenciaBancaria) }}</strong>
+    </div>
+    <div class="summary-card">
+      <span>Ultima actualizacion</span>
+      <strong>{{ formatDate(configuration?.updatedAt) }}</strong>
+    </div>
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="save()" class="quotation-form">
+    <label>
+      <span>Dolar billete</span>
+      <input type="number" class="form-control" formControlName="dolarBillete" min="0.01" step="0.01">
+      <small *ngIf="controlInvalid('dolarBillete')">Debe ser mayor a cero.</small>
+    </label>
+
+    <label>
+      <span>USDT</span>
+      <input type="number" class="form-control" formControlName="usdt" min="0.01" step="0.01">
+      <small *ngIf="controlInvalid('usdt')">Debe ser mayor a cero.</small>
+    </label>
+
+    <label>
+      <span>Transferencia bancaria (%)</span>
+      <input type="number" class="form-control" formControlName="transferenciaBancaria" min="0" step="0.01">
+      <small *ngIf="controlInvalid('transferenciaBancaria')">Debe ser cero o mayor.</small>
+    </label>
+
+    <label>
+      <span>Tarjeta 3 pagos (%)</span>
+      <input type="number" class="form-control" formControlName="tarjeta3Pagos" min="0" step="0.01">
+      <small *ngIf="controlInvalid('tarjeta3Pagos')">Debe ser cero o mayor.</small>
+    </label>
+
+    <label>
+      <span>Tarjeta 6 pagos (%)</span>
+      <input type="number" class="form-control" formControlName="tarjeta6Pagos" min="0" step="0.01">
+      <small *ngIf="controlInvalid('tarjeta6Pagos')">Debe ser cero o mayor.</small>
+    </label>
+
+    <label>
+      <span>Tarjeta 12 pagos (%)</span>
+      <input type="number" class="form-control" formControlName="tarjeta12Pagos" min="0" step="0.01">
+      <small *ngIf="controlInvalid('tarjeta12Pagos')">Debe ser cero o mayor.</small>
+    </label>
+
+    <div class="form-footer">
+      <span *ngIf="loading">Cargando configuracion...</span>
+      <span *ngIf="!loading && !configuration">Todavia no existe una configuracion guardada.</span>
+      <button type="submit" class="primary-button" [disabled]="saving || form.invalid">
+        <i class="bi bi-save" aria-hidden="true"></i>
+        <span>{{ saving ? 'Guardando' : 'Guardar cotizaciones' }}</span>
+      </button>
+    </div>
+  </form>
+</section>
+
+<div *ngIf="confirmDelete" class="modal-layer" role="dialog" aria-modal="true">
+  <div class="modal-box">
+    <h4>Eliminar configuracion</h4>
+    <p>El catalogo no podra calcular precios hasta que vuelvas a cargar cotizaciones.</p>
+    <div class="form-actions">
+      <button type="button" class="secondary-button" (click)="cancelDelete()">Cancelar</button>
+      <button type="button" class="danger-button" (click)="deleteConfiguration()" [disabled]="saving">
+        <i class="bi bi-trash" aria-hidden="true"></i>
+        <span>Eliminar</span>
+      </button>
+    </div>
+  </div>
+</div>

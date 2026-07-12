@@ -1,9 +1,10 @@
 import { Component } from '@angular/core';
-import { Router, RouterOutlet } from '@angular/router';
+import { ActivatedRouteSnapshot, NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { HeaderComponent } from "./header/header.component";
 import { FooterComponent } from "./footer/footer.component";
 import { HttpClientModule } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
+import { filter } from 'rxjs';
 
 @Component({
   selector: 'app-root',
@@ -19,9 +20,21 @@ export class AppComponent {
   showHeaderFooter = true;
 
   constructor(private router: Router) {
-    this.router.events.subscribe(() => {
-      // Ocultar el header y footer si la ruta es '/login'
-      this.showHeaderFooter = !this.router.url.includes('/adminhorse');
-    });
+    this.router.events
+      .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
+      .subscribe(() => {
+        this.showHeaderFooter = !this.routeHidesPublicLayout(this.router.routerState.snapshot.root);
+      });
+  }
+
+  private routeHidesPublicLayout(route: ActivatedRouteSnapshot): boolean {
+    let current: ActivatedRouteSnapshot | null = route;
+    while (current) {
+      if (current.data['hidePublicLayout'] === true) {
+        return true;
+      }
+      current = current.firstChild;
+    }
+    return false;
   }
 }

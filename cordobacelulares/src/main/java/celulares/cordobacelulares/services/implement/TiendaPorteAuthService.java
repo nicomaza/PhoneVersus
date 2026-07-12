@@ -9,6 +9,7 @@ import celulares.cordobacelulares.exceptions.TiendaPorteIntegrationException;
 import celulares.cordobacelulares.exceptions.TiendaPorteTimeoutException;
 import celulares.cordobacelulares.repository.TiendaPorteCredentialRepository;
 import celulares.cordobacelulares.services.TiendaPorteAuthenticationInvalidator;
+import celulares.cordobacelulares.utils.TiendaPorteDiagnostics;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -92,15 +93,18 @@ public class TiendaPorteAuthService implements TiendaPorteAuthenticationInvalida
     }
 
     private void authenticate() {
-        TiendaPorteCredential credential = credentialRepository.findFirstByActivaTrueOrderByUpdatedAtDescIdDesc()
-                .orElseThrow(() -> new TiendaPorteAuthenticationException("No existe una credencial activa para Tienda Porte"));
+        TiendaPorteCredential credential = activeCredential();
         String username = credential.getUsername();
-        String plainPassword = credentialCipher.decrypt(credential.getEncryptedPassword());
+        String plainPassword = decryptPassword(credential);
         if (isBlank(username) || isBlank(plainPassword)) {
             throw new TiendaPorteAuthenticationException(AUTH_ERROR_MESSAGE);
         }
 
-        LOGGER.info("Iniciando autenticacion con Tienda Porte");
+        LOGGER.info(
+                "Iniciando autenticacion con Tienda Porte. cid={} username={}",
+                TiendaPorteDiagnostics.currentCorrelationId(),
+                TiendaPorteDiagnostics.maskUsername(username)
+        );
         cookieManager.getCookieStore().removeAll();
 
         String csrfToken = fetchCsrfToken();
@@ -108,13 +112,38 @@ public class TiendaPorteAuthService implements TiendaPorteAuthenticationInvalida
         TiendaPorteSessionResponse session = fetchSession();
 
         if (session.getUser() == null || isBlank(session.getUser().getAccessToken())) {
+            LOGGER.error("Tienda Porte session sin accessToken. cid={}", TiendaPorteDiagnostics.currentCorrelationId());
             throw new TiendaPorteAuthenticationException(AUTH_ERROR_MESSAGE);
         }
 
         Instant expiration = parseExpiration(session.getExpires());
         accessToken = session.getUser().getAccessToken();
         expiresAt = expiration;
-        LOGGER.info("Autenticacion con Tienda Porte completada");
+        LOGGER.info(
+                "Autenticacion con Tienda Porte completada. cid={} tokenObtenido={} expiresAt={}",
+                TiendaPorteDiagnostics.currentCorrelationId(),
+                true,
+                expiration
+        );
+    }
+
+    private TiendaPorteCredential activeCredential() {
+        try {
+            return credentialRepository.findFirstByActivaTrueOrderByUpdatedAtDescIdDesc()
+                    .orElseThrow(() -> new TiendaPorteAuthenticationException("No existe una credencial activa para Tienda Porte"));
+        } catch (TiendaPorteAuthenticationException ex) {
+            throw ex;
+        } catch (RuntimeException ex) {
+            throw new TiendaPorteAuthenticationException(AUTH_ERROR_MESSAGE, ex);
+        }
+    }
+
+    private String decryptPassword(TiendaPorteCredential credential) {
+        try {
+            return credentialCipher.decrypt(credential.getEncryptedPassword());
+        } catch (RuntimeException ex) {
+            throw new TiendaPorteAuthenticationException(AUTH_ERROR_MESSAGE, ex);
+        }
     }
 
     private String fetchCsrfToken() {
@@ -123,18 +152,32 @@ public class TiendaPorteAuthService implements TiendaPorteAuthenticationInvalida
                 .header("Accept", "application/json")
                 .GET()
                 .build();
-        HttpResponse<String> response = send(request, AUTH_ERROR_MESSAGE);
+        LOGGER.info("Solicitando CSRF a Tienda Porte. cid={} target={}", TiendaPorteDiagnostics.currentCorrelationId(), TiendaPorteDiagnostics.safeUriHostAndPath(request.uri()));
+        HttpResponse<String> response = send(request, "csrf", AUTH_ERROR_MESSAGE);
         if (!isSuccess(response.statusCode())) {
-            LOGGER.warn("Tienda Porte rechazo la obtencion de CSRF con estado {}", response.statusCode());
+            LOGGER.error(
+                    "Tienda Porte rechazo la obtencion de CSRF. cid={} status={} bodyPreview={}",
+                    TiendaPorteDiagnostics.currentCorrelationId(),
+                    response.statusCode(),
+                    TiendaPorteDiagnostics.safeBodyPreview(response.body())
+            );
             throw new TiendaPorteAuthenticationException(AUTH_ERROR_MESSAGE);
         }
         try {
             TiendaPorteCsrfResponse csrfResponse = objectMapper.readValue(response.body(), TiendaPorteCsrfResponse.class);
             if (csrfResponse == null || isBlank(csrfResponse.getCsrfToken())) {
+                LOGGER.error("Respuesta CSRF invalida de Tienda Porte. cid={} bodyPreview={}", TiendaPorteDiagnostics.currentCorrelationId(), TiendaPorteDiagnostics.safeBodyPreview(response.body()));
                 throw new TiendaPorteAuthenticationException(AUTH_ERROR_MESSAGE);
             }
+            LOGGER.info("CSRF recibido desde Tienda Porte. cid={} tokenObtenido={}", TiendaPorteDiagnostics.currentCorrelationId(), true);
             return csrfResponse.getCsrfToken();
         } catch (JsonProcessingException ex) {
+            LOGGER.error(
+                    "No se pudo parsear CSRF de Tienda Porte. cid={} bodyPreview={}",
+                    TiendaPorteDiagnostics.currentCorrelationId(),
+                    TiendaPorteDiagnostics.safeBodyPreview(response.body()),
+                    ex
+            );
             throw new TiendaPorteAuthenticationException(AUTH_ERROR_MESSAGE, ex);
         }
     }
@@ -149,11 +192,23 @@ public class TiendaPorteAuthService implements TiendaPorteAuthenticationInvalida
                 .header("Referer", normalizedBaseUrl(properties.getAuthBaseUrl()) + "/")
                 .POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8))
                 .build();
-        HttpResponse<String> response = send(request, AUTH_ERROR_MESSAGE);
+        LOGGER.info(
+                "Enviando credenciales a Tienda Porte. cid={} username={} target={}",
+                TiendaPorteDiagnostics.currentCorrelationId(),
+                TiendaPorteDiagnostics.maskUsername(username),
+                TiendaPorteDiagnostics.safeUriHostAndPath(request.uri())
+        );
+        HttpResponse<String> response = send(request, "login", AUTH_ERROR_MESSAGE);
         if (!isSuccess(response.statusCode())) {
-            LOGGER.warn("Tienda Porte rechazo las credenciales con estado {}", response.statusCode());
+            LOGGER.error(
+                    "Tienda Porte rechazo las credenciales. cid={} status={} bodyPreview={}",
+                    TiendaPorteDiagnostics.currentCorrelationId(),
+                    response.statusCode(),
+                    TiendaPorteDiagnostics.safeBodyPreview(response.body())
+            );
             throw new TiendaPorteAuthenticationException(AUTH_ERROR_MESSAGE);
         }
+        LOGGER.info("Credenciales aceptadas por Tienda Porte. cid={} status={}", TiendaPorteDiagnostics.currentCorrelationId(), response.statusCode());
     }
 
     private TiendaPorteSessionResponse fetchSession() {
@@ -162,21 +217,45 @@ public class TiendaPorteAuthService implements TiendaPorteAuthenticationInvalida
                 .header("Accept", "application/json")
                 .GET()
                 .build();
-        HttpResponse<String> response = send(request, AUTH_ERROR_MESSAGE);
+        LOGGER.info("Consultando sesion de Tienda Porte. cid={} target={}", TiendaPorteDiagnostics.currentCorrelationId(), TiendaPorteDiagnostics.safeUriHostAndPath(request.uri()));
+        HttpResponse<String> response = send(request, "session", AUTH_ERROR_MESSAGE);
         if (!isSuccess(response.statusCode())) {
-            LOGGER.warn("Tienda Porte rechazo la consulta de sesion con estado {}", response.statusCode());
+            LOGGER.error(
+                    "Tienda Porte rechazo la consulta de sesion. cid={} status={} bodyPreview={}",
+                    TiendaPorteDiagnostics.currentCorrelationId(),
+                    response.statusCode(),
+                    TiendaPorteDiagnostics.safeBodyPreview(response.body())
+            );
             throw new TiendaPorteAuthenticationException(AUTH_ERROR_MESSAGE);
         }
         try {
             return objectMapper.readValue(response.body(), TiendaPorteSessionResponse.class);
         } catch (JsonProcessingException ex) {
+            LOGGER.error(
+                    "No se pudo parsear sesion de Tienda Porte. cid={} bodyPreview={}",
+                    TiendaPorteDiagnostics.currentCorrelationId(),
+                    TiendaPorteDiagnostics.safeBodyPreview(response.body()),
+                    ex
+            );
             throw new TiendaPorteAuthenticationException(AUTH_ERROR_MESSAGE, ex);
         }
     }
 
-    private HttpResponse<String> send(HttpRequest request, String errorMessage) {
+    private HttpResponse<String> send(HttpRequest request, String operation, String errorMessage) {
+        long startNanos = System.nanoTime();
         try {
-            return httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+            long durationMs = (System.nanoTime() - startNanos) / 1_000_000;
+            LOGGER.info(
+                    "Tienda Porte auth response. cid={} operation={} status={} contentType={} durationMs={} bodySize={}",
+                    TiendaPorteDiagnostics.currentCorrelationId(),
+                    operation,
+                    response.statusCode(),
+                    response.headers().firstValue("Content-Type").orElse("-"),
+                    durationMs,
+                    TiendaPorteDiagnostics.bodySize(response.body())
+            );
+            return response;
         } catch (HttpTimeoutException ex) {
             throw new TiendaPorteTimeoutException("El proveedor externo no respondio dentro del tiempo permitido", ex);
         } catch (IOException ex) {
@@ -210,7 +289,11 @@ public class TiendaPorteAuthService implements TiendaPorteAuthenticationInvalida
     }
 
     private URI buildAuthUri(String path) {
-        return URI.create(normalizedBaseUrl(properties.getAuthBaseUrl()) + path);
+        try {
+            return URI.create(normalizedBaseUrl(properties.getAuthBaseUrl()) + path);
+        } catch (IllegalArgumentException ex) {
+            throw new TiendaPorteIntegrationException(AUTH_ERROR_MESSAGE, ex);
+        }
     }
 
     private String normalizedBaseUrl(String baseUrl) {
@@ -235,6 +318,7 @@ public class TiendaPorteAuthService implements TiendaPorteAuthenticationInvalida
         try {
             return Instant.parse(value);
         } catch (DateTimeParseException ex) {
+            LOGGER.error("No se pudo parsear expiracion de sesion de Tienda Porte. cid={} expires={}", TiendaPorteDiagnostics.currentCorrelationId(), value, ex);
             throw new TiendaPorteAuthenticationException(AUTH_ERROR_MESSAGE, ex);
         }
     }

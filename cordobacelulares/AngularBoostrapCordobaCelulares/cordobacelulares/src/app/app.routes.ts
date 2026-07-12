@@ -11,6 +11,11 @@ import { LoginComponent } from './admin/login/login.component';
 import { NewphoneComponent } from './admin/newphone/newphone.component';
 import { AdminphonelistComponent } from './admin/adminphonelist/adminphonelist.component';
 import { NuevosPreciosComponent } from './list-prices/nuevos-precios/nuevos-precios.component';
+import { AdminConfigLayoutComponent } from './admin-config/admin-config-layout/admin-config-layout.component';
+import { CredentialsAdminComponent } from './admin-config/credentials-admin/credentials-admin.component';
+import { QuotationsAdminComponent } from './admin-config/quotations-admin/quotations-admin.component';
+import { TiendaPorteProductsAdminComponent } from './admin-config/tienda-porte-products-admin/tienda-porte-products-admin.component';
+import { CatalogCacheAdminComponent } from './admin-config/catalog-cache-admin/catalog-cache-admin.component';
 
 
 export const routes: Routes = [{
@@ -58,6 +63,7 @@ export const routes: Routes = [{
 },
 {
     path: 'adminhorse',
+    data: { hidePublicLayout: true },
     component: LoginComponent
 },
 
@@ -72,6 +78,51 @@ export const routes: Routes = [{
 {
     path: 'adminphonelist',
     component: AdminphonelistComponent
+},
+{
+    path: 'config/bombai',
+    component: AdminConfigLayoutComponent,
+    data: { hidePublicLayout: true },
+    // TODO: proteger /config/bombai y los endpoints administrativos mediante Nginx Basic Auth.
+    children: [
+        {
+            path: '',
+            redirectTo: 'cotizaciones',
+            pathMatch: 'full'
+        },
+        {
+            path: 'credenciales',
+            component: CredentialsAdminComponent,
+            data: {
+                title: 'Credenciales',
+                description: 'Gestion de credenciales usadas para autenticar contra Tienda Porte.'
+            }
+        },
+        {
+            path: 'cotizaciones',
+            component: QuotationsAdminComponent,
+            data: {
+                title: 'Cotizaciones',
+                description: 'Cotizacion dolar, USDT y porcentajes de recargo usados por el catalogo.'
+            }
+        },
+        {
+            path: 'equipos',
+            component: TiendaPorteProductsAdminComponent,
+            data: {
+                title: 'Equipos Tienda Porte',
+                description: 'Consulta paginada del snapshot cacheado, sin llamadas nuevas al proveedor.'
+            }
+        },
+        {
+            path: 'actualizacion',
+            component: CatalogCacheAdminComponent,
+            data: {
+                title: 'Actualizacion',
+                description: 'Estado y refresh manual del cache centralizado de catalogo.'
+            }
+        }
+    ]
 },
 
 {

@@ -1,0 +1,137 @@
+<section class="admin-panel">
+  <div class="toolbar">
+    <div>
+      <h3>Equipos Tienda Porte</h3>
+      <p>Lectura administrativa desde el snapshot cacheado del catalogo.</p>
+    </div>
+    <button type="button" class="secondary-button" (click)="refresh()" [disabled]="loading">
+      <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
+      <span>Actualizar vista</span>
+    </button>
+  </div>
+
+  <div class="filters">
+    <label>
+      <span>Buscar</span>
+      <div class="search-box">
+        <i class="bi bi-search" aria-hidden="true"></i>
+        <input type="search" class="form-control" [formControl]="searchControl" placeholder="ID, marca, modelo o color">
+      </div>
+    </label>
+
+    <label>
+      <span>Categoria</span>
+      <select class="form-select" [formControl]="categoryControl">
+        <option *ngFor="let category of categories" [value]="category.value">{{ category.label }}</option>
+      </select>
+    </label>
+
+    <label>
+      <span>Stock</span>
+      <select class="form-select" [formControl]="stockControl">
+        <option *ngFor="let option of stockOptions" [value]="option.value">{{ option.label }}</option>
+      </select>
+    </label>
+
+    <label>
+      <span>Filas</span>
+      <select class="form-select" [formControl]="limitControl">
+        <option *ngFor="let limit of limitOptions" [ngValue]="limit">{{ limit }}</option>
+      </select>
+    </label>
+  </div>
+
+  <div *ngIf="error" class="alert alert-danger compact-alert">{{ error }}</div>
+
+  <div class="table-meta">
+    <span *ngIf="loading">Cargando equipos...</span>
+    <span *ngIf="!loading && response">{{ response.total }} filas encontradas</span>
+  </div>
+
+  <div class="table-wrap">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>
+            <button type="button" (click)="changeSort('id')">
+              <span>ID</span>
+              <i class="bi" [ngClass]="sortIcon('id')" aria-hidden="true"></i>
+            </button>
+          </th>
+          <th>
+            <button type="button" (click)="changeSort('marca')">
+              <span>Marca</span>
+              <i class="bi" [ngClass]="sortIcon('marca')" aria-hidden="true"></i>
+            </button>
+          </th>
+          <th>
+            <button type="button" (click)="changeSort('modelo')">
+              <span>Modelo</span>
+              <i class="bi" [ngClass]="sortIcon('modelo')" aria-hidden="true"></i>
+            </button>
+          </th>
+          <th>
+            <button type="button" (click)="changeSort('color')">
+              <span>Color</span>
+              <i class="bi" [ngClass]="sortIcon('color')" aria-hidden="true"></i>
+            </button>
+          </th>
+          <th>
+            <button type="button" (click)="changeSort('cantidad')">
+              <span>Stock</span>
+              <i class="bi" [ngClass]="sortIcon('cantidad')" aria-hidden="true"></i>
+            </button>
+          </th>
+          <th>
+            <button type="button" (click)="changeSort('precioUsd')">
+              <span>USD</span>
+              <i class="bi" [ngClass]="sortIcon('precioUsd')" aria-hidden="true"></i>
+            </button>
+          </th>
+          <th>
+            <button type="button" (click)="changeSort('precioPesos')">
+              <span>Pesos</span>
+              <i class="bi" [ngClass]="sortIcon('precioPesos')" aria-hidden="true"></i>
+            </button>
+          </th>
+          <th>Transferencia</th>
+          <th>3 pagos</th>
+          <th>6 pagos</th>
+          <th>12 pagos</th>
+          <th>Origen</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngIf="!loading && response?.data?.length === 0">
+          <td colspan="12" class="empty-cell">No hay equipos para los filtros seleccionados.</td>
+        </tr>
+        <tr *ngFor="let row of response?.data ?? []; trackBy: trackByRow">
+          <td>{{ row.id ?? '-' }}</td>
+          <td><span class="brand-pill">{{ row.marca }}</span></td>
+          <td class="model-cell">{{ row.modelo }}</td>
+          <td>{{ row.color }}</td>
+          <td>{{ stockLabel(row) }}</td>
+          <td>{{ formatUsd(row.precioUsd) }}</td>
+          <td class="price-cell">{{ formatMoney(row.precioPesos) }}</td>
+          <td>{{ formatMoney(row.precioTransferenciaBancaria) }}</td>
+          <td>{{ installment(row.precioTarjeta3Pagos, 3) }}</td>
+          <td>{{ installment(row.precioTarjeta6Pagos, 6) }}</td>
+          <td>{{ installment(row.precioTarjeta12Pagos, 12) }}</td>
+          <td>{{ row.origen }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="pager" *ngIf="response">
+    <button type="button" class="secondary-button" (click)="goToPage(page - 1)" [disabled]="loading || page <= 1">
+      <i class="bi bi-chevron-left" aria-hidden="true"></i>
+      <span>Anterior</span>
+    </button>
+    <span>Pagina {{ response.page }} de {{ response.totalPages || 1 }}</span>
+    <button type="button" class="secondary-button" (click)="goToPage(page + 1)" [disabled]="loading || !response.hasNext">
+      <span>Siguiente</span>
+      <i class="bi bi-chevron-right" aria-hidden="true"></i>
+    </button>
+  </div>
+</section>

@@ -13,13 +13,13 @@ import celulares.cordobacelulares.repository.ModelJPA;
 import celulares.cordobacelulares.repository.PhoneJPA;
 import celulares.cordobacelulares.services.BrandService;
 import celulares.cordobacelulares.services.PhoneService;
+import celulares.cordobacelulares.utils.TiendaPorteTextUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -44,6 +44,9 @@ public class PhoneServiceImpl implements PhoneService {
     @Autowired
     BoxContentJPA boxContentJPA;
 
+    @Autowired
+    CatalogProductPolicy catalogProductPolicy;
+
 
     @Override
     public List<OnePhoneDto> getAllPhones() {
@@ -52,12 +55,13 @@ public class PhoneServiceImpl implements PhoneService {
 
         // Convertir la lista de PhoneEntity a lista de OnePhoneDto
         List<OnePhoneDto> onePhoneDtoList = listEntity.stream()
+                .filter(this::isAllowedPhone)
                 .map(phoneEntity -> {
                     OnePhoneDto phoneDto = modelMapper.map(phoneEntity, OnePhoneDto.class);
                     if (phoneEntity.getModel() != null) {
                         phoneDto.setModel(phoneEntity.getModel().getModelName());
                         // Asumiendo que ModelEntity tiene un método getBrand() para obtener la marca
-                        phoneDto.setBrand(phoneEntity.getModel().getBrand().getBrandName());
+                        phoneDto.setBrand(displayCategory(phoneEntity.getModel()));
                     }
 
                     // Convertir la lista de ColorEntity a una lista de cadenas
@@ -79,9 +83,10 @@ public class PhoneServiceImpl implements PhoneService {
         String[] searchTerms = textSearch.toLowerCase().split("\\s+");
         // Filtrar las entidades según el texto de búsqueda
         List<PhoneEntity> filteredEntities = listEntity.stream()
+                .filter(this::isAllowedPhone)
                 .filter(phoneEntity -> {
                     String modelName = phoneEntity.getModel().getModelName().toLowerCase();
-                    String brandName = phoneEntity.getModel().getBrand().getBrandName().toLowerCase();
+                    String brandName = displayCategory(phoneEntity.getModel()).toLowerCase();
 
                     // Verificar si todas las palabras están presentes en el nombre del modelo o en la marca
                     return java.util.Arrays.stream(searchTerms).allMatch(term ->
@@ -95,7 +100,7 @@ public class PhoneServiceImpl implements PhoneService {
                     SearchPhone phoneDto = modelMapper.map(phoneEntity, SearchPhone.class);
                     if (phoneEntity.getModel() != null) {
                         phoneDto.setModel(phoneEntity.getModel().getModelName());
-                        phoneDto.setBrand(phoneEntity.getModel().getBrand().getBrandName());
+                        phoneDto.setBrand(displayCategory(phoneEntity.getModel()));
                     }
                     return phoneDto;
                 })
@@ -108,7 +113,7 @@ public class PhoneServiceImpl implements PhoneService {
     @Override
     public OnePhoneDto getPhoneById(Long id) {
         PhoneEntity phoneEntity = phoneRepository.findById(id).orElse(null);
-        if (phoneEntity == null) {
+        if (phoneEntity == null || !isAllowedPhone(phoneEntity)) {
             return null; // O maneja el caso cuando no se encuentra la entidad
         }
 
@@ -118,7 +123,7 @@ public class PhoneServiceImpl implements PhoneService {
         if (phoneEntity.getModel() != null) {
             phoneDto.setModel(phoneEntity.getModel().getModelName());
             // Assuming ModelEntity has a method getBrand() or similar
-            phoneDto.setBrand(phoneEntity.getModel().getBrand().getBrandName());
+            phoneDto.setBrand(displayCategory(phoneEntity.getModel()));
         }
 
         return phoneDto;
@@ -176,7 +181,12 @@ public class PhoneServiceImpl implements PhoneService {
         // Obtener todas las entidades filtradas por la marca
 
 
-        List<PhoneEntity> phoneEntities = phoneRepository.findPhonesByBrandName(brand);
+        String requestedBrand = catalogProductPolicy.canonicalizeRequestedCategory(brand);
+        String requestedBrandKey = TiendaPorteTextUtils.normalize(requestedBrand == null ? brand : requestedBrand);
+        List<PhoneEntity> phoneEntities = phoneRepository.findAll().stream()
+                .filter(this::isAllowedPhone)
+                .filter(phoneEntity -> TiendaPorteTextUtils.normalize(displayCategory(phoneEntity.getModel())).equals(requestedBrandKey))
+                .toList();
 
         // Convertir las entidades a DTOs
         List<OnePhoneDto> onePhoneDtoList = phoneEntities.stream()
@@ -186,7 +196,7 @@ public class PhoneServiceImpl implements PhoneService {
                     // Establecer el nombre del modelo y la marca en el DTO
                     if (phoneEntity.getModel() != null) {
                         phoneDto.setModel(phoneEntity.getModel().getModelName());
-                        phoneDto.setBrand(phoneEntity.getModel().getBrand().getBrandName());
+                        phoneDto.setBrand(displayCategory(phoneEntity.getModel()));
                     }
                     return phoneDto;
                 })
@@ -198,6 +208,7 @@ public class PhoneServiceImpl implements PhoneService {
     @Override
     public PostNewPhone getPhoneByIdEditDto(Long id) {
         return phoneRepository.findById(id)
+                .filter(this::isAllowedPhone)
                 .map(phone -> new PostNewPhone(
                         phone.getIdPhone(),
                         phone.getImages(),
@@ -224,4 +235,18 @@ public class PhoneServiceImpl implements PhoneService {
     }
 
 
+    private boolean isAllowedPhone(PhoneEntity phoneEntity) {
+        return phoneEntity != null
+                && phoneEntity.getModel() != null
+                && !catalogProductPolicy.isExcludedProduct(phoneEntity.getModel().getModelName());
+    }
+
+    private String displayCategory(ModelEntity model) {
+        if (model == null) {
+            return null;
+        }
+        String brandName = model.getBrand() == null ? null : model.getBrand().getBrandName();
+        String canonical = catalogProductPolicy.resolveCanonicalCategory(model.getModelName(), brandName);
+        return canonical == null ? brandName : canonical;
+    }
 }
