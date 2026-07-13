@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 @Service
 public class AdminCatalogService {
@@ -37,6 +38,7 @@ public class AdminCatalogService {
     private final DollarQuotationResolver dollarQuotationResolver;
     private final TiendaPortePriceCalculator priceCalculator;
     private final CatalogProductPolicy catalogProductPolicy;
+    private final BlockedCatalogProductService blockedCatalogProductService;
 
     // TODO: proteger esta ruta y estos endpoints mediante Nginx Basic Auth.
     public AdminCatalogService(
@@ -44,13 +46,15 @@ public class AdminCatalogService {
             PriceConfigurationService priceConfigurationService,
             DollarQuotationResolver dollarQuotationResolver,
             TiendaPortePriceCalculator priceCalculator,
-            CatalogProductPolicy catalogProductPolicy
+            CatalogProductPolicy catalogProductPolicy,
+            BlockedCatalogProductService blockedCatalogProductService
     ) {
         this.catalogCacheService = catalogCacheService;
         this.priceConfigurationService = priceConfigurationService;
         this.dollarQuotationResolver = dollarQuotationResolver;
         this.priceCalculator = priceCalculator;
         this.catalogProductPolicy = catalogProductPolicy;
+        this.blockedCatalogProductService = blockedCatalogProductService;
     }
 
     public AdminCatalogPageResponse getProducts(
@@ -100,7 +104,12 @@ public class AdminCatalogService {
             BigDecimal dolarBilleteAplicado
     ) {
         List<AdminCatalogProductRowResponse> rows = new ArrayList<>();
-        CatalogProductPolicy.SelectionResult selectionResult = catalogProductPolicy.selectPublishableTiendaPorteProducts(catalogCacheService.getProducts(), null);
+        Set<Long> blockedExternalProductIds = blockedCatalogProductService.currentFilter().externalProductIds();
+        List<TiendaPorteExternalProduct> publishableCandidates = catalogCacheService.getProducts()
+                .stream()
+                .filter(product -> !blockedCatalogProductService.isBlockedTiendaPorteProduct(product, blockedExternalProductIds))
+                .toList();
+        CatalogProductPolicy.SelectionResult selectionResult = catalogProductPolicy.selectPublishableTiendaPorteProducts(publishableCandidates, null);
         logProcessingSummary(selectionResult.stats());
         for (CatalogProductPolicy.ProductSelection selection : selectionResult.selections()) {
             TiendaPorteExternalProduct product = selection.product();

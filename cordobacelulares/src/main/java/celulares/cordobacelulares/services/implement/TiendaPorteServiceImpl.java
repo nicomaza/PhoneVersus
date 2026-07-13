@@ -75,6 +75,7 @@ public class TiendaPorteServiceImpl implements TiendaPorteService {
     private final DollarQuotationResolver dollarQuotationResolver;
     private final TiendaPortePriceCalculator priceCalculator;
     private final CatalogProductPolicy catalogProductPolicy;
+    private final BlockedCatalogProductService blockedCatalogProductService;
 
     public TiendaPorteServiceImpl(
             TiendaPorteCatalogCacheService catalogCacheService,
@@ -82,7 +83,8 @@ public class TiendaPorteServiceImpl implements TiendaPorteService {
             SupplierSheetService supplierSheetService,
             DollarQuotationResolver dollarQuotationResolver,
             TiendaPortePriceCalculator priceCalculator,
-            CatalogProductPolicy catalogProductPolicy
+            CatalogProductPolicy catalogProductPolicy,
+            BlockedCatalogProductService blockedCatalogProductService
     ) {
         this.catalogCacheService = catalogCacheService;
         this.priceConfigurationService = priceConfigurationService;
@@ -90,14 +92,17 @@ public class TiendaPorteServiceImpl implements TiendaPorteService {
         this.dollarQuotationResolver = dollarQuotationResolver;
         this.priceCalculator = priceCalculator;
         this.catalogProductPolicy = catalogProductPolicy;
+        this.blockedCatalogProductService = blockedCatalogProductService;
     }
 
     @Override
     public List<TiendaPorteBrandResponse> getAll(BigDecimal cotizacionDolar, String cotizacionDolarHeader) {
         PriceConfiguration configuration = priceConfigurationService.getRequiredForCatalog();
         BigDecimal dolarBilleteAplicado = dollarQuotationResolver.resolve(cotizacionDolarHeader, cotizacionDolar, configuration);
-        List<TiendaPorteBrandResponse> catalog = buildCatalog(catalogCacheService.getProducts(), configuration, dolarBilleteAplicado, null);
-        return addSupplierSheetMissingProducts(catalog, configuration, dolarBilleteAplicado, null);
+        BlockedCatalogProductService.BlockedCatalogFilter blockedFilter = blockedCatalogProductService.currentFilter();
+        List<TiendaPorteExternalProduct> products = filterBlockedProducts(catalogCacheService.getProducts(), blockedFilter.externalProductIds());
+        List<TiendaPorteBrandResponse> catalog = buildCatalog(products, configuration, dolarBilleteAplicado, null);
+        return addSupplierSheetMissingProducts(catalog, configuration, dolarBilleteAplicado, null, blockedFilter.normalizedModelKeys());
     }
 
     @Override
@@ -109,8 +114,10 @@ public class TiendaPorteServiceImpl implements TiendaPorteService {
 
         PriceConfiguration configuration = priceConfigurationService.getRequiredForCatalog();
         BigDecimal dolarBilleteAplicado = dollarQuotationResolver.resolve(cotizacionDolarHeader, cotizacionDolar, configuration);
-        List<TiendaPorteBrandResponse> catalog = buildCatalog(catalogCacheService.getProducts(), configuration, dolarBilleteAplicado, null);
-        catalog = addSupplierSheetMissingProducts(catalog, configuration, dolarBilleteAplicado, null);
+        BlockedCatalogProductService.BlockedCatalogFilter blockedFilter = blockedCatalogProductService.currentFilter();
+        List<TiendaPorteExternalProduct> products = filterBlockedProducts(catalogCacheService.getProducts(), blockedFilter.externalProductIds());
+        List<TiendaPorteBrandResponse> catalog = buildCatalog(products, configuration, dolarBilleteAplicado, null);
+        catalog = addSupplierSheetMissingProducts(catalog, configuration, dolarBilleteAplicado, null, blockedFilter.normalizedModelKeys());
         return filterBySearch(catalog, normalizedQuery);
     }
 
@@ -118,8 +125,10 @@ public class TiendaPorteServiceImpl implements TiendaPorteService {
     public List<TiendaPorteBrandResponse> getAllowedCategories(BigDecimal cotizacionDolar, String cotizacionDolarHeader) {
         PriceConfiguration configuration = priceConfigurationService.getRequiredForCatalog();
         BigDecimal dolarBilleteAplicado = dollarQuotationResolver.resolve(cotizacionDolarHeader, cotizacionDolar, configuration);
-        List<TiendaPorteBrandResponse> catalog = buildCatalog(mainCategoryProducts(catalogCacheService.getProducts()), configuration, dolarBilleteAplicado, null);
-        return addSupplierSheetMissingProducts(catalog, configuration, dolarBilleteAplicado, null);
+        BlockedCatalogProductService.BlockedCatalogFilter blockedFilter = blockedCatalogProductService.currentFilter();
+        List<TiendaPorteExternalProduct> products = filterBlockedProducts(catalogCacheService.getProducts(), blockedFilter.externalProductIds());
+        List<TiendaPorteBrandResponse> catalog = buildCatalog(mainCategoryProducts(products), configuration, dolarBilleteAplicado, null);
+        return addSupplierSheetMissingProducts(catalog, configuration, dolarBilleteAplicado, null, blockedFilter.normalizedModelKeys());
     }
 
     @Override
@@ -136,13 +145,17 @@ public class TiendaPorteServiceImpl implements TiendaPorteService {
 
         PriceConfiguration configuration = priceConfigurationService.getRequiredForCatalog();
         BigDecimal dolarBilleteAplicado = dollarQuotationResolver.resolve(cotizacionDolarHeader, cotizacionDolar, configuration);
+        BlockedCatalogProductService.BlockedCatalogFilter blockedFilter = blockedCatalogProductService.currentFilter();
         if (isSupplierOnlyCategory(normalizedCategory)) {
-            return supplierOnlyCategoryResponse(normalizedCategory, safePage, safeLimit, configuration, dolarBilleteAplicado);
+            return supplierOnlyCategoryResponse(normalizedCategory, safePage, safeLimit, configuration, dolarBilleteAplicado, blockedFilter.normalizedModelKeys());
         }
 
-        List<TiendaPorteExternalProduct> products = productsByCategory(catalogCacheService.getProducts(), normalizedCategory);
+        List<TiendaPorteExternalProduct> products = productsByCategory(
+                filterBlockedProducts(catalogCacheService.getProducts(), blockedFilter.externalProductIds()),
+                normalizedCategory
+        );
         List<TiendaPorteBrandResponse> data = buildCatalog(products, configuration, dolarBilleteAplicado, null);
-        data = addSupplierSheetMissingProducts(data, configuration, dolarBilleteAplicado, normalizedCategory);
+        data = addSupplierSheetMissingProducts(data, configuration, dolarBilleteAplicado, normalizedCategory, blockedFilter.normalizedModelKeys());
 
         int total = countModels(data);
         int totalPages = totalPages(total, safeLimit);
@@ -177,9 +190,10 @@ public class TiendaPorteServiceImpl implements TiendaPorteService {
             int page,
             int limit,
             PriceConfiguration configuration,
-            BigDecimal dolarBilleteAplicado
+            BigDecimal dolarBilleteAplicado,
+            Set<String> blockedNormalizedModelKeys
     ) {
-        List<TiendaPorteBrandResponse> sheetData = addSupplierSheetMissingProducts(List.of(), configuration, dolarBilleteAplicado, category);
+        List<TiendaPorteBrandResponse> sheetData = addSupplierSheetMissingProducts(List.of(), configuration, dolarBilleteAplicado, category, blockedNormalizedModelKeys);
         int total = countModels(sheetData);
         int totalPages = totalPages(total, limit);
         return new TiendaPorteCategoryPageResponse(
@@ -338,7 +352,8 @@ public class TiendaPorteServiceImpl implements TiendaPorteService {
             List<TiendaPorteBrandResponse> catalog,
             PriceConfiguration configuration,
             BigDecimal dolarBilleteAplicado,
-            String categoryFilter
+            String categoryFilter,
+            Set<String> blockedNormalizedModelKeys
     ) {
         List<SupplierSheetProduct> supplierProducts = supplierSheetService.getProducts();
         if (supplierProducts.isEmpty()) {
@@ -358,6 +373,10 @@ public class TiendaPorteServiceImpl implements TiendaPorteService {
             }
 
             String brandName = supplierBrandName(product);
+            if (isBlockedSupplierProduct(product, brandName, blockedNormalizedModelKeys)) {
+                continue;
+            }
+
             String brandKey = normalizedKey(brandName, DEFAULT_BRAND);
             if (!normalizedCategoryFilter.isBlank() && !brandKey.equals(normalizedCategoryFilter)) {
                 continue;
@@ -387,6 +406,23 @@ public class TiendaPorteServiceImpl implements TiendaPorteService {
 
         LOGGER.info("Supplier Sheet: {} productos faltantes agregados al catalogo{}", added, categoryFilter == null ? "" : " para categoria " + categoryFilter);
         return sortCatalog(response);
+    }
+
+    private List<TiendaPorteExternalProduct> filterBlockedProducts(List<TiendaPorteExternalProduct> products, Set<Long> blockedExternalProductIds) {
+        if (products == null || products.isEmpty() || blockedExternalProductIds == null || blockedExternalProductIds.isEmpty()) {
+            return products == null ? List.of() : products;
+        }
+        return products.stream()
+                .filter(product -> !blockedCatalogProductService.isBlockedTiendaPorteProduct(product, blockedExternalProductIds))
+                .toList();
+    }
+
+    private boolean isBlockedSupplierProduct(SupplierSheetProduct product, String brandName, Set<String> blockedNormalizedModelKeys) {
+        if (blockedNormalizedModelKeys == null || blockedNormalizedModelKeys.isEmpty()) {
+            return false;
+        }
+        String normalizedModelKey = blockedCatalogProductService.normalizedModelKey(brandName, product == null ? null : product.modelName());
+        return !normalizedModelKey.isBlank() && blockedNormalizedModelKeys.contains(normalizedModelKey);
     }
 
     private List<TiendaPorteBrandResponse> mutableCatalog(List<TiendaPorteBrandResponse> catalog) {

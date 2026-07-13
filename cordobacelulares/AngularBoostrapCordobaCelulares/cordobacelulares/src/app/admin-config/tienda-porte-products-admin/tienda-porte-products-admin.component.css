@@ -3,6 +3,7 @@
 }
 
 .admin-panel {
+  position: relative;
   background: #fff;
   border: 1px solid #dfe3ea;
   border-radius: 8px;
@@ -13,7 +14,8 @@
 .toolbar,
 .filters,
 .table-meta,
-.pager {
+.pager,
+.view-switch {
   display: flex;
   align-items: center;
 }
@@ -21,7 +23,7 @@
 .toolbar {
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 .toolbar h3 {
@@ -36,18 +38,54 @@
   color: #64748b;
 }
 
-.secondary-button {
+.view-switch {
+  width: fit-content;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 16px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.view-switch button {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #475569;
+  font-weight: 800;
+}
+
+.view-switch button.active {
+  background: #111827;
+  color: #fff;
+  box-shadow: 0 6px 14px rgba(15, 23, 42, .16);
+}
+
+.secondary-button,
+.danger-button {
   min-height: 38px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   padding: 0 14px;
-  border: 1px solid #cbd5e1;
   border-radius: 8px;
+  font-weight: 700;
+}
+
+.secondary-button {
+  border: 1px solid #cbd5e1;
   background: #fff;
   color: #334155;
-  font-weight: 700;
+}
+
+.danger-button {
+  border: 1px solid #fecaca;
+  background: #fff5f5;
+  color: #b91c1c;
 }
 
 button:disabled {
@@ -112,8 +150,12 @@ button:disabled {
 
 .admin-table {
   width: 100%;
-  min-width: 1280px;
+  min-width: 1080px;
   border-collapse: collapse;
+}
+
+.blocked-table {
+  min-width: 820px;
 }
 
 .admin-table th,
@@ -163,6 +205,32 @@ button:disabled {
   white-space: nowrap;
 }
 
+.price-detail-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 7px;
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #111827;
+  font: inherit;
+  font-weight: 750;
+  text-align: left;
+}
+
+.price-detail-trigger i {
+  color: #64748b;
+  font-size: .92rem;
+}
+
+.row-action {
+  min-width: 128px;
+  min-height: 34px;
+  white-space: nowrap;
+}
+
 .empty-cell {
   text-align: center;
   color: #64748b !important;
@@ -176,9 +244,45 @@ button:disabled {
   font-weight: 700;
 }
 
+.payment-tooltip-floating {
+  position: fixed;
+  z-index: 1080;
+  width: min(280px, calc(100vw - 24px));
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  color: #111827;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, .22);
+}
+
+.payment-tooltip-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 24px;
+  font-size: .9rem;
+}
+
+.payment-tooltip-line span {
+  color: #475569;
+}
+
+.payment-tooltip-line strong {
+  color: #111827;
+  white-space: nowrap;
+}
+
 @media (max-width: 760px) {
   .toolbar {
     align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .view-switch {
+    width: 100%;
+    align-items: stretch;
     flex-direction: column;
   }
 

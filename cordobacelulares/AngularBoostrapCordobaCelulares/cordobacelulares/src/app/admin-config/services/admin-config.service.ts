@@ -4,6 +4,7 @@ import { Observable, catchError, throwError } from 'rxjs';
 import {
   AdminCatalogPageResponse,
   AdminCatalogQuery,
+  BlockedCatalogProductResponse,
   CatalogCacheStatus,
   CatalogRefreshResponse,
   CredentialCreateRequest,
@@ -100,6 +101,21 @@ export class AdminConfigService {
     }
 
     return this.http.get<AdminCatalogPageResponse>(`${this.apiUrl}/admin/catalogo/equipos`, { params })
+      .pipe(catchError(error => this.handleError(error)));
+  }
+
+  getBlockedCatalogProducts(): Observable<BlockedCatalogProductResponse[]> {
+    return this.http.get<BlockedCatalogProductResponse[]>(`${this.apiUrl}/admin/catalogo/bloqueados`)
+      .pipe(catchError(error => this.handleError(error)));
+  }
+
+  blockCatalogProduct(externalProductId: number): Observable<BlockedCatalogProductResponse> {
+    return this.http.post<BlockedCatalogProductResponse>(`${this.apiUrl}/admin/catalogo/bloqueados/${externalProductId}`, {})
+      .pipe(catchError(error => this.handleError(error)));
+  }
+
+  unblockCatalogProduct(externalProductId: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/admin/catalogo/bloqueados/${externalProductId}`)
       .pipe(catchError(error => this.handleError(error)));
   }
 

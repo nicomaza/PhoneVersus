@@ -7,7 +7,7 @@ import { NgSelectModule } from '@ng-select/ng-select';
 import { PhonesService } from '../../services/phones.service';
 import Swal from 'sweetalert2';
 import { Subscription, interval } from 'rxjs';
-import { CatalogCacheService, CatalogCacheStatusResponse } from '../../services/catalog-cache.service';
+import { CatalogCacheDateValue, CatalogCacheService, CatalogCacheStatusResponse } from '../../services/catalog-cache.service';
 
 @Component({
   selector: 'app-adminphonelist',
@@ -126,7 +126,11 @@ export class AdminphonelistComponent implements OnInit, OnDestroy {
     if (!this.cacheStatus?.lastSuccessfulRefreshAt) {
       return '-';
     }
-    const lastSuccess = new Date(this.cacheStatus.lastSuccessfulRefreshAt).getTime();
+    const lastSuccessDate = this.parseCatalogCacheDate(this.cacheStatus.lastSuccessfulRefreshAt);
+    if (!lastSuccessDate) {
+      return '-';
+    }
+    const lastSuccess = lastSuccessDate.getTime();
     const elapsedSeconds = Math.max(0, Math.floor((Date.now() - lastSuccess) / 1000));
     if (elapsedSeconds < 60) {
       return `${elapsedSeconds}s`;
@@ -134,11 +138,32 @@ export class AdminphonelistComponent implements OnInit, OnDestroy {
     return `${Math.floor(elapsedSeconds / 60)}m ${elapsedSeconds % 60}s`;
   }
 
-  formatDate(value?: string | null): string {
-    if (!value) {
+  formatDate(value?: CatalogCacheDateValue): string {
+    const date = this.parseCatalogCacheDate(value);
+    if (!date) {
       return '-';
     }
-    return new Date(value).toLocaleString();
+    return date.toLocaleString('es-AR');
+  }
+
+  private parseCatalogCacheDate(value?: CatalogCacheDateValue): Date | null {
+    if (value === null || value === undefined) {
+      return null;
+    }
+    if (typeof value === 'number') {
+      const millis = Math.abs(value) < 1_000_000_000_000 ? value * 1000 : value;
+      const date = new Date(millis);
+      return Number.isNaN(date.getTime()) ? null : date;
+    }
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return null;
+    }
+    if (/^-?\d+(\.\d+)?$/.test(trimmed)) {
+      return this.parseCatalogCacheDate(Number(trimmed));
+    }
+    const date = new Date(trimmed);
+    return Number.isNaN(date.getTime()) ? null : date;
   }
 
   private startCatalogCachePolling(): void {

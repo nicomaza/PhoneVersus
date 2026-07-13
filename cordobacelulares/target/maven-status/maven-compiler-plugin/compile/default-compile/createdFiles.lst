@@ -3,6 +3,7 @@ celulares\cordobacelulares\dtos\tiendaporte\admin\AdminCatalogPageResponse.class
 celulares\cordobacelulares\services\TiendaPorteCredentialService.class
 celulares\cordobacelulares\dtos\BrandDto.class
 celulares\cordobacelulares\dtos\tiendaporte\external\TiendaPorteCategory.class
+celulares\cordobacelulares\dtos\tiendaporte\admin\BlockedCatalogProductResponse.class
 celulares\cordobacelulares\dtos\tiendaporte\response\TiendaPorteBrandResponse.class
 celulares\cordobacelulares\services\implement\SupplierSheetServiceImpl.class
 celulares\cordobacelulares\repository\PriceConfigurationRepository.class
@@ -13,6 +14,7 @@ celulares\cordobacelulares\exceptions\ApiNotFoundException.class
 celulares\cordobacelulares\services\implement\SupplierSheetServiceImpl$SupplierSheetSnapshot.class
 celulares\cordobacelulares\services\implement\BrandServiceImpl.class
 celulares\cordobacelulares\dtos\tiendaporte\credentials\TiendaPorteCredentialPatchRequest.class
+celulares\cordobacelulares\services\implement\BlockedCatalogProductService.class
 celulares\cordobacelulares\services\SupplierSheetService.class
 celulares\cordobacelulares\dtos\tiendaporte\external\TiendaPorteExternalProduct.class
 celulares\cordobacelulares\exceptions\ApiInternalException.class
@@ -76,11 +78,14 @@ celulares\cordobacelulares\config\RestClientConfig.class
 celulares\cordobacelulares\services\implement\SupplierSheetServiceImpl$SupplierSheetStats.class
 celulares\cordobacelulares\services\implement\ColorServiceImpl.class
 celulares\cordobacelulares\entities\BoxContentsEntity.class
+celulares\cordobacelulares\repository\BlockedCatalogProductRepository.class
 celulares\cordobacelulares\dtos\phonedto\SearchPhone.class
 celulares\cordobacelulares\dtos\tiendaporte\credentials\TiendaPorteCredentialCreateRequest.class
 celulares\cordobacelulares\dtos\tiendaporte\credentials\TiendaPorteCredentialUpdateRequest.class
 celulares\cordobacelulares\dtos\tiendaporte\external\TiendaPorteProductsResponse.class
 celulares\cordobacelulares\services\implement\TiendaPorteClient.class
+celulares\cordobacelulares\entities\BlockedCatalogProduct.class
+celulares\cordobacelulares\controller\BlockedCatalogProductController.class
 celulares\cordobacelulares\dtos\priceconfiguration\PriceConfigurationPatchRequest.class
 celulares\cordobacelulares\dtos\model\ModelNewDto.class
 celulares\cordobacelulares\exceptions\TiendaPorteAuthenticationException.class
@@ -133,6 +138,7 @@ celulares\cordobacelulares\services\implement\TiendaPorteServiceImpl.class
 celulares\cordobacelulares\config\TiendaPorteHttpClientConfig.class
 celulares\cordobacelulares\dtos\common\ErrorApi$ErrorApiBuilder.class
 celulares\cordobacelulares\services\BoxContentService.class
+celulares\cordobacelulares\services\implement\BlockedCatalogProductService$BlockedCatalogFilter.class
 celulares\cordobacelulares\services\implement\CatalogCategoryResolver$ResolveRequest.class
 celulares\cordobacelulares\services\implement\TiendaPorteCatalogCacheService.class
 celulares\cordobacelulares\services\implement\CatalogProductPolicy$ResolveRequest.class

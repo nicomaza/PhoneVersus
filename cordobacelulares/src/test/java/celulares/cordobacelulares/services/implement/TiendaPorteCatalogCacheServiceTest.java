@@ -2,11 +2,15 @@ package celulares.cordobacelulares.services.implement;
 
 import celulares.cordobacelulares.config.TiendaPorteProperties;
 import celulares.cordobacelulares.dtos.tiendaporte.cache.CatalogCacheRefreshResponse;
+import celulares.cordobacelulares.dtos.tiendaporte.cache.CatalogCacheStatusResponse;
 import celulares.cordobacelulares.dtos.tiendaporte.external.TiendaPorteCategory;
 import celulares.cordobacelulares.dtos.tiendaporte.external.TiendaPorteExternalProduct;
 import celulares.cordobacelulares.dtos.tiendaporte.external.TiendaPorteProductReference;
 import celulares.cordobacelulares.exceptions.TiendaPorteIntegrationException;
 import celulares.cordobacelulares.exceptions.TiendaPorteRateLimitException;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -26,6 +30,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -42,6 +47,31 @@ class TiendaPorteCatalogCacheServiceTest {
             refreshExecutor,
             false
     );
+
+    @Test
+    void statusResponseSerializesInstantsAsIsoStrings() throws JsonProcessingException {
+        CatalogCacheStatusResponse status = new CatalogCacheStatusResponse(
+                true,
+                true,
+                false,
+                false,
+                2,
+                412,
+                Instant.parse("2026-07-11T16:31:41.123Z"),
+                Instant.parse("2026-07-11T16:31:41.123Z"),
+                Instant.parse("2026-07-11T16:34:41.123Z"),
+                null,
+                null
+        );
+
+        String json = new ObjectMapper()
+                .registerModule(new JavaTimeModule())
+                .writeValueAsString(status);
+
+        assertThat(json).contains("\"lastSuccessfulRefreshAt\":\"2026-07-11T16:31:41.123Z\"");
+        assertThat(json).contains("\"expiresAt\":\"2026-07-11T16:34:41.123Z\"");
+        assertThat(json).doesNotContain("\"lastSuccessfulRefreshAt\":178");
+    }
 
     @AfterEach
     void shutdown() {
@@ -62,6 +92,41 @@ class TiendaPorteCatalogCacheServiceTest {
     }
 
     @Test
+    void currentSnapshotReadDoesNotInitializeOrRefreshCache() {
+        List<TiendaPorteExternalProduct> products = cacheService.getCurrentSnapshotProducts();
+
+        assertThat(products).isEmpty();
+        assertThat(cacheService.status().initialized()).isFalse();
+        verify(client, never()).getProducts();
+    }
+
+    @Test
+    void statusCalculatesExpirationAndFreshUsingThreeMinuteTtl() {
+        when(client.getProducts()).thenReturn(List.of(product("REALME C75X", "REALME")));
+
+        cacheService.getProducts();
+        CatalogCacheStatusResponse status = cacheService.status();
+
+        assertThat(status.lastSuccessfulRefreshAt()).isEqualTo(Instant.parse("2026-07-11T10:00:00Z"));
+        assertThat(status.expiresAt()).isEqualTo(Instant.parse("2026-07-11T10:03:00Z"));
+        assertThat(status.fresh()).isTrue();
+        assertThat(status.stale()).isFalse();
+    }
+
+    @Test
+    void statusIsStaleAfterExpiration() {
+        when(client.getProducts()).thenReturn(List.of(product("REALME C75X", "REALME")));
+
+        cacheService.getProducts();
+        clock.advance(Duration.ofMinutes(4));
+        CatalogCacheStatusResponse status = cacheService.status();
+
+        assertThat(status.fresh()).isFalse();
+        assertThat(status.stale()).isTrue();
+        assertThat(status.expiresAt()).isEqualTo(Instant.parse("2026-07-11T10:03:00Z"));
+    }
+
+    @Test
     void freshSnapshotIsReusedWithinTtl() {
         when(client.getProducts()).thenReturn(List.of(product("REALME C75X", "REALME")));
 
@@ -70,6 +135,25 @@ class TiendaPorteCatalogCacheServiceTest {
         cacheService.getProducts();
 
         verify(client, times(1)).getProducts();
+    }
+
+    @Test
+    void adminRefreshIncrementsVersionAndUpdatesAttemptTimestamps() {
+        when(client.getProducts())
+                .thenReturn(List.of(product("REALME C75X", "REALME")))
+                .thenReturn(List.of(product("REALME C85", "REALME")));
+
+        cacheService.getProducts();
+        clock.advance(Duration.ofMinutes(1));
+        CatalogCacheRefreshResponse response = cacheService.refreshFromAdmin();
+
+        assertThat(response.refreshStarted()).isTrue();
+        awaitVersion(2);
+        CatalogCacheStatusResponse status = cacheService.status();
+        assertThat(status.version()).isEqualTo(2);
+        assertThat(status.lastAttemptAt()).isEqualTo(Instant.parse("2026-07-11T10:01:00Z"));
+        assertThat(status.lastSuccessfulRefreshAt()).isEqualTo(Instant.parse("2026-07-11T10:01:00Z"));
+        assertThat(status.productCount()).isEqualTo(1);
     }
 
     @Test

@@ -83,6 +83,17 @@ export interface AdminCatalogPageResponse {
   data: AdminCatalogProductRow[];
 }
 
+export type ApiDateValue = string | number | null;
+
+export interface BlockedCatalogProductResponse {
+  id: number;
+  marca: string;
+  modelo: string;
+  precioUsd: number | null;
+  origen: string;
+  blockedAt: ApiDateValue;
+}
+
 export interface CatalogCacheStatus {
   initialized: boolean;
   fresh: boolean;
@@ -90,10 +101,10 @@ export interface CatalogCacheStatus {
   refreshing: boolean;
   version: number;
   productCount: number;
-  lastSuccessfulRefreshAt: string | null;
-  lastAttemptAt: string | null;
-  expiresAt: string | null;
-  nextAllowedRefreshAt: string | null;
+  lastSuccessfulRefreshAt: ApiDateValue;
+  lastAttemptAt: ApiDateValue;
+  expiresAt: ApiDateValue;
+  nextAllowedRefreshAt: ApiDateValue;
   lastError: string | null;
 }
 

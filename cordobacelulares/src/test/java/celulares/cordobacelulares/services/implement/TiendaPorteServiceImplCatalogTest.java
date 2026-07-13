@@ -15,10 +15,13 @@ import org.junit.jupiter.api.Test;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -33,7 +36,8 @@ class TiendaPorteServiceImplCatalogTest {
             null,
             null,
             new TiendaPortePriceCalculator(),
-            catalogProductPolicy
+            catalogProductPolicy,
+            null
     );
 
     @Test
@@ -87,7 +91,8 @@ class TiendaPorteServiceImplCatalogTest {
                 supplierSheetService,
                 new DollarQuotationResolver(),
                 new TiendaPortePriceCalculator(),
-                catalogProductPolicy
+                catalogProductPolicy,
+                emptyBlockedCatalogProductService()
         );
 
         List<TiendaPorteBrandResponse> catalog = cachedService.getAllowedCategories(null, null);
@@ -116,7 +121,8 @@ class TiendaPorteServiceImplCatalogTest {
                 supplierSheetService,
                 new DollarQuotationResolver(),
                 new TiendaPortePriceCalculator(),
-                catalogProductPolicy
+                catalogProductPolicy,
+                emptyBlockedCatalogProductService()
         );
 
         BigDecimal firstPrice = cachedService.getAll(null, null).get(0).getModelos().get(0).getPrecioPesos();
@@ -148,7 +154,8 @@ class TiendaPorteServiceImplCatalogTest {
                 supplierSheetService,
                 new DollarQuotationResolver(),
                 new TiendaPortePriceCalculator(),
-                catalogProductPolicy
+                catalogProductPolicy,
+                emptyBlockedCatalogProductService()
         );
 
         TiendaPorteCategoryPageResponse response = cachedService.getByCategory("REALME", 2, 1, null, null);
@@ -221,7 +228,8 @@ class TiendaPorteServiceImplCatalogTest {
                 supplierSheetService,
                 new DollarQuotationResolver(),
                 new TiendaPortePriceCalculator(),
-                catalogProductPolicy
+                catalogProductPolicy,
+                emptyBlockedCatalogProductService()
         );
 
         List<TiendaPorteBrandResponse> catalog = cachedService.getAll(null, null);
@@ -234,6 +242,43 @@ class TiendaPorteServiceImplCatalogTest {
                 .flatMap(brand -> brand.getModelos().stream())
                 .map(TiendaPorteModelResponse::getModeloNombre))
                 .doesNotContain("BATERIA IPHONE 6 ORIGINAL");
+    }
+
+    @Test
+    void blockedProductsAreExcludedFromTiendaPorteAndExactSupplierSheetMatch() {
+        TiendaPorteCatalogCacheService cacheService = mock(TiendaPorteCatalogCacheService.class);
+        PriceConfigurationService priceConfigurationService = mock(PriceConfigurationService.class);
+        SupplierSheetService supplierSheetService = mock(SupplierSheetService.class);
+
+        when(priceConfigurationService.getRequiredForCatalog()).thenReturn(priceConfiguration("1000"));
+        when(cacheService.getProducts()).thenReturn(List.of(
+                product(99L, "SAMSUNG A56", "SAMSUNG", "SAMSUNG", "320"),
+                product(100L, "SAMSUNG A35", "SAMSUNG", "SAMSUNG", "250")
+        ));
+        when(supplierSheetService.getProducts()).thenReturn(List.of(
+                supplierProduct("SAMSUNG", "SAMSUNG", "SAMSUNG A56", "320"),
+                supplierProduct("SAMSUNG", "SAMSUNG", "SAMSUNG A56 5G", "330")
+        ));
+
+        TiendaPorteServiceImpl cachedService = new TiendaPorteServiceImpl(
+                cacheService,
+                priceConfigurationService,
+                supplierSheetService,
+                new DollarQuotationResolver(),
+                new TiendaPortePriceCalculator(),
+                catalogProductPolicy,
+                blockedCatalogProductService(Set.of(99L), Set.of("samsung|samsunga56"))
+        );
+
+        List<String> models = cachedService.getAll(null, null)
+                .stream()
+                .flatMap(brand -> brand.getModelos().stream())
+                .map(TiendaPorteModelResponse::getModeloNombre)
+                .toList();
+
+        assertThat(models)
+                .contains("SAMSUNG A35", "SAMSUNG A56 5G")
+                .doesNotContain("SAMSUNG A56");
     }
 
     @Test
@@ -362,6 +407,21 @@ class TiendaPorteServiceImplCatalogTest {
         return brand.getModelos().stream()
                 .map(TiendaPorteModelResponse::getModeloNombre)
                 .toList();
+    }
+
+    private BlockedCatalogProductService emptyBlockedCatalogProductService() {
+        return blockedCatalogProductService(Set.of(), Set.of());
+    }
+
+    private BlockedCatalogProductService blockedCatalogProductService(Set<Long> blockedExternalProductIds, Set<String> blockedNormalizedModelKeys) {
+        BlockedCatalogProductService blockedCatalogProductService = mock(BlockedCatalogProductService.class);
+        when(blockedCatalogProductService.currentFilter())
+                .thenReturn(new BlockedCatalogProductService.BlockedCatalogFilter(blockedExternalProductIds, blockedNormalizedModelKeys));
+        when(blockedCatalogProductService.isBlockedTiendaPorteProduct(any(TiendaPorteExternalProduct.class), anySet()))
+                .thenCallRealMethod();
+        when(blockedCatalogProductService.normalizedModelKey(any(), any()))
+                .thenCallRealMethod();
+        return blockedCatalogProductService;
     }
 
     private TiendaPorteExternalProduct product(

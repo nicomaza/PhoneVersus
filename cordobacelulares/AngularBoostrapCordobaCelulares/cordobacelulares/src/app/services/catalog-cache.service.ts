@@ -2,6 +2,8 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
+export type CatalogCacheDateValue = string | number | null;
+
 export interface CatalogCacheStatusResponse {
   initialized: boolean;
   fresh: boolean;
@@ -9,10 +11,10 @@ export interface CatalogCacheStatusResponse {
   refreshing: boolean;
   version: number;
   productCount: number;
-  lastSuccessfulRefreshAt?: string | null;
-  lastAttemptAt?: string | null;
-  expiresAt?: string | null;
-  nextAllowedRefreshAt?: string | null;
+  lastSuccessfulRefreshAt?: CatalogCacheDateValue;
+  lastAttemptAt?: CatalogCacheDateValue;
+  expiresAt?: CatalogCacheDateValue;
+  nextAllowedRefreshAt?: CatalogCacheDateValue;
   lastError?: string | null;
 }
 
@@ -27,7 +29,7 @@ export interface CatalogCacheRefreshResponse {
   providedIn: 'root'
 })
 export class CatalogCacheService {
-  private readonly API_URL = 'http://localhost:8080/api/admin/catalogo/cache';
+  private readonly API_URL = 'https://www.cordobacelulares.com/api/admin/catalogo/cache';
 
   constructor(private http: HttpClient) { }
 

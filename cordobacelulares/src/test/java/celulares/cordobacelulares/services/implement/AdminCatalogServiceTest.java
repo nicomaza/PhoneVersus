@@ -12,8 +12,11 @@ import org.junit.jupiter.api.Test;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -29,7 +32,8 @@ class AdminCatalogServiceTest {
                 priceConfigurationService,
                 new DollarQuotationResolver(),
                 new TiendaPortePriceCalculator(),
-                new CatalogProductPolicy(new CatalogCategoryResolver())
+                new CatalogProductPolicy(new CatalogCategoryResolver()),
+                emptyBlockedCatalogProductService()
         );
 
         when(priceConfigurationService.getRequiredForCatalog()).thenReturn(priceConfiguration());
@@ -61,7 +65,8 @@ class AdminCatalogServiceTest {
                 priceConfigurationService,
                 new DollarQuotationResolver(),
                 new TiendaPortePriceCalculator(),
-                new CatalogProductPolicy(new CatalogCategoryResolver())
+                new CatalogProductPolicy(new CatalogCategoryResolver()),
+                emptyBlockedCatalogProductService()
         );
 
         when(priceConfigurationService.getRequiredForCatalog()).thenReturn(priceConfiguration());
@@ -87,7 +92,8 @@ class AdminCatalogServiceTest {
                 priceConfigurationService,
                 new DollarQuotationResolver(),
                 new TiendaPortePriceCalculator(),
-                new CatalogProductPolicy(new CatalogCategoryResolver())
+                new CatalogProductPolicy(new CatalogCategoryResolver()),
+                emptyBlockedCatalogProductService()
         );
 
         when(priceConfigurationService.getRequiredForCatalog()).thenReturn(priceConfiguration());
@@ -106,6 +112,34 @@ class AdminCatalogServiceTest {
                 .containsExactly("ARTICULOS VARIOS", "ARTICULOS VARIOS");
     }
 
+    @Test
+    void adminCatalogExcludesBlockedProductBeforeFlatteningColorRows() {
+        TiendaPorteCatalogCacheService cacheService = mock(TiendaPorteCatalogCacheService.class);
+        PriceConfigurationService priceConfigurationService = mock(PriceConfigurationService.class);
+        AdminCatalogService service = new AdminCatalogService(
+                cacheService,
+                priceConfigurationService,
+                new DollarQuotationResolver(),
+                new TiendaPortePriceCalculator(),
+                new CatalogProductPolicy(new CatalogCategoryResolver()),
+                blockedCatalogProductService(Set.of(123L))
+        );
+
+        when(priceConfigurationService.getRequiredForCatalog()).thenReturn(priceConfiguration());
+        when(cacheService.getProducts()).thenReturn(List.of(
+                product(123L, "REDMI NOTE 15 PRO", "XIAOMI", "420", Map.of("Black", 3, "Titanium", 2)),
+                product(456L, "SAMSUNG A56", "SAMSUNG", "300", Map.of("Gray", 1))
+        ));
+
+        AdminCatalogPageResponse response = service.getProducts(null, null, 1, 50, "id", "asc", "TIENDA_PORTE", "todos");
+
+        assertThat(response.getTotal()).isEqualTo(1);
+        assertThat(response.getData()).extracting(AdminCatalogProductRowResponse::getId)
+                .containsExactly(456L);
+        assertThat(response.getData()).extracting(AdminCatalogProductRowResponse::getModelo)
+                .containsExactly("SAMSUNG A56");
+    }
+
     private PriceConfiguration priceConfiguration() {
         PriceConfiguration configuration = new PriceConfiguration();
         configuration.setDolarBillete(new BigDecimal("1000"));
@@ -115,6 +149,19 @@ class AdminCatalogServiceTest {
         configuration.setTarjeta6Pagos(new BigDecimal("30"));
         configuration.setTarjeta12Pagos(new BigDecimal("40"));
         return configuration;
+    }
+
+    private BlockedCatalogProductService emptyBlockedCatalogProductService() {
+        return blockedCatalogProductService(Set.of());
+    }
+
+    private BlockedCatalogProductService blockedCatalogProductService(Set<Long> blockedExternalProductIds) {
+        BlockedCatalogProductService blockedCatalogProductService = mock(BlockedCatalogProductService.class);
+        when(blockedCatalogProductService.currentFilter())
+                .thenReturn(new BlockedCatalogProductService.BlockedCatalogFilter(blockedExternalProductIds, Set.of()));
+        when(blockedCatalogProductService.isBlockedTiendaPorteProduct(any(TiendaPorteExternalProduct.class), anySet()))
+                .thenCallRealMethod();
+        return blockedCatalogProductService;
     }
 
     private TiendaPorteExternalProduct product(Long id, String name, String categoryName, String priceUsd, Map<String, Integer> stock) {

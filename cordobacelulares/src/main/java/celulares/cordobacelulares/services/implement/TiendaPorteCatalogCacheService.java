@@ -105,6 +105,11 @@ public class TiendaPorteCatalogCacheService {
         return awaitInitialSnapshot(refreshStart.future()).productsCopy();
     }
 
+    public List<TiendaPorteExternalProduct> getCurrentSnapshotProducts() {
+        CatalogCacheSnapshot current = snapshot.get();
+        return current == null ? List.of() : current.productsCopy();
+    }
+
     public CatalogCacheStatusResponse status() {
         CatalogCacheSnapshot current = snapshot.get();
         Instant now = now();
