@@ -261,12 +261,24 @@ public class SupplierSheetServiceImpl implements SupplierSheetService {
 
     private BrandMapping mapBrand(String rawBrand) {
         String brandKey = TiendaPorteTextUtils.normalize(rawBrand);
-        return BRAND_MAPPINGS.get(brandKey);
+        if (brandKey.isBlank()) {
+            return null;
+        }
+        BrandMapping knownMapping = BRAND_MAPPINGS.get(brandKey);
+        if (knownMapping != null) {
+            return knownMapping;
+        }
+        String brand = clean(rawBrand).toUpperCase(Locale.ROOT);
+        return new BrandMapping(brand, CatalogCategoryResolver.ARTICULOS_VARIOS);
     }
 
     private String buildModelName(String originalBrand, String responseBrand, String modelValue) {
         String cleanModel = clean(modelValue);
-        String prefix = ("REDMI".equals(originalBrand) || "POCO".equals(originalBrand)) ? originalBrand : responseBrand;
+        String prefix = ("REDMI".equals(originalBrand)
+                || "POCO".equals(originalBrand)
+                || CatalogCategoryResolver.ARTICULOS_VARIOS.equals(responseBrand))
+                ? originalBrand
+                : responseBrand;
         if (TiendaPorteTextUtils.normalize(cleanModel).startsWith(TiendaPorteTextUtils.normalize(prefix))) {
             return cleanModel;
         }
@@ -480,6 +492,7 @@ public class SupplierSheetServiceImpl implements SupplierSheetService {
         putMapping(mappings, "POCO", "XIAOMI");
         putMapping(mappings, "SAMSUNG", "SAMSUNG");
         putMapping(mappings, "MOTOROLA", "MOTOROLA");
+        putMapping(mappings, "MOTO", "MOTOROLA");
         putMapping(mappings, "REALME", "REALME");
         putMapping(mappings, "INFINIX", "INFINIX");
         putMapping(mappings, "PRODUCTOS APPLE", "PRODUCTOS APPLE");
@@ -488,6 +501,7 @@ public class SupplierSheetServiceImpl implements SupplierSheetService {
         putMapping(mappings, "HUAWEI", "HUAWEI");
         putMapping(mappings, "HONOR", "HONOR");
         putMapping(mappings, "OPPO", "OPPO");
+        putMapping(mappings, "SONY", "SONY");
         return Map.copyOf(mappings);
     }
 

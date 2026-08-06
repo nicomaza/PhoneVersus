@@ -1,0 +1,55 @@
+-------------------------------------------------------------------------------
+Test set: celulares.cordobacelulares.services.implement.TiendaPortePriceCalculatorTest
+-------------------------------------------------------------------------------
+Tests run: 10, Failures: 4, Errors: 0, Skipped: 0, Time elapsed: 0.022 s <<< FAILURE! -- in celulares.cordobacelulares.services.implement.TiendaPortePriceCalculatorTest
+celulares.cordobacelulares.services.implement.TiendaPortePriceCalculatorTest.pesoPriceAvailableCalculatesSurchargesWithoutDollarQuotation -- Time elapsed: 0.016 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 
+
+expected: 100.00
+ but was: 0.00
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:500)
+	at celulares.cordobacelulares.services.implement.TiendaPortePriceCalculatorTest.pesoPriceAvailableCalculatesSurchargesWithoutDollarQuotation(TiendaPortePriceCalculatorTest.java:81)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+celulares.cordobacelulares.services.implement.TiendaPortePriceCalculatorTest.usdPriceWithoutDollarQuotationDoesNotCalculateInvalidPesoPrices -- Time elapsed: 0 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 
+
+expected: null
+ but was: 0.00
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:500)
+	at celulares.cordobacelulares.services.implement.TiendaPortePriceCalculatorTest.usdPriceWithoutDollarQuotationDoesNotCalculateInvalidPesoPrices(TiendaPortePriceCalculatorTest.java:58)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+celulares.cordobacelulares.services.implement.TiendaPortePriceCalculatorTest.zeroDollarQuotationDoesNotCalculateInvalidPesoPrices -- Time elapsed: 0 s <<< FAILURE!
+org.opentest4j.AssertionFailedError: 
+
+expected: null
+ but was: 0.00
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance0(Native Method)
+	at java.base/jdk.internal.reflect.NativeConstructorAccessorImpl.newInstance(NativeConstructorAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingConstructorAccessorImpl.newInstance(DelegatingConstructorAccessorImpl.java:45)
+	at java.base/java.lang.reflect.Constructor.newInstanceWithCaller(Constructor.java:500)
+	at celulares.cordobacelulares.services.implement.TiendaPortePriceCalculatorTest.zeroDollarQuotationDoesNotCalculateInvalidPesoPrices(TiendaPortePriceCalculatorTest.java:70)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+
+celulares.cordobacelulares.services.implement.TiendaPortePriceCalculatorTest.rejectsNegativePercentageAsInvalidConfiguration -- Time elapsed: 0 s <<< FAILURE!
+java.lang.AssertionError: 
+
+Expecting code to raise a throwable.
+	at celulares.cordobacelulares.services.implement.TiendaPortePriceCalculatorTest.rejectsNegativePercentageAsInvalidConfiguration(TiendaPortePriceCalculatorTest.java:93)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1511)
+

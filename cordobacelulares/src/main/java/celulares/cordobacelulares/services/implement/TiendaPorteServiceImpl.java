@@ -37,7 +37,6 @@ public class TiendaPorteServiceImpl implements TiendaPorteService {
     private static final Logger LOGGER = LoggerFactory.getLogger(TiendaPorteServiceImpl.class);
     private static final String DEFAULT_BRAND = "OTROS";
     private static final BigDecimal MONEY_ZERO = BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
-    private static final List<String> XIAOMI_FAMILY_PREFIXES = List.of("xiaomi", "redmi", "poco");
     private static final int NO_MATCH = Integer.MAX_VALUE;
     private static final int DEFAULT_CATEGORY_PAGE = 1;
     private static final int DEFAULT_CATEGORY_LIMIT = 50;
@@ -50,6 +49,7 @@ public class TiendaPorteServiceImpl implements TiendaPorteService {
             "PRODUCTOS APPLE",
             "PERFUMES",
             "REALME",
+            "SONY",
             "XIAOMI",
             "SAMSUNG"
     );
@@ -64,6 +64,7 @@ public class TiendaPorteServiceImpl implements TiendaPorteService {
             "PRODUCTOS APPLE",
             "PERFUMES",
             "REALME",
+            "SONY",
             "XIAOMI",
             "SAMSUNG",
             "OTROS"
@@ -315,15 +316,15 @@ public class TiendaPorteServiceImpl implements TiendaPorteService {
             String brandKey = normalizedKey(brandName, DEFAULT_BRAND);
             List<ModelPriceGroup> modelPriceGroups = priceGroups(product, priceUsd(product));
             for (ModelPriceGroup priceGroup : modelPriceGroups) {
-                String modelKey = modelKey(product, brandKey, modelName, priceGroup.priceUsd());
+                String modelKey = modelKey(brandKey, modelName, priceGroup.colors());
                 ModelAccumulator model = modelsByKey.get(modelKey);
                 if (model == null) {
                     BrandAccumulator brand = brandsByKey.computeIfAbsent(brandKey, key -> new BrandAccumulator(brandName));
-                    model = new ModelAccumulator(modelName, priceGroup.priceUsd());
+                    model = new ModelAccumulator(modelName);
                     brand.modelsByKey.put(modelKey, model);
                     modelsByKey.put(modelKey, model);
                 }
-                model.mergeColors(priceGroup.colors());
+                model.mergeOffer(priceGroup.priceUsd(), priceGroup.colors());
             }
         }
 
@@ -362,7 +363,7 @@ public class TiendaPorteServiceImpl implements TiendaPorteService {
 
         List<TiendaPorteBrandResponse> response = mutableCatalog(catalog);
         Map<String, TiendaPorteBrandResponse> brandsByKey = brandsByKey(response);
-        Map<String, Set<String>> duplicateKeysByBrand = duplicateKeysByBrand(response);
+        Set<CatalogVariantIdentity.VariantKey> tiendaPorteVariants = catalogVariantIdentities(response);
         String normalizedCategoryFilter = TiendaPorteTextUtils.normalize(categoryFilter);
         Set<String> addedSupplierKeys = new LinkedHashSet<>();
         int added = 0;
@@ -382,9 +383,11 @@ public class TiendaPorteServiceImpl implements TiendaPorteService {
                 continue;
             }
 
-            Set<String> productKeys = duplicateKeys(brandName, product.originalBrand(), product.modelName());
-            Set<String> existingKeys = duplicateKeysByBrand.computeIfAbsent(brandKey, key -> new LinkedHashSet<>());
-            if (productKeys.stream().anyMatch(existingKeys::contains)) {
+            CatalogVariantIdentity.VariantKey variantIdentity = CatalogVariantIdentity.from(
+                    product.originalBrand(),
+                    product.modelName()
+            );
+            if (variantIdentity != null && tiendaPorteVariants.contains(variantIdentity)) {
                 continue;
             }
             if (!addedSupplierKeys.add(supplierUniqueKey(brandName, product.modelName(), product.priceUsd()))) {
@@ -400,7 +403,6 @@ public class TiendaPorteServiceImpl implements TiendaPorteService {
                     }
             );
             brandResponse.getModelos().add(toSupplierModelResponse(product, configuration, dolarBilleteAplicado));
-            existingKeys.addAll(productKeys);
             added++;
         }
 
@@ -452,50 +454,29 @@ public class TiendaPorteServiceImpl implements TiendaPorteService {
         return brandsByKey;
     }
 
-    private Map<String, Set<String>> duplicateKeysByBrand(List<TiendaPorteBrandResponse> catalog) {
-        Map<String, Set<String>> keysByBrand = new HashMap<>();
+    private Set<CatalogVariantIdentity.VariantKey> catalogVariantIdentities(List<TiendaPorteBrandResponse> catalog) {
+        Set<CatalogVariantIdentity.VariantKey> identities = new LinkedHashSet<>();
         for (TiendaPorteBrandResponse brand : catalog) {
             if (brand == null || brand.getModelos() == null) {
                 continue;
             }
-            String brandKey = normalizedKey(brand.getMarca(), DEFAULT_BRAND);
-            Set<String> brandKeys = keysByBrand.computeIfAbsent(brandKey, key -> new LinkedHashSet<>());
             for (TiendaPorteModelResponse model : brand.getModelos()) {
                 if (model != null) {
-                    brandKeys.addAll(duplicateKeys(brand.getMarca(), brand.getMarca(), model.getModeloNombre()));
+                    CatalogVariantIdentity.VariantKey identity = CatalogVariantIdentity.from(
+                            brand.getMarca(),
+                            model.getModeloNombre()
+                    );
+                    if (identity != null && model.getOrigen() == CatalogProductOrigin.TIENDA_PORTE) {
+                        identities.add(identity);
+                    }
                 }
             }
         }
-        return keysByBrand;
+        return identities;
     }
 
     private String supplierBrandName(SupplierSheetProduct product) {
         return catalogProductPolicy.resolveCanonicalCategory(product, null);
-    }
-
-    private Set<String> duplicateKeys(String responseBrand, String originalBrand, String modelName) {
-        Set<String> keys = new LinkedHashSet<>();
-        String normalizedModel = TiendaPorteTextUtils.normalize(modelName);
-        if (normalizedModel.isBlank()) {
-            return keys;
-        }
-
-        String responseBrandKey = TiendaPorteTextUtils.normalize(responseBrand);
-        String originalBrandKey = TiendaPorteTextUtils.normalize(originalBrand);
-        String strippedModel = stripKnownBrandPrefix(normalizedModel, responseBrandKey, originalBrandKey);
-
-        addKey(keys, normalizedModel);
-        addKey(keys, strippedModel);
-        addPrefixedKey(keys, responseBrandKey, strippedModel);
-        addPrefixedKey(keys, originalBrandKey, strippedModel);
-
-        if (isXiaomiFamily(responseBrandKey) || isXiaomiFamily(originalBrandKey) || startsWithXiaomiFamilyPrefix(normalizedModel)) {
-            for (String prefix : XIAOMI_FAMILY_PREFIXES) {
-                addPrefixedKey(keys, prefix, strippedModel);
-            }
-        }
-
-        return keys;
     }
 
     private String supplierUniqueKey(String brandName, String modelName, BigDecimal priceUsd) {
@@ -506,45 +487,6 @@ public class TiendaPorteServiceImpl implements TiendaPorteService {
                 + normalizedPriceKey(priceUsd)
                 + "|"
                 + CatalogProductOrigin.GOOGLE_SHEET;
-    }
-
-    private String stripKnownBrandPrefix(String normalizedModel, String responseBrandKey, String originalBrandKey) {
-        List<String> prefixes = new ArrayList<>();
-        if (responseBrandKey != null && !responseBrandKey.isBlank()) {
-            prefixes.add(responseBrandKey);
-        }
-        if (originalBrandKey != null && !originalBrandKey.isBlank()) {
-            prefixes.add(originalBrandKey);
-        }
-        prefixes.addAll(XIAOMI_FAMILY_PREFIXES);
-
-        return prefixes.stream()
-                .distinct()
-                .sorted(Comparator.comparingInt(String::length).reversed())
-                .filter(prefix -> normalizedModel.startsWith(prefix) && normalizedModel.length() > prefix.length())
-                .findFirst()
-                .map(prefix -> normalizedModel.substring(prefix.length()))
-                .orElse(normalizedModel);
-    }
-
-    private boolean startsWithXiaomiFamilyPrefix(String normalizedModel) {
-        return XIAOMI_FAMILY_PREFIXES.stream().anyMatch(prefix -> normalizedModel.startsWith(prefix) && normalizedModel.length() > prefix.length());
-    }
-
-    private boolean isXiaomiFamily(String normalizedBrand) {
-        return XIAOMI_FAMILY_PREFIXES.contains(normalizedBrand);
-    }
-
-    private void addPrefixedKey(Set<String> keys, String prefix, String value) {
-        if (prefix != null && !prefix.isBlank() && value != null && !value.isBlank()) {
-            addKey(keys, prefix + value);
-        }
-    }
-
-    private void addKey(Set<String> keys, String key) {
-        if (key != null && !key.isBlank()) {
-            keys.add(key);
-        }
     }
 
     private TiendaPorteModelResponse toSupplierModelResponse(
@@ -686,16 +628,21 @@ public class TiendaPorteServiceImpl implements TiendaPorteService {
         }
 
         Map<String, BigDecimal> colorPricesByColor = colorPricesByColor(product.getProductReference());
-        Map<BigDecimal, List<ColorStockValue>> colorsByPrice = new HashMap<>();
-        for (ColorStockValue color : colors) {
-            BigDecimal price = priceForColor(color.colorName(), colorPricesByColor, safeFallbackPriceUsd);
-            colorsByPrice.computeIfAbsent(price, key -> new ArrayList<>()).add(color);
-        }
-
-        return colorsByPrice.entrySet().stream()
-                .sorted(Map.Entry.comparingByKey())
-                .map(entry -> new ModelPriceGroup(entry.getKey(), entry.getValue()))
+        List<ModelPriceGroup> variants = colors.stream()
+                .sorted(Comparator.comparing(ColorStockValue::colorName, String.CASE_INSENSITIVE_ORDER))
+                .map(color -> new ModelPriceGroup(
+                        priceForColor(color.colorName(), colorPricesByColor, safeFallbackPriceUsd),
+                        List.of(color)
+                ))
                 .toList();
+        boolean samePriceForEveryColor = variants.stream()
+                .map(ModelPriceGroup::priceUsd)
+                .distinct()
+                .count() == 1;
+        if (samePriceForEveryColor) {
+            return List.of(new ModelPriceGroup(variants.get(0).priceUsd(), colors));
+        }
+        return variants;
     }
 
     private List<ColorStockValue> colorStockValues(Map<String, Integer> colorStock) {
@@ -786,13 +733,13 @@ public class TiendaPorteServiceImpl implements TiendaPorteService {
         return colorName.trim().toLowerCase(Locale.ROOT);
     }
 
-    private String modelKey(TiendaPorteExternalProduct product, String brandKey, String modelName, BigDecimal priceUsd) {
-        TiendaPorteProductReference productReference = product.getProductReference();
-        String priceKey = normalizedPriceKey(priceUsd);
-        if (productReference != null && productReference.getId() != null) {
-            return brandKey + "|ref:" + productReference.getId() + "|" + priceKey;
-        }
-        return brandKey + "|name:" + normalizedKey(modelName, modelName) + "|" + priceKey;
+    private String modelKey(String brandKey, String modelName, List<ColorStockValue> colors) {
+        String variantColorKey = colors == null || colors.isEmpty()
+                ? "sin-color"
+                : colorKey(colors.get(0).colorName());
+        return brandKey
+                + "|model:" + normalizedKey(modelName, modelName)
+                + "|color:" + variantColorKey;
     }
 
     private String normalizedPriceKey(BigDecimal priceUsd) {
@@ -852,11 +799,10 @@ public class TiendaPorteServiceImpl implements TiendaPorteService {
 
         private final String modelName;
         private final Map<String, ColorAccumulator> colorsByKey = new HashMap<>();
-        private final BigDecimal priceUsd;
+        private BigDecimal priceUsd;
 
-        private ModelAccumulator(String modelName, BigDecimal priceUsd) {
+        private ModelAccumulator(String modelName) {
             this.modelName = modelName;
-            this.priceUsd = normalizeMoney(priceUsd);
         }
 
         private String getModelName() {
@@ -864,7 +810,7 @@ public class TiendaPorteServiceImpl implements TiendaPorteService {
         }
 
         private BigDecimal getPriceUsd() {
-            return priceUsd;
+            return priceUsd == null ? MONEY_ZERO : priceUsd;
         }
 
         private String firstColorName() {
@@ -872,6 +818,19 @@ public class TiendaPorteServiceImpl implements TiendaPorteService {
                     .map(ColorAccumulator::getColorName)
                     .min(String.CASE_INSENSITIVE_ORDER)
                     .orElse("");
+        }
+
+        private void mergeOffer(BigDecimal offeredPriceUsd, List<ColorStockValue> colors) {
+            BigDecimal normalizedOfferedPrice = normalizeMoney(offeredPriceUsd);
+            if (priceUsd == null || normalizedOfferedPrice.compareTo(priceUsd) < 0) {
+                priceUsd = normalizedOfferedPrice;
+                colorsByKey.clear();
+                mergeColors(colors);
+                return;
+            }
+            if (normalizedOfferedPrice.compareTo(priceUsd) == 0) {
+                mergeColors(colors);
+            }
         }
 
         private void mergeColors(List<ColorStockValue> colors) {
@@ -896,7 +855,7 @@ public class TiendaPorteServiceImpl implements TiendaPorteService {
                 BigDecimal dolarBilleteAplicado,
                 TiendaPortePriceCalculator priceCalculator
         ) {
-            TiendaPorteCalculatedPrices prices = priceCalculator.calculate(priceUsd, configuration, dolarBilleteAplicado);
+            TiendaPorteCalculatedPrices prices = priceCalculator.calculate(getPriceUsd(), configuration, dolarBilleteAplicado);
             List<TiendaPorteColorStockResponse> colors = colorsByKey.values().stream()
                     .sorted(Comparator.comparing(ColorAccumulator::getColorName, String.CASE_INSENSITIVE_ORDER))
                     .map(ColorAccumulator::toResponse)

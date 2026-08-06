@@ -1,0 +1,205 @@
+<section class="admin-panel comparativa-panel">
+  <div class="toolbar">
+    <div>
+      <h3>Comparativa</h3>
+      <p>Mis precios contra LiberadosYa usando coincidencias por marca y modelo.</p>
+    </div>
+    <button type="button" class="secondary-button" (click)="load()" [disabled]="loading">
+      <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
+      <span>Actualizar vista</span>
+    </button>
+  </div>
+
+  <div *ngIf="loading" class="loading-state" role="status">
+    <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+    <span>Comparando precios...</span>
+  </div>
+
+  <div *ngIf="error" class="alert alert-danger compact-alert">
+    {{ error }}
+    <button type="button" class="secondary-button retry-button" (click)="load()">Reintentar</button>
+  </div>
+
+  <ng-container *ngIf="response && !loading">
+    <div class="summary-grid">
+      <article class="metric-card">
+        <span>Transferencia sobre efectivo</span>
+        <strong>{{ metricValue(response.summary.competitorTransferMarkup, 'percent') }}</strong>
+        <small>{{ metricSub(response.summary.competitorTransferMarkup, 'percent') }}</small>
+      </article>
+
+      <article *ngIf="hasMetricData(response.summary.competitorCardMarkup)" class="metric-card">
+        <span>Tarjeta sobre efectivo</span>
+        <strong>{{ metricValue(response.summary.competitorCardMarkup, 'percent') }}</strong>
+        <small>{{ metricSub(response.summary.competitorCardMarkup, 'percent') }}</small>
+      </article>
+
+      <article class="metric-card">
+        <span>Cotizacion competencia sobre mi costo</span>
+        <strong>{{ metricValue(response.summary.competitorImplicitRateOnMyCost, 'rate') }}</strong>
+        <small>{{ metricSub(response.summary.competitorImplicitRateOnMyCost, 'rate') }}</small>
+      </article>
+
+      <article class="metric-card">
+        <span>Cotizacion implicita al cliente</span>
+        <strong>{{ metricValue(response.summary.competitorCustomerExchangeRate, 'rate') }}</strong>
+        <small>{{ metricSub(response.summary.competitorCustomerExchangeRate, 'rate') }}</small>
+      </article>
+
+      <article class="metric-card result-card is-cheaper">
+        <span>Yo mas barato</span>
+        <strong>{{ response.summary.mineCheaperCount }}</strong>
+        <small>{{ formatPercent(response.summary.mineCheaperPercent) }} de comparables</small>
+      </article>
+
+      <article class="metric-card result-card is-expensive">
+        <span>Yo mas caro</span>
+        <strong>{{ response.summary.mineMoreExpensiveCount }}</strong>
+        <small>{{ formatPercent(response.summary.mineMoreExpensivePercent) }} de comparables</small>
+      </article>
+
+      <article class="metric-card result-card is-mixed">
+        <span>Resultado mixto</span>
+        <strong>{{ response.summary.mixedCount }}</strong>
+        <small>{{ response.summary.comparableProducts }} productos comparables</small>
+      </article>
+    </div>
+
+    <div class="filters">
+      <label>
+        <span>Buscar</span>
+        <div class="search-box">
+          <i class="bi bi-search" aria-hidden="true"></i>
+          <input type="search" class="form-control" [formControl]="searchControl" placeholder="Marca o modelo">
+        </div>
+      </label>
+
+      <label>
+        <span>Marca</span>
+        <select class="form-select" [formControl]="brandControl">
+          <option *ngFor="let option of brandOptions" [value]="option.value">{{ option.label }}</option>
+        </select>
+      </label>
+
+      <label>
+        <span>Resultado</span>
+        <select class="form-select" [formControl]="statusControl">
+          <option *ngFor="let option of statusOptions" [value]="option.value">{{ option.label }}</option>
+        </select>
+      </label>
+
+      <label>
+        <span>Comparacion</span>
+        <select class="form-select" [formControl]="availabilityControl">
+          <option *ngFor="let option of availabilityOptions" [value]="option.value">{{ option.label }}</option>
+        </select>
+      </label>
+
+      <label>
+        <span>Orden</span>
+        <select class="form-select" [formControl]="sortControl">
+          <option *ngFor="let option of sortOptions" [value]="option.value">{{ option.label }}</option>
+        </select>
+      </label>
+
+      <button type="button" class="secondary-button clear-button" (click)="clearFilters()">
+        <i class="bi bi-x-circle" aria-hidden="true"></i>
+        <span>Limpiar</span>
+      </button>
+    </div>
+
+    <div class="table-meta">
+      <span>{{ visibleRows.length }} de {{ rows.length }} productos</span>
+      <span>{{ response.summary.matchedProducts }} con match · {{ response.summary.withoutMatchCount }} sin match</span>
+    </div>
+
+    <div class="table-wrap">
+      <table class="admin-table comparison-table">
+        <thead>
+          <tr>
+            <th>Marca</th>
+            <th>Modelo</th>
+            <th>Mi precio USD</th>
+            <th>Precio USD LiberadosYa</th>
+            <th>Diferencia USD</th>
+            <th>Diferencias ARS</th>
+            <th>Resultado general</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="visibleRows.length === 0">
+            <td colspan="7" class="empty-cell">No hay productos para los filtros seleccionados.</td>
+          </tr>
+
+          <tr *ngFor="let row of visibleRows; trackBy: trackByRow">
+            <td data-label="Marca">
+              <span class="brand-pill">{{ row.brand }}</span>
+            </td>
+            <td data-label="Modelo" class="model-cell">
+              <strong>{{ row.model }}</strong>
+              <span *ngIf="row.colorCount > 0" class="subtle-line">{{ row.colorCount }} colores agrupados</span>
+            </td>
+            <td data-label="Mi precio USD" class="price-cell">
+              <details class="detail-popover">
+                <summary>
+                  <span>{{ formatUsd(row.mine.priceUsd) }}</span>
+                  <i class="bi bi-info-circle" aria-hidden="true"></i>
+                </summary>
+                <div class="popover-card">
+                  <h4>Mis precios</h4>
+                  <div *ngFor="let line of ownDetails(row)" class="detail-line">
+                    <span>{{ line.label }}</span>
+                    <strong>{{ line.value }}</strong>
+                  </div>
+                </div>
+              </details>
+            </td>
+            <td data-label="Precio USD LiberadosYa" class="price-cell">
+              <details class="detail-popover">
+                <summary>
+                  <span>{{ row.matchStatus === 'MATCHED' ? formatUsd(row.competitor.mainUsd) : 'Sin match' }}</span>
+                  <i class="bi bi-info-circle" aria-hidden="true"></i>
+                </summary>
+                <div class="popover-card">
+                  <h4>LiberadosYa</h4>
+                  <p class="match-copy">{{ matchLabel(row) }}</p>
+                  <div *ngFor="let line of competitorDetails(row)" class="detail-line">
+                    <span>{{ line.label }}</span>
+                    <strong>{{ line.value }}</strong>
+                  </div>
+                </div>
+              </details>
+            </td>
+            <td data-label="Diferencia USD">
+              <details class="detail-popover difference-popover">
+                <summary [class]="differenceClass(row.differences.usd)">
+                  <span>{{ differenceLabel(row.differences.usd, 'USD') }}</span>
+                  <i class="bi bi-info-circle" aria-hidden="true"></i>
+                </summary>
+                <div class="popover-card wide-popover">
+                  <h4>Diferencias por forma de pago</h4>
+                  <div *ngFor="let line of differenceDetails(row)" class="comparison-line" [ngClass]="comparisonClass(line.status)">
+                    <span>{{ line.label }}</span>
+                    <small>Yo: {{ line.mine }}</small>
+                    <small>LiberadosYa: {{ line.competitor }}</small>
+                    <strong>{{ line.result }}</strong>
+                  </div>
+                </div>
+              </details>
+            </td>
+            <td data-label="Diferencias ARS" class="compact-diffs">
+              <span *ngFor="let line of compactDifferenceDetails(row)" [ngClass]="differenceClass(line.difference)">
+                {{ line.label }} {{ differenceLabel(line.difference, 'ARS') }}
+              </span>
+            </td>
+            <td data-label="Resultado">
+              <span class="status-pill" [ngClass]="comparisonClass(row.comparison.usd)">
+                {{ overallLabel(row.comparison.overall) }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </ng-container>
+</section>

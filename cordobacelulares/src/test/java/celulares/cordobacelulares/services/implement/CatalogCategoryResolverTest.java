@@ -65,6 +65,11 @@ class CatalogCategoryResolverTest {
     }
 
     @Test
+    void resolvesSonyFromTheAuthoritativeExternalCategory() {
+        assertResolves("EA Sports FC 26 PS5", "SONY", "SONY", null, "SONY");
+    }
+
+    @Test
     void resolvesArticulosVariosFromExternalCategory() {
         assertResolves("TABLET GENERICA 10", "ARTICULOS VARIOS", "ARTICULOS VARIOS", null, "ARTICULOS VARIOS");
     }

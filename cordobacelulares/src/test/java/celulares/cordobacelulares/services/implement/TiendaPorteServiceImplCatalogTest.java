@@ -4,6 +4,7 @@ import celulares.cordobacelulares.dtos.tiendaporte.external.TiendaPorteCategory;
 import celulares.cordobacelulares.dtos.tiendaporte.external.TiendaPorteExternalProduct;
 import celulares.cordobacelulares.dtos.tiendaporte.external.TiendaPorteProductReference;
 import celulares.cordobacelulares.dtos.suppliersheet.SupplierSheetProduct;
+import celulares.cordobacelulares.dtos.tiendaporte.response.CatalogProductOrigin;
 import celulares.cordobacelulares.dtos.tiendaporte.response.TiendaPorteBrandResponse;
 import celulares.cordobacelulares.dtos.tiendaporte.response.TiendaPorteCategoryPageResponse;
 import celulares.cordobacelulares.dtos.tiendaporte.response.TiendaPorteModelResponse;
@@ -209,7 +210,7 @@ class TiendaPorteServiceImplCatalogTest {
     }
 
     @Test
-    void supplierSheetProductsUseSamePolicy() {
+    void supplierSheetBrandIsAuthoritativeWhileExcludedProductsStayExcluded() {
         TiendaPorteCatalogCacheService cacheService = mock(TiendaPorteCatalogCacheService.class);
         PriceConfigurationService priceConfigurationService = mock(PriceConfigurationService.class);
         SupplierSheetService supplierSheetService = mock(SupplierSheetService.class);
@@ -236,12 +237,80 @@ class TiendaPorteServiceImplCatalogTest {
         Map<String, TiendaPorteBrandResponse> brandsByName = catalog.stream()
                 .collect(Collectors.toMap(TiendaPorteBrandResponse::getMarca, Function.identity()));
 
-        assertThat(modelNames(brandsByName.get("ARTICULOS VARIOS"))).containsExactly("SAMSUNG X620 TAB S10 FE");
+        assertThat(modelNames(brandsByName.get("SAMSUNG"))).containsExactly("SAMSUNG X620 TAB S10 FE");
         assertThat(modelNames(brandsByName.get("PRODUCTOS APPLE"))).containsExactly("IPAD AIR M3 11 128GB");
         assertThat(catalog.stream()
                 .flatMap(brand -> brand.getModelos().stream())
                 .map(TiendaPorteModelResponse::getModeloNombre))
                 .doesNotContain("BATERIA IPHONE 6 ORIGINAL");
+    }
+
+    @Test
+    void reportedSheetProductsReachThePublicCatalogWithTheirOwnPricesAndColors() {
+        TiendaPorteCatalogCacheService cacheService = mock(TiendaPorteCatalogCacheService.class);
+        PriceConfigurationService priceConfigurationService = mock(PriceConfigurationService.class);
+        SupplierSheetService supplierSheetService = mock(SupplierSheetService.class);
+
+        when(priceConfigurationService.getRequiredForCatalog()).thenReturn(priceConfiguration("1000"));
+        when(cacheService.getProducts()).thenReturn(List.of());
+        when(supplierSheetService.getProducts()).thenReturn(List.of(
+                new SupplierSheetProduct(
+                        "AMAZON",
+                        "AMAZON",
+                        "Amazon Fire Tv Stick 4K Select 8GB Wi Fi 5",
+                        List.of(),
+                        new BigDecimal("50")
+                ),
+                new SupplierSheetProduct(
+                        "AMAZON",
+                        "AMAZON",
+                        "Amazon Kindle Gen 11 – 16GB",
+                        List.of("Matcha"),
+                        new BigDecimal("149")
+                ),
+                new SupplierSheetProduct(
+                        "ANTHBOT",
+                        "ANTHBOT",
+                        "Anthbot Genie 600 – Robot Cortacésped Inteligente",
+                        List.of(),
+                        new BigDecimal("1250")
+                )
+        ));
+
+        TiendaPorteServiceImpl cachedService = new TiendaPorteServiceImpl(
+                cacheService,
+                priceConfigurationService,
+                supplierSheetService,
+                new DollarQuotationResolver(),
+                new TiendaPortePriceCalculator(),
+                catalogProductPolicy,
+                emptyBlockedCatalogProductService()
+        );
+
+        List<TiendaPorteBrandResponse> catalog = cachedService.getAllowedCategories(null, null);
+        TiendaPorteBrandResponse genericCategory = catalog.stream()
+                .filter(brand -> "ARTICULOS VARIOS".equals(brand.getMarca()))
+                .findFirst()
+                .orElseThrow();
+        Map<String, TiendaPorteModelResponse> models = genericCategory.getModelos().stream()
+                .collect(Collectors.toMap(TiendaPorteModelResponse::getModeloNombre, Function.identity()));
+
+        assertThat(models).containsOnlyKeys(
+                "Amazon Fire Tv Stick 4K Select 8GB Wi Fi 5",
+                "Amazon Kindle Gen 11 – 16GB",
+                "Anthbot Genie 600 – Robot Cortacésped Inteligente"
+        );
+        assertThat(models.get("Amazon Fire Tv Stick 4K Select 8GB Wi Fi 5").getPrecioUsd()).isEqualByComparingTo("50.00");
+        assertThat(models.get("Amazon Fire Tv Stick 4K Select 8GB Wi Fi 5").getPrecioPesos()).isEqualByComparingTo("50000.00");
+        assertThat(models.get("Amazon Fire Tv Stick 4K Select 8GB Wi Fi 5").getColores()).isEmpty();
+        assertThat(models.get("Amazon Kindle Gen 11 – 16GB").getPrecioUsd()).isEqualByComparingTo("149.00");
+        assertThat(models.get("Amazon Kindle Gen 11 – 16GB").getPrecioPesos()).isEqualByComparingTo("149000.00");
+        assertThat(models.get("Amazon Kindle Gen 11 – 16GB").getColores())
+                .extracting(color -> color.getColor())
+                .containsExactly("Matcha");
+        assertThat(models.get("Anthbot Genie 600 – Robot Cortacésped Inteligente").getPrecioUsd()).isEqualByComparingTo("1250.00");
+        assertThat(models.get("Anthbot Genie 600 – Robot Cortacésped Inteligente").getPrecioPesos()).isEqualByComparingTo("1250000.00");
+        assertThat(models.get("Anthbot Genie 600 – Robot Cortacésped Inteligente").getColores()).isEmpty();
     }
 
     @Test
@@ -402,6 +471,231 @@ class TiendaPorteServiceImplCatalogTest {
                 .containsExactly("Blue");
     }
 
+    @Test
+    void tiendaPorteWinsOverEquivalentSupplierVariantRegardlessOfBrandSpellingOrderAndPrice() {
+        TiendaPorteServiceImpl catalogService = catalogService(
+                List.of(product(501L, "MOTO G56 5G 8GB 256GB", "MOTOROLA", "MOTOROLA", "300")),
+                List.of(supplierProduct(
+                        "MOTOROLA",
+                        "MOTOROLA",
+                        "MOTOROLA 256GB - G56 - 8GB - 5G",
+                        "200"
+                ))
+        );
+
+        List<TiendaPorteModelResponse> models = catalogService.getAll(null, null).stream()
+                .filter(brand -> "MOTOROLA".equals(brand.getMarca()))
+                .findFirst()
+                .orElseThrow()
+                .getModelos();
+
+        assertThat(models).singleElement().satisfies(model -> {
+            assertThat(model.getModeloNombre()).isEqualTo("MOTO G56 5G 8GB 256GB");
+            assertThat(model.getOrigen()).isEqualTo(CatalogProductOrigin.TIENDA_PORTE);
+            assertThat(model.getPrecioUsd()).isEqualByComparingTo("300.00");
+        });
+    }
+
+    @Test
+    void exactIdentityKeepsDifferentRamStorageConnectivityAndSupplierOnlyModels() {
+        TiendaPorteServiceImpl catalogService = catalogService(
+                List.of(product(502L, "MOTO G56 5G 8GB 256GB", "MOTOROLA", "MOTOROLA", "300")),
+                List.of(
+                        supplierProduct("MOTOROLA", "MOTOROLA", "MOTOROLA G56 5G 8GB 256GB", "200"),
+                        supplierProduct("MOTOROLA", "MOTOROLA", "MOTOROLA G56 5G 12GB 256GB", "310"),
+                        supplierProduct("MOTOROLA", "MOTOROLA", "MOTOROLA G56 5G 8GB 128GB", "280"),
+                        supplierProduct("MOTOROLA", "MOTOROLA", "MOTOROLA G56 4G 8GB 256GB", "270"),
+                        supplierProduct("MOTOROLA", "MOTOROLA", "MOTOROLA G75 5G 8GB 256GB", "320")
+                )
+        );
+
+        List<TiendaPorteModelResponse> models = catalogService.getAll(null, null).stream()
+                .filter(brand -> "MOTOROLA".equals(brand.getMarca()))
+                .findFirst()
+                .orElseThrow()
+                .getModelos();
+
+        assertThat(models).extracting(TiendaPorteModelResponse::getModeloNombre)
+                .containsExactlyInAnyOrder(
+                        "MOTO G56 5G 8GB 256GB",
+                        "MOTOROLA G56 5G 12GB 256GB",
+                        "MOTOROLA G56 5G 8GB 128GB",
+                        "MOTOROLA G56 4G 8GB 256GB",
+                        "MOTOROLA G75 5G 8GB 256GB"
+                )
+                .doesNotContain("MOTOROLA G56 5G 8GB 256GB");
+        assertThat(models).filteredOn(model -> model.getOrigen() == CatalogProductOrigin.TIENDA_PORTE).hasSize(1);
+        assertThat(models).filteredOn(model -> model.getOrigen() == CatalogProductOrigin.GOOGLE_SHEET).hasSize(4);
+    }
+
+    @Test
+    void allReportedSonyProductsReachSonyCategoryWithExactPricesAndOptionalColors() {
+        List<SupplierSheetProduct> sonyProducts = List.of(
+                supplierProduct("SONY", "SONY", "EA Sports FC 26 \u2013 PS5", "53", "F\u00edsico"),
+                supplierProduct("SONY", "SONY", "JOYSTICK PS5 INAL\u00c1MBRICO SONY PLAYSTATION 5 GOD OF WAR EDITION LIMITED 20th ANNIVERSARY", "132", "Red/white"),
+                supplierProduct("SONY", "SONY", "PLAYSTATION 5 SLIM 825GB PS5 DIGITAL + DUALSENSE", "725", "White"),
+                supplierProduct("SONY", "SONY", "PS5 CON LECTORA 1TB", "845", "GRAN TURISMO + ASTRO BOT"),
+                supplierProduct("SONY", "SONY", "PlayStation 3 500GB Con flash incluido + juegos digitales", "275", new String[0]),
+                supplierProduct("SONY", "SONY", "PlayStation 5 Pro 2TB Digital", "1300", new String[0]),
+                supplierProduct("SONY", "SONY", "PlayStation 5 Slim 825GB Digital en stock", "735", new String[0]),
+                supplierProduct("SONY", "SONY", "joystick PS5 dualsence", "100", "Colores Varios Consultar")
+        );
+        TiendaPorteServiceImpl catalogService = catalogService(List.of(), sonyProducts);
+
+        TiendaPorteCategoryPageResponse response = catalogService.getByCategory("sony", 1, 50, null, null);
+        List<TiendaPorteModelResponse> models = response.getData().get(0).getModelos();
+
+        assertThat(response.getCategoria()).isEqualTo("SONY");
+        assertThat(response.getTotal()).isEqualTo(8);
+        assertThat(response.getData()).extracting(TiendaPorteBrandResponse::getMarca).containsExactly("SONY");
+        assertThat(models).hasSize(8).allSatisfy(model -> assertThat(model.getOrigen()).isEqualTo(CatalogProductOrigin.GOOGLE_SHEET));
+        assertThat(models).extracting(TiendaPorteModelResponse::getPrecioUsd)
+                .contains(new BigDecimal("53.00"), new BigDecimal("1300.00"));
+        assertThat(models).filteredOn(model -> model.getColores().isEmpty()).hasSize(3);
+    }
+
+    @Test
+    void unknownSupplierBrandReachesArticulosVarios() {
+        TiendaPorteServiceImpl catalogService = catalogService(
+                List.of(),
+                List.of(supplierProduct("MARCA NUEVA", "ARTICULOS VARIOS", "MARCA NUEVA Producto", "75"))
+        );
+
+        List<TiendaPorteBrandResponse> catalog = catalogService.getAllowedCategories(null, null);
+
+        assertThat(catalog).extracting(TiendaPorteBrandResponse::getMarca).containsExactly("ARTICULOS VARIOS");
+        assertThat(modelNames(catalog.get(0))).containsExactly("MARCA NUEVA Producto");
+    }
+
+    @Test
+    void sameModelAndStoragePublishesEveryColorWithItsOwnUsdAndArsPrice() {
+        List<TiendaPorteBrandResponse> catalog = service.buildCatalog(
+                List.of(product(
+                        17L,
+                        "IPHONE 17 PRO MAX 256GB",
+                        "IPHONE",
+                        "IPHONE",
+                        "1240",
+                        null,
+                        Map.of(
+                                "Cosmic Orange", 3,
+                                "Deep Blue", 2,
+                                "Silver", 1
+                        ),
+                        Map.of(
+                                "Cosmic Orange", "1240",
+                                "Deep Blue", "1245",
+                                "Silver", "1250"
+                        )
+                )),
+                priceConfiguration("1000"),
+                new BigDecimal("1000"),
+                null
+        );
+
+        List<TiendaPorteModelResponse> variants = catalog.get(0).getModelos();
+        Map<String, TiendaPorteModelResponse> variantsByColor = variants.stream()
+                .collect(Collectors.toMap(
+                        variant -> variant.getColores().get(0).getColor(),
+                        Function.identity()
+                ));
+
+        assertThat(variants).hasSize(3);
+        assertThat(variants).allSatisfy(variant -> {
+            assertThat(variant.getModeloNombre()).isEqualTo("IPHONE 17 PRO MAX 256GB");
+            assertThat(variant.getColores()).hasSize(1);
+        });
+        assertThat(variantsByColor).containsOnlyKeys("Cosmic Orange", "Deep Blue", "Silver");
+        assertThat(variantsByColor.get("Cosmic Orange").getPrecioUsd()).isEqualByComparingTo("1240.00");
+        assertThat(variantsByColor.get("Deep Blue").getPrecioUsd()).isEqualByComparingTo("1245.00");
+        assertThat(variantsByColor.get("Silver").getPrecioUsd()).isEqualByComparingTo("1250.00");
+        assertThat(variantsByColor.get("Cosmic Orange").getPrecioPesos()).isEqualByComparingTo("1240000.00");
+        assertThat(variantsByColor.get("Deep Blue").getPrecioPesos()).isEqualByComparingTo("1245000.00");
+        assertThat(variantsByColor.get("Silver").getPrecioPesos()).isEqualByComparingTo("1250000.00");
+    }
+
+    @Test
+    void sameModelStorageAndPriceKeepsAllColorsInOneModelResponse() {
+        List<TiendaPorteBrandResponse> catalog = service.buildCatalog(
+                List.of(product(
+                        18L,
+                        "IPHONE 17 PRO MAX 512GB",
+                        "IPHONE",
+                        "IPHONE",
+                        "2547.90",
+                        null,
+                        Map.of("Cosmic Orange", 2, "Deep Blue", 1),
+                        Map.of("Cosmic Orange", "2547.90", "Deep Blue", "2547.90")
+                )),
+                priceConfiguration("1000"),
+                new BigDecimal("1000"),
+                null
+        );
+
+        List<TiendaPorteModelResponse> models = catalog.get(0).getModelos();
+
+        assertThat(models).hasSize(1);
+        assertThat(models.get(0).getModeloNombre()).isEqualTo("IPHONE 17 PRO MAX 512GB");
+        assertThat(models.get(0).getPrecioUsd()).isEqualByComparingTo("2547.90");
+        assertThat(models.get(0).getColores())
+                .extracting(color -> color.getColor())
+                .containsExactlyInAnyOrder("Cosmic Orange", "Deep Blue");
+    }
+
+    @Test
+    void exactColorDuplicateKeepsCheapestOfferWithoutMergingOtherColors() {
+        List<TiendaPorteBrandResponse> catalog = service.buildCatalog(
+                List.of(
+                        product(
+                                31L,
+                                "IPHONE 17 PRO MAX 256GB",
+                                "IPHONE",
+                                "IPHONE",
+                                "1260",
+                                null,
+                                Map.of("Cosmic Orange", 1),
+                                Map.of("Cosmic Orange", "1260")
+                        ),
+                        product(
+                                32L,
+                                "IPHONE 17 PRO MAX 256GB",
+                                "IPHONE",
+                                "IPHONE",
+                                "1240",
+                                null,
+                                Map.of("Cosmic Orange", 2),
+                                Map.of("Cosmic Orange", "1240")
+                        ),
+                        product(
+                                33L,
+                                "IPHONE 17 PRO MAX 256GB",
+                                "IPHONE",
+                                "IPHONE",
+                                "1245",
+                                null,
+                                Map.of("Deep Blue", 1),
+                                Map.of("Deep Blue", "1245")
+                        )
+                ),
+                new PriceConfiguration(),
+                BigDecimal.ONE,
+                null
+        );
+
+        List<TiendaPorteModelResponse> variants = catalog.get(0).getModelos();
+        Map<String, TiendaPorteModelResponse> variantsByColor = variants.stream()
+                .collect(Collectors.toMap(
+                        variant -> variant.getColores().get(0).getColor(),
+                        Function.identity()
+                ));
+
+        assertThat(variants).hasSize(2);
+        assertThat(variantsByColor).containsOnlyKeys("Cosmic Orange", "Deep Blue");
+        assertThat(variantsByColor.get("Cosmic Orange").getPrecioUsd()).isEqualByComparingTo("1240.00");
+        assertThat(variantsByColor.get("Cosmic Orange").getColores().get(0).getStock()).isEqualTo(2);
+        assertThat(variantsByColor.get("Deep Blue").getPrecioUsd()).isEqualByComparingTo("1245.00");
+    }
+
     private List<String> modelNames(TiendaPorteBrandResponse brand) {
         assertThat(brand).isNotNull();
         return brand.getModelos().stream()
@@ -495,12 +789,43 @@ class TiendaPorteServiceImplCatalogTest {
         return configuration;
     }
 
+    private TiendaPorteServiceImpl catalogService(
+            List<TiendaPorteExternalProduct> tiendaPorteProducts,
+            List<SupplierSheetProduct> supplierProducts
+    ) {
+        TiendaPorteCatalogCacheService cacheService = mock(TiendaPorteCatalogCacheService.class);
+        PriceConfigurationService priceConfigurationService = mock(PriceConfigurationService.class);
+        SupplierSheetService supplierSheetService = mock(SupplierSheetService.class);
+        when(cacheService.getProducts()).thenReturn(tiendaPorteProducts);
+        when(priceConfigurationService.getRequiredForCatalog()).thenReturn(priceConfiguration("1000"));
+        when(supplierSheetService.getProducts()).thenReturn(supplierProducts);
+        return new TiendaPorteServiceImpl(
+                cacheService,
+                priceConfigurationService,
+                supplierSheetService,
+                new DollarQuotationResolver(),
+                new TiendaPortePriceCalculator(),
+                catalogProductPolicy,
+                emptyBlockedCatalogProductService()
+        );
+    }
+
     private SupplierSheetProduct supplierProduct(String originalBrand, String responseBrand, String modelName, String priceUsd) {
+        return supplierProduct(originalBrand, responseBrand, modelName, priceUsd, "Black");
+    }
+
+    private SupplierSheetProduct supplierProduct(
+            String originalBrand,
+            String responseBrand,
+            String modelName,
+            String priceUsd,
+            String... colors
+    ) {
         return new SupplierSheetProduct(
                 originalBrand,
                 responseBrand,
                 modelName,
-                List.of("Black"),
+                List.of(colors),
                 new BigDecimal(priceUsd)
         );
     }

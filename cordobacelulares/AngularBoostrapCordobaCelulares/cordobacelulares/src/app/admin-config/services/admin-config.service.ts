@@ -7,6 +7,7 @@ import {
   BlockedCatalogProductResponse,
   CatalogCacheStatus,
   CatalogRefreshResponse,
+  ComparativaResponse,
   CredentialCreateRequest,
   CredentialPatchRequest,
   CredentialResponse,
@@ -24,7 +25,9 @@ export class AdminConfigHttpError extends Error {
   providedIn: 'root'
 })
 export class AdminConfigService {
-  private readonly apiUrl = 'https://www.cordobacelulares.com/api';
+  private readonly apiUrlll = 'http://localhost:8080/api';
+
+  private apiUrl = 'https://www.cordobacelulares.com/api'
 
   constructor(private http: HttpClient) { }
 
@@ -126,6 +129,11 @@ export class AdminConfigService {
 
   refreshCatalogCache(): Observable<CatalogRefreshResponse> {
     return this.http.post<CatalogRefreshResponse>(`${this.apiUrl}/admin/catalogo/cache/refresh`, {})
+      .pipe(catchError(error => this.handleError(error)));
+  }
+
+  getComparativa(): Observable<ComparativaResponse> {
+    return this.http.get<ComparativaResponse>(`${this.apiUrl}/config/bombai/comparativa`)
       .pipe(catchError(error => this.handleError(error)));
   }
 

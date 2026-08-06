@@ -27,6 +27,7 @@ public class CatalogCategoryResolver {
     public static final String HUAWEI = "HUAWEI";
     public static final String HONOR = "HONOR";
     public static final String OPPO = "OPPO";
+    public static final String SONY = "SONY";
     public static final String OTROS = "OTROS";
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CatalogCategoryResolver.class);
@@ -47,7 +48,8 @@ public class CatalogCategoryResolver {
             SAMSUNG,
             HUAWEI,
             HONOR,
-            OPPO
+            OPPO,
+            SONY
     );
 
     public ResolveResult resolve(ResolveRequest request) {
@@ -265,6 +267,7 @@ public class CatalogCategoryResolver {
         putAlias(aliases, HUAWEI, HUAWEI);
         putAlias(aliases, HONOR, HONOR);
         putAlias(aliases, OPPO, OPPO);
+        putAlias(aliases, SONY, SONY);
         putAlias(aliases, OTROS, OTROS);
         return Map.copyOf(aliases);
     }

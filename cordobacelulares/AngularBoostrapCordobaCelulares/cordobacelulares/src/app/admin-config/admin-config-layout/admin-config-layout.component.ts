@@ -21,6 +21,7 @@ export class AdminConfigLayoutComponent implements OnInit, OnDestroy {
     { label: 'Cotizaciones', path: '/config/bombai/cotizaciones', icon: 'bi-currency-dollar' },
     { label: 'Credenciales', path: '/config/bombai/credenciales', icon: 'bi-key' },
     { label: 'Equipos', path: '/config/bombai/equipos', icon: 'bi-phone' },
+    { label: 'Comparativa', path: '/config/bombai/comparativa', icon: 'bi-bar-chart-line' },
     { label: 'Actualizacion', path: '/config/bombai/actualizacion', icon: 'bi-arrow-repeat' }
   ];
 

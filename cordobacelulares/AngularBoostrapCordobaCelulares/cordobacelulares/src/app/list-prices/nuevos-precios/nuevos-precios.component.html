@@ -45,7 +45,7 @@
     </div>
 
     <!-- Grupos por marca -->
-    <div *ngFor="let g of grupos" class="lp-brand-block">
+    <div *ngFor="let g of grupos; trackBy: trackByBrand" class="lp-brand-block">
       <div class="lp-brand-header" [attr.data-brand]="g.marca">
         <div class="lp-brand-left">
           <div class="lp-brand-icon" aria-hidden="true">
@@ -62,12 +62,15 @@
 
       <!-- Grid responsive de cards -->
       <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-2">
-        <div class="col" *ngFor="let p of g.items">
+        <div class="col" *ngFor="let p of g.items; trackBy: trackByProduct">
           <button type="button" class="card lp-card w-100 text-start" (click)="openDetails(p)">
             <div class="card-body">
               <div class="lp-model">{{ p.modelo }}</div>
+              <div *ngIf="cardColor(p) as color" class="small text-muted mt-1">
+                <i class="bi bi-palette-fill me-1" aria-hidden="true"></i>{{ color }}
+              </div>
 
-              <div class="lp-price-line">
+              <div *ngIf="!isPerfume(p)" class="lp-price-line">
                 <span class="lp-badge">Efectivo</span>
                 <span class="lp-price">$ {{ fmtMoney(p.efectivo) }}</span>
               </div>
@@ -88,7 +91,7 @@
       <span>{{ categorias.length }} marcas</span>
     </div>
 
-    <div *ngFor="let categoria of categorias" class="lp-brand-block lp-category-block">
+    <div *ngFor="let categoria of categorias; trackBy: trackByCategory" class="lp-brand-block lp-category-block">
       <button
         type="button"
         class="lp-brand-header lp-category-header"
@@ -144,12 +147,15 @@
           </div>
 
           <div *ngIf="categoryItems(categoria).length > 0" class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-2">
-            <div class="col" *ngFor="let p of categoryItems(categoria)">
+            <div class="col" *ngFor="let p of categoryItems(categoria); trackBy: trackByProduct">
               <button type="button" class="card lp-card w-100 text-start" (click)="openDetails(p)">
                 <div class="card-body">
                   <div class="lp-model">{{ p.modelo }}</div>
+                  <div *ngIf="cardColor(p) as color" class="small text-muted mt-1">
+                    <i class="bi bi-palette-fill me-1" aria-hidden="true"></i>{{ color }}
+                  </div>
 
-                  <div class="lp-price-line">
+                  <div *ngIf="!isPerfume(p)" class="lp-price-line">
                     <span class="lp-badge">Efectivo</span>
                     <span class="lp-price">$ {{ fmtMoney(p.efectivo) }}</span>
                   </div>
@@ -195,7 +201,7 @@
 
       <div class="modal-body" *ngIf="selected as p">
         <div class="lp-prices">
-          <div class="lp-price-row">
+          <div *ngIf="!isPerfume(p)" class="lp-price-row">
             <div class="lp-k">Efectivo</div>
             <div class="lp-v fw-bold">{{ fmtPrice(p.precioPesos) }}</div>
           </div>
@@ -218,6 +224,18 @@
           <div class="text-muted small mb-1">Colores</div>
           <span *ngFor="let color of colorNames(p)" class="badge text-bg-secondary me-1 mb-1">{{ color }}</span>
         </div>
+<!--
+        <button
+          *ngIf="canShowCharacteristicsButton(p)"
+          type="button"
+          class="btn btn-outline-dark w-100 mt-3 lp-features-open"
+          [disabled]="featuresModalOpen"
+          [attr.aria-label]="'Ver caracter\u00EDsticas de ' + p.marca + ' ' + p.modelo"
+          (click)="openFeaturesModal(p, $event)"
+        >
+          <i class="bi bi-card-list me-2" aria-hidden="true"></i>
+          Ver caracter&iacute;sticas
+        </button> -->
 
         <div class="lp-legend mt-3">
           <div *ngIf="shouldShowColors(p)" class="lp-legend-note">
@@ -245,6 +263,157 @@
     </div>
   </div>
 </div>
+
+<div
+  *ngIf="featuresModalOpen"
+  class="modal-backdrop fade show lp-features-backdrop"
+  (click)="closeFeaturesModal()"
+></div>
+
+<div
+  *ngIf="featuresModalOpen"
+  class="modal fade show d-block lp-modal lp-features-modal"
+  tabindex="-1"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="lp-features-title"
+>
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content lp-modal-content lp-features-content" (click)="$event.stopPropagation()">
+      <div class="lp-sheet-handle" aria-hidden="true"></div>
+
+      <div class="modal-header">
+        <div class="w-100">
+          <div id="lp-features-title" class="lp-modal-title" *ngIf="featuresProduct as fp">
+            {{ fp.marca }} &middot; {{ fp.modelo }}
+          </div>
+          <div class="lp-modal-sub">Caracter&iacute;sticas</div>
+        </div>
+        <button
+          #featuresCloseButton
+          type="button"
+          class="btn-close"
+          aria-label="Cerrar caracter&iacute;sticas"
+          (click)="closeFeaturesModal()">
+        </button>
+      </div>
+
+      <div class="modal-body lp-features-body">
+        <div *ngIf="featuresLoading" class="lp-features-loading" role="status">
+          <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+          <span>Cargando caracter&iacute;sticas...</span>
+        </div>
+
+        <div *ngIf="!featuresLoading && featuresError" class="lp-features-empty" role="alert">
+          <div class="lp-features-empty-title">{{ featuresErrorTitle() }}</div>
+          <div>{{ featuresErrorMessage() }}</div>
+          <button
+            *ngIf="featuresError === 'general'"
+            type="button"
+            class="btn btn-outline-secondary btn-sm mt-3"
+            (click)="retryFeatures()">
+            Reintentar
+          </button>
+        </div>
+
+        <ng-container *ngIf="!featuresLoading && !featuresError">
+          <div *ngIf="hasFeaturesContent(); else emptyFeatures">
+            <section class="lp-features-section lp-feature-gallery">
+              <div class="lp-feature-image-wrap">
+                <ng-container *ngIf="featureCurrentImage() as image; else featureImagePlaceholder">
+                  <img
+                    class="lp-feature-image"
+                    [src]="image"
+                    [alt]="featureImageAlt()"
+                    loading="lazy"
+                    (error)="onFeatureImageError(image)"
+                  />
+                </ng-container>
+
+                <button
+                  *ngIf="hasFeatureGalleryControls()"
+                  type="button"
+                  class="lp-feature-gallery-nav lp-feature-gallery-prev"
+                  aria-label="Imagen anterior"
+                  (click)="previousFeatureImage()">
+                  <i class="bi bi-chevron-left" aria-hidden="true"></i>
+                </button>
+
+                <button
+                  *ngIf="hasFeatureGalleryControls()"
+                  type="button"
+                  class="lp-feature-gallery-nav lp-feature-gallery-next"
+                  aria-label="Imagen siguiente"
+                  (click)="nextFeatureImage()">
+                  <i class="bi bi-chevron-right" aria-hidden="true"></i>
+                </button>
+              </div>
+
+              <div *ngIf="hasFeatureGalleryControls()" class="lp-feature-thumbs">
+                <ng-container *ngFor="let image of featuresImages; let i = index">
+                  <button
+                    type="button"
+                    class="lp-feature-thumb"
+                    [class.lp-feature-thumb-active]="i === featuresImageIndex"
+                    [attr.aria-label]="'Ver imagen ' + (i + 1)"
+                    [attr.aria-current]="i === featuresImageIndex ? 'true' : null"
+                    (click)="selectFeatureImage(i)">
+                    <img
+                      [src]="image"
+                      [alt]="featureImageAlt()"
+                      loading="lazy"
+                      (error)="onFeatureImageError(image)"
+                    />
+                  </button>
+                </ng-container>
+              </div>
+            </section>
+
+            <section class="lp-feature-info-note" aria-label="Aviso informativo">
+              <i class="bi bi-info-circle lp-feature-info-icon" aria-hidden="true"></i>
+              <p>
+                Informaci&oacute;n t&eacute;cnica de referencia obtenida de fuentes especializadas como Smart-GSM.
+                Las especificaciones pueden contener diferencias o errores de carga. Recomendamos verificar siempre
+                la informaci&oacute;n en el sitio oficial del fabricante antes de tomar una decisi&oacute;n de compra.
+              </p>
+            </section>
+
+            <section *ngIf="featuresSpecSections.length > 0" class="lp-features-section">
+              <h3>Especificaciones</h3>
+              <div class="lp-feature-spec-sections">
+                <div class="lp-feature-spec-section" *ngFor="let section of featuresSpecSections">
+                  <h4>{{ section.label }}</h4>
+                  <div class="lp-feature-spec-grid">
+                    <div *ngFor="let item of section.entries" class="lp-feature-spec-row">
+                      <div class="lp-feature-k">{{ item.label }}</div>
+                      <div class="lp-feature-v">{{ item.value }}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+        </ng-container>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" (click)="closeFeaturesModal()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<ng-template #featureImagePlaceholder>
+  <div class="lp-feature-image-placeholder" role="img" aria-label="Imagen no disponible">
+    <i class="bi bi-phone" aria-hidden="true"></i>
+  </div>
+</ng-template>
+
+<ng-template #emptyFeatures>
+  <div class="lp-features-empty">
+    No hay caracter&iacute;sticas disponibles para este modelo.
+  </div>
+</ng-template>
 
 <div
   *ngIf="warningModalOpen"

@@ -267,17 +267,11 @@ public class CatalogProductPolicy {
         if (product == null) {
             return null;
         }
-        return resolveCanonicalCategory(new ResolveRequest(
-                product.modelName(),
-                product.modelName(),
-                product.responseBrand(),
-                product.originalBrand(),
-                requestedCategory,
-                product.responseBrand(),
-                product.originalBrand(),
-                CatalogProductOrigin.GOOGLE_SHEET,
-                null
-        ));
+        if (isExcludedProduct(product)) {
+            return null;
+        }
+        String sheetCategory = CatalogCategoryResolver.canonicalizeRequestedCategory(product.responseBrand());
+        return sheetCategory == null ? CatalogCategoryResolver.ARTICULOS_VARIOS : sheetCategory;
     }
 
     public String resolveCanonicalCategory(String modelName, String brandName) {

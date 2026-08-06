@@ -114,3 +114,87 @@ export interface CatalogRefreshResponse {
   blockedByCooldown: boolean;
   status: CatalogCacheStatus;
 }
+
+export interface ComparativaMetric {
+  average: number | null;
+  median: number | null;
+  min: number | null;
+  max: number | null;
+  count: number;
+}
+
+export interface ComparativaSummary {
+  competitorTransferMarkup: ComparativaMetric;
+  competitorCardMarkup: ComparativaMetric;
+  competitorImplicitRateOnMyCost: ComparativaMetric;
+  competitorCustomerExchangeRate: ComparativaMetric;
+  totalProducts: number;
+  matchedProducts: number;
+  comparableProducts: number;
+  mineCheaperCount: number;
+  mineCheaperPercent: number;
+  mineMoreExpensiveCount: number;
+  mineMoreExpensivePercent: number;
+  mixedCount: number;
+  withoutMatchCount: number;
+}
+
+export interface ComparativaMinePrices {
+  costUsd: number | null;
+  priceUsd: number | null;
+  cashArs: number | null;
+  transferArs: number | null;
+  cardArs: number | null;
+}
+
+export interface ComparativaCompetitorPrices {
+  matched: boolean;
+  name: string | null;
+  cashArs: number | null;
+  currentArs: number | null;
+  listArs: number | null;
+  transferArs: number | null;
+  cardArs: number | null;
+  cashUsd: number | null;
+  currentUsd: number | null;
+  listUsd: number | null;
+  mainUsd: number | null;
+}
+
+export interface ComparativaDifferences {
+  cashArs: number | null;
+  transferArs: number | null;
+  cardArs: number | null;
+  usd: number | null;
+}
+
+export type ComparativaComparisonStatus = 'CHEAPER' | 'MORE_EXPENSIVE' | 'EQUAL' | 'NOT_AVAILABLE' | string;
+export type ComparativaOverallStatus = 'CHEAPER_ALL' | 'MORE_EXPENSIVE_ALL' | 'MIXED' | 'COMPETITIVE' | 'INCOMPLETE' | string;
+
+export interface ComparativaComparison {
+  cash: ComparativaComparisonStatus;
+  transfer: ComparativaComparisonStatus;
+  card: ComparativaComparisonStatus;
+  usd: ComparativaComparisonStatus;
+  overall: ComparativaOverallStatus;
+  comparableCount: number;
+}
+
+export interface ComparativaProduct {
+  brand: string;
+  model: string;
+  fullName: string;
+  origin: string | null;
+  colorCount: number;
+  matchStatus: string;
+  matchMessage: string | null;
+  mine: ComparativaMinePrices;
+  competitor: ComparativaCompetitorPrices;
+  differences: ComparativaDifferences;
+  comparison: ComparativaComparison;
+}
+
+export interface ComparativaResponse {
+  summary: ComparativaSummary;
+  products: ComparativaProduct[];
+}

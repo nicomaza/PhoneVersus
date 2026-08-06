@@ -16,6 +16,7 @@ import { CredentialsAdminComponent } from './admin-config/credentials-admin/cred
 import { QuotationsAdminComponent } from './admin-config/quotations-admin/quotations-admin.component';
 import { TiendaPorteProductsAdminComponent } from './admin-config/tienda-porte-products-admin/tienda-porte-products-admin.component';
 import { CatalogCacheAdminComponent } from './admin-config/catalog-cache-admin/catalog-cache-admin.component';
+import { ComparativaComponent } from './admin-config/comparativa/comparativa.component';
 
 
 export const routes: Routes = [{
@@ -112,6 +113,14 @@ export const routes: Routes = [{
             data: {
                 title: 'Equipos Tienda Porte',
                 description: 'Consulta paginada del snapshot cacheado, sin llamadas nuevas al proveedor.'
+            }
+        },
+        {
+            path: 'comparativa',
+            component: ComparativaComponent,
+            data: {
+                title: 'Comparativa',
+                description: 'Comparacion de precios propios contra LiberadosYa por forma de pago.'
             }
         },
         {
