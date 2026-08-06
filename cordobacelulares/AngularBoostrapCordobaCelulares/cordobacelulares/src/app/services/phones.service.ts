@@ -12,8 +12,7 @@ import { PostNewPhone } from '../models/PostNewPhone';
 @Injectable({ providedIn: 'root' })
 export class PhonesService {
 
-  private apiUrl = 'https://www.cordobacelulares.com/api/phones';
-  //private apiUrl = 'http://localhost:8080/api/phones/edit/';
+  private apiUrl = '/api/phones';
   productos: Phone[] = [];
 
 

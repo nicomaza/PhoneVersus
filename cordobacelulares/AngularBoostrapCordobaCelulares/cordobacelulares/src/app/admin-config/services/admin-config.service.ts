@@ -25,9 +25,7 @@ export class AdminConfigHttpError extends Error {
   providedIn: 'root'
 })
 export class AdminConfigService {
-  private readonly apiUrlll = 'http://localhost:8080/api';
-
-  private apiUrl = 'https://www.cordobacelulares.com/api'
+  private readonly apiUrl = '/api';
 
   constructor(private http: HttpClient) { }
 

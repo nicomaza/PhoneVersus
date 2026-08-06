@@ -78,8 +78,8 @@ export interface LiberadosYaProductMatchResponse {
   providedIn: 'root'
 })
 export class NuevosPreciosService {
-  private readonly API_URL = 'https://www.cordobacelulares.com/api/tiendaporte/equipos';
-  private readonly LIBERADOS_YA_PUBLIC_URL = 'http://localhost:8080/api/public/products/liberadosya';
+  private readonly API_URL = '/api/tiendaporte/equipos';
+  private readonly LIBERADOS_YA_PUBLIC_URL = '/api/public/products/liberadosya';
 
   private allCatalogCache: TiendaPorteBrandResponse[] | null = null;
   private allCatalogLoading$?: Observable<TiendaPorteBrandResponse[]>;

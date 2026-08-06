@@ -21,7 +21,7 @@ describe('NuevosPreciosService catalog variants', () => {
     let result: TiendaPorteBrandResponse[] = [];
     service.getCatalogoPrincipal().subscribe(data => result = data);
 
-    httpMock.expectOne('https://www.cordobacelulares.com/api/tiendaporte/equipos/categorias-principales')
+    httpMock.expectOne('/api/tiendaporte/equipos/categorias-principales')
       .flush([{
         marca: 'IPHONE',
         modelos: [
@@ -51,7 +51,7 @@ describe('NuevosPreciosService catalog variants', () => {
     let result: TiendaPorteBrandResponse[] = [];
     service.getCatalogoPrincipal().subscribe(data => result = data);
 
-    httpMock.expectOne('https://www.cordobacelulares.com/api/tiendaporte/equipos/categorias-principales')
+    httpMock.expectOne('/api/tiendaporte/equipos/categorias-principales')
       .flush([{
         marca: 'IPHONE',
         modelos: [{
@@ -71,6 +71,19 @@ describe('NuevosPreciosService catalog variants', () => {
     expect(models[0].showColorOnCard).toBeFalse();
     expect(models[0].colores?.map(color => color.color))
       .toEqual(jasmine.arrayWithExactContents(['Cosmic Orange', 'Deep Blue']));
+  });
+
+  it('requests product characteristics through the same-origin public API', () => {
+    service.getLiberadosYaProductMatch('Samsung', 'Galaxy S25').subscribe();
+
+    const request = httpMock.expectOne(req =>
+      req.url === '/api/public/products/liberadosya/match'
+      && req.params.get('brand') === 'Samsung'
+      && req.params.get('model') === 'Galaxy S25'
+    );
+
+    expect(request.request.method).toBe('GET');
+    request.flush({ nombre: 'Samsung Galaxy S25' });
   });
 
   function variant(color: string, precioUsd: number, precioPesos: number) {

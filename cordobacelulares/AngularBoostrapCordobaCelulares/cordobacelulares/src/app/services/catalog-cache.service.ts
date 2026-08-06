@@ -29,7 +29,7 @@ export interface CatalogCacheRefreshResponse {
   providedIn: 'root'
 })
 export class CatalogCacheService {
-  private readonly API_URL = 'https://www.cordobacelulares.com/api/admin/catalogo/cache';
+  private readonly API_URL = '/api/admin/catalogo/cache';
 
   constructor(private http: HttpClient) { }
 
