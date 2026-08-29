@@ -611,7 +611,12 @@ public class TiendaPorteServiceImpl implements TiendaPorteService {
     private String modelName(TiendaPorteExternalProduct product) {
         String productReferenceName = product.getProductReference() == null ? null : product.getProductReference().getName();
         String selected = firstNonBlank(productReferenceName, product.getName());
-        return selected == null ? null : selected.trim();
+        return selected == null
+                ? null
+                : selected.trim().replaceFirst(
+                        "(?i)^REDMI\\s+NOTE\\s+15\\s+PRO\\s*\\+(?=\\s|$)",
+                        "REDMI NOTE 15 PRO PLUS"
+                );
     }
 
     private BigDecimal priceUsd(TiendaPorteExternalProduct product) {
