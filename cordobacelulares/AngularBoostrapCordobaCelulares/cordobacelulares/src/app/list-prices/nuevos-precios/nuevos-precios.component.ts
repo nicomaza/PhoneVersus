@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, ElementRef, HostListener, OnDestroy, ViewChild, isDevMode } from '@angular/core';
+import { Component, ElementRef, HostListener, OnDestroy, ViewChild } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { debounceTime, distinctUntilChanged, Subscription } from 'rxjs';
 import {
@@ -12,6 +12,16 @@ import {
   TiendaPorteColorStockResponse,
   TiendaPorteModelResponse
 } from '../../services/nuevos-precios.service';
+import { CatalogWhatsappService } from '../../services/catalog-whatsapp.service';
+import {
+  catalogProductConditionLabel,
+  catalogProductWhatsappWarning,
+  formatCatalogMoney,
+  isCatalogMiscellaneous,
+  isCatalogPerfume,
+  publicProductSlug,
+  tarjeta6Installment
+} from '../../utils/catalog-product.utils';
 
 type GrupoMarca = { marca: string; items: NuevoProductoLista[] };
 type ColorStockLista = { color: string; stock: number | null };
@@ -71,8 +81,6 @@ export class NuevosPreciosComponent implements OnDestroy {
     'PERFUMES'
   ];
   private readonly extraCategoriaOrden = ['HUAWEI', 'HONOR', 'OPPO'];
-  readonly SHEET_EMOJI = String.fromCodePoint(0x1F4F2);
-
   categorias = [...this.baseCategorias];
 
   catalogLoading = false;
@@ -105,7 +113,6 @@ export class NuevosPreciosComponent implements OnDestroy {
   warningTitle = '';
   warningMessage = '';
 
-  private readonly WHATSAPP_PHONE = '5493512129922';
   private readonly CATEGORY_LIMIT = 50;
 
   private all: NuevoProductoLista[] = [];
@@ -163,7 +170,10 @@ export class NuevosPreciosComponent implements OnDestroy {
     LANZAMIENTO: 12,
   };
 
-  constructor(private service: NuevosPreciosService) {
+  constructor(
+    private service: NuevosPreciosService,
+    private whatsappService: CatalogWhatsappService
+  ) {
     window.addEventListener('scroll', this.scrollHandler, { passive: true });
     this.applyFilter('');
     this.loadCatalogInBackground();
@@ -205,12 +215,7 @@ export class NuevosPreciosComponent implements OnDestroy {
   }
 
   fmtMoney(n?: number | null): string {
-    return this.hasValidMoney(n)
-      ? n.toLocaleString('es-AR', {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-      })
-      : '-';
+    return formatCatalogMoney(n);
   }
 
   fmtPrice(n?: number | null): string {
@@ -250,7 +255,7 @@ export class NuevosPreciosComponent implements OnDestroy {
   readonly trackByProduct = (_index: number, product: NuevoProductoLista): string => this.productKey(product);
 
   cuotaTarjeta6(p: NuevoProductoLista): number | null {
-    return this.hasValidMoney(p.precioTarjeta6Pagos) ? p.precioTarjeta6Pagos / 6 : null;
+    return tarjeta6Installment(p.precioTarjeta6Pagos);
   }
 
   hasCuotaTarjeta6(p: NuevoProductoLista): boolean {
@@ -258,11 +263,11 @@ export class NuevosPreciosComponent implements OnDestroy {
   }
 
   isPerfume(p: NuevoProductoLista | null | undefined): boolean {
-    return this.normalizeCategory(p?.marca) === 'perfumes';
+    return isCatalogPerfume(p);
   }
 
   isArticulosVarios(p: NuevoProductoLista | null | undefined): boolean {
-    return this.normalizeCategory(p?.marca) === 'articulosvarios';
+    return isCatalogMiscellaneous(p);
   }
 
   shouldShowColors(p: NuevoProductoLista | null | undefined): boolean {
@@ -280,38 +285,33 @@ export class NuevosPreciosComponent implements OnDestroy {
   }
 
   productConditionLabel(p: NuevoProductoLista | null | undefined): string {
-    if (this.isPerfume(p)) {
-      return 'En caja sellada de f\u00E1brica, sin abrir.';
-    }
-
-    if (this.isArticulosVarios(p)) {
-      return 'Dispositivos nuevos, sellados de f\u00E1brica y con garant\u00EDa.';
-    }
-
-    return 'Equipos nuevos, sellados de f\u00E1brica y con garant\u00EDa.';
+    return catalogProductConditionLabel(p);
   }
 
   isGoogleSheetProduct(p: NuevoProductoLista | null | undefined): boolean {
-    const raw = String(
-      p?.origen ??
-      p?.source ??
-      p?.origin ??
-      p?.provider ??
-      p?.proveedor ??
-      ''
-    ).trim().toUpperCase();
-    const normalized = this.normalizeOriginSignal(raw);
-
-    return raw === 'GOOGLE_SHEET'
-      || normalized === 'GOOGLESHEET'
-      || raw === 'SUPPLIER_SHEET'
-      || normalized === 'SUPPLIERSHEET'
-      || raw === 'SHEET'
-      || normalized === 'SHEET';
+    return this.whatsappService.isGoogleSheetProduct(p);
   }
 
   getSheetEmoji(p: NuevoProductoLista | null | undefined): string {
-    return this.isGoogleSheetProduct(p) ? this.SHEET_EMOJI : '';
+    return this.isGoogleSheetProduct(p) ? this.whatsappService.sheetEmoji : '';
+  }
+
+  productSlug(p: NuevoProductoLista): string {
+    return publicProductSlug(p.modelo);
+  }
+
+  productHref(p: NuevoProductoLista): string {
+    return `/celulares/${this.productSlug(p)}`;
+  }
+
+  onProductCardClick(event: MouseEvent, p: NuevoProductoLista): void {
+    const isModifiedClick = event.ctrlKey || event.metaKey || event.shiftKey || event.altKey;
+    if (event.button !== 0 || isModifiedClick) {
+      return;
+    }
+
+    event.preventDefault();
+    this.openDetails(p);
   }
 
   openDetails(p: NuevoProductoLista): void {
@@ -1106,63 +1106,11 @@ export class NuevosPreciosComponent implements OnDestroy {
   }
 
   private openWhatsApp(p: NuevoProductoLista): void {
-    const url = this.buildWhatsappUrl(p);
-
-    if (isDevMode()) {
-      const msg = this.buildWhatsappMessage(p);
-      console.debug('[nuevosprecios][wa-msg]', msg);
-      console.debug(
-        '[nuevosprecios][wa-emoji]',
-        this.SHEET_EMOJI,
-        this.SHEET_EMOJI.codePointAt(0)?.toString(16)
-      );
-      console.debug('[nuevosprecios][wa-url]', url);
-    }
-
-    window.open(url, '_blank', 'noopener,noreferrer');
-  }
-
-  private buildWhatsappMessage(p: NuevoProductoLista): string {
-    const cuota = this.cuotaTarjeta6(p);
-    const sheetEmoji = this.isGoogleSheetProduct(p) ? ` ${this.SHEET_EMOJI}` : '';
-    const lines = [
-      `Hola! Quiero consultar disponibilidad del ${p.marca} ${p.modelo}.${sheetEmoji}`,
-      `- Efectivo: $ ${this.fmtMoney(p.precioPesos)}`,
-      `- Transferencia: $ ${this.fmtMoney(p.precioTransferenciaBancaria)}`,
-      `- 6 cuotas sin interes de: $ ${this.fmtMoney(cuota)}`
-    ];
-
-    if (this.shouldShowColors(p)) {
-      lines.push(`Colores: ${this.formatColorsForMessage(p)}`);
-    }
-
-    return lines.join('\n');
-  }
-
-  private buildWhatsappUrl(p: NuevoProductoLista): string {
-    const phone = this.WHATSAPP_PHONE.replace(/[^\d]/g, '');
-    const msg = this.buildWhatsappMessage(p);
-
-    const encodedText = encodeURIComponent(msg);
-    return `https://wa.me/${phone}?text=${encodedText}`;
+    this.whatsappService.openProductConsultation(p);
   }
 
   private warningForProduct(p: NuevoProductoLista): { title: string; message: string } | null {
-    if (this.isArticulosVarios(p)) {
-      return {
-        title: 'Confirmar consulta',
-        message: 'Este art\u00EDculo en particular requiere pago anticipado. \u00BFDesea continuar?'
-      };
-    }
-
-    if (this.isPerfume(p)) {
-      return {
-        title: 'Confirmar consulta',
-        message: 'Los perfumes requieren pago completo anticipado. \u00BFDesea continuar?'
-      };
-    }
-
-    return null;
+    return catalogProductWhatsappWarning(p);
   }
 
   private openWarningModal(
@@ -1460,10 +1408,6 @@ export class NuevosPreciosComponent implements OnDestroy {
     return typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : null;
   }
 
-  private formatColorsForMessage(p: NuevoProductoLista): string {
-    return this.colorNames(p).join(', ');
-  }
-
   private applyFilter(qRaw: string, scrollToTop = true): void {
     const qNorm = this.normalizeQ(qRaw ?? '');
     this.hasSearch = !!qNorm;
@@ -1688,12 +1632,6 @@ export class NuevosPreciosComponent implements OnDestroy {
 
   private normalizeCategory(txt: string | null | undefined): string {
     return this.normalizeQ(txt ?? '').replace(/\s/g, '');
-  }
-
-  private normalizeOriginSignal(value: unknown): string {
-    return String(value ?? '')
-      .toUpperCase()
-      .replace(/[^A-Z0-9]/g, '');
   }
 
   private buildTokens(qNorm: string): string[] {

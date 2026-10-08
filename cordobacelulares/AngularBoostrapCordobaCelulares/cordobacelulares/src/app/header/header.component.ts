@@ -13,6 +13,7 @@ import { Brand } from '../models/brand';
 })
 export class HeaderComponent implements OnInit {
   @ViewChild('navbarCollapse', { static: false }) navbarCollapse: any;
+  readonly showEquipmentAndVersus = false;
   marcas: string[] = ["Samsung", "Iphone", "Morotola"];
   Brand: Brand[] = [];
   constructor(private brandService: BrandService) {

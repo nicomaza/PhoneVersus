@@ -36,6 +36,14 @@
     </div>
   </div>
 
+  <section class="lp-seo-intro" aria-labelledby="lp-seo-intro-title">
+    <h1 id="lp-seo-intro-title">Celulares nuevos y liberados en Córdoba</h1>
+    <p>
+      Consultá precios actualizados de celulares originales Samsung, Xiaomi, Redmi, POCO, Motorola, iPhone y más.
+      Equipos nuevos, sellados de fábrica y con garantía.
+    </p>
+  </section>
+
   <div *ngIf="catalogLoading" class="lp-loading">Cargando cat&aacute;logo actualizado...</div>
   <div *ngIf="catalogErrorMessage && !hasSearch" class="lp-empty">{{ catalogErrorMessage }}</div>
 
@@ -63,7 +71,11 @@
       <!-- Grid responsive de cards -->
       <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-2">
         <div class="col" *ngFor="let p of g.items; trackBy: trackByProduct">
-          <button type="button" class="card lp-card w-100 text-start" (click)="openDetails(p)">
+          <a
+            class="card lp-card w-100 text-start"
+            [href]="productHref(p)"
+            (click)="onProductCardClick($event, p)"
+          >
             <div class="card-body">
               <div class="lp-model">{{ p.modelo }}</div>
               <div *ngIf="cardColor(p) as color" class="small text-muted mt-1">
@@ -79,7 +91,7 @@
                 {{ cardHint(p) }}
               </div>
             </div>
-          </button>
+          </a>
         </div>
       </div>
     </div>
@@ -148,7 +160,11 @@
 
           <div *ngIf="categoryItems(categoria).length > 0" class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-2">
             <div class="col" *ngFor="let p of categoryItems(categoria); trackBy: trackByProduct">
-              <button type="button" class="card lp-card w-100 text-start" (click)="openDetails(p)">
+              <a
+                class="card lp-card w-100 text-start"
+                [href]="productHref(p)"
+                (click)="onProductCardClick($event, p)"
+              >
                 <div class="card-body">
                   <div class="lp-model">{{ p.modelo }}</div>
                   <div *ngIf="cardColor(p) as color" class="small text-muted mt-1">
@@ -164,7 +180,7 @@
                     {{ cardHint(p) }}
                   </div>
                 </div>
-              </button>
+              </a>
             </div>
           </div>
 

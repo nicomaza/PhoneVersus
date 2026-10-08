@@ -17,6 +17,7 @@ import { QuotationsAdminComponent } from './admin-config/quotations-admin/quotat
 import { TiendaPorteProductsAdminComponent } from './admin-config/tienda-porte-products-admin/tienda-porte-products-admin.component';
 import { CatalogCacheAdminComponent } from './admin-config/catalog-cache-admin/catalog-cache-admin.component';
 import { ComparativaComponent } from './admin-config/comparativa/comparativa.component';
+import { ProductoPublicoComponent } from './producto-publico/producto-publico.component';
 
 
 export const routes: Routes = [{
@@ -141,6 +142,10 @@ export const routes: Routes = [{
 {
     path: 'nuevosprecios',
     component: NuevosPreciosComponent
+},
+{
+    path: 'celulares/:slug',
+    component: ProductoPublicoComponent
 },
 {
     path: '',

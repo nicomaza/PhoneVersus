@@ -1,0 +1,135 @@
+<main class="product-page">
+  <div class="product-shell">
+    <div *ngIf="loading" class="product-state" role="status" aria-live="polite">
+      <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+      <span>Cargando producto...</span>
+    </div>
+
+    <ng-container *ngIf="!loading">
+      <ng-container *ngIf="!loadError; else technicalError">
+      <article *ngIf="product as p; else unavailable" class="product-card">
+        <nav class="product-breadcrumb" aria-label="Navegación">
+          <a routerLink="/home">Inicio</a>
+          <span aria-hidden="true">&gt;</span>
+          <a routerLink="/listapreciosactual">Celulares</a>
+          <span aria-hidden="true">&gt;</span>
+          <span>{{ p.marca }}</span>
+          <span aria-hidden="true">&gt;</span>
+          <span aria-current="page">{{ p.modelo }}</span>
+        </nav>
+
+        <header class="product-header">
+          <p class="product-brand">{{ p.marca }}</p>
+          <h1>{{ p.modelo }}</h1>
+          <p *ngIf="isPhoneProduct(p); else genericProductIntro">
+            Celular nuevo, liberado y original. Precio actualizado en Córdoba Celulares.
+          </p>
+          <ng-template #genericProductIntro>
+            <p>Precio actualizado en Córdoba Celulares.</p>
+          </ng-template>
+        </header>
+
+        <section class="product-prices" aria-labelledby="product-prices-title">
+          <h2 id="product-prices-title">Precios</h2>
+
+          <div *ngIf="hasPrice(p.precioPesos)" class="product-price-row product-price-main">
+            <span>Efectivo</span>
+            <strong>{{ fmtPrice(p.precioPesos) }}</strong>
+          </div>
+
+          <div *ngIf="hasPrice(p.precioTransferenciaBancaria)" class="product-price-row">
+            <span>Transferencia</span>
+            <strong>{{ fmtPrice(p.precioTransferenciaBancaria) }}</strong>
+          </div>
+
+          <div *ngIf="hasPrice(p.precioTarjeta3Pagos)" class="product-price-row">
+            <span>Tarjeta 3 pagos</span>
+            <strong>{{ fmtPrice(p.precioTarjeta3Pagos) }}</strong>
+          </div>
+
+          <div *ngIf="hasPrice(p.precioTarjeta6Pagos)" class="product-price-row">
+            <span>Tarjeta 6 pagos</span>
+            <span class="product-price-value">
+              <strong>{{ fmtPrice(p.precioTarjeta6Pagos) }}</strong>
+              <small *ngIf="cuotaTarjeta6(p) as cuota">6 cuotas de {{ fmtPrice(cuota) }}</small>
+            </span>
+          </div>
+
+        </section>
+
+        <section *ngIf="colorNames(p).length > 0" class="product-details">
+          <h2>Colores disponibles</h2>
+          <div class="product-colors">
+            <span *ngFor="let color of colorNames(p)">{{ color }}</span>
+          </div>
+        </section>
+
+        <section class="product-conditions" aria-labelledby="product-conditions-title">
+          <h2 id="product-conditions-title">Condiciones</h2>
+          <ul>
+            <li>Atención únicamente con turno asignado.</li>
+            <li>{{ productConditionLabel(p) }}</li>
+            <li>Precios en pesos argentinos (ARS).</li>
+            <li>Aceptamos dólares y criptomonedas.</li>
+            <li>Tarjetas: Se reciben TODAS las tarjetas.</li>
+          </ul>
+        </section>
+
+        <div class="product-actions">
+          <button type="button" class="btn btn-success product-primary" (click)="consultarProducto(p)">
+            Consultar por WhatsApp
+          </button>
+          <a class="btn btn-outline-secondary" routerLink="/listapreciosactual">Volver a precios</a>
+        </div>
+      </article>
+      </ng-container>
+    </ng-container>
+  </div>
+</main>
+
+<ng-template #unavailable>
+  <section class="product-card product-unavailable">
+    <h1>Producto no disponible</h1>
+    <p>Este modelo no se encuentra disponible actualmente en nuestro catálogo.</p>
+    <div class="product-actions">
+      <a class="btn btn-success product-primary" routerLink="/listapreciosactual">Ver precios actuales</a>
+      <button type="button" class="btn btn-outline-secondary" (click)="consultarProductoNoDisponible()">
+        Consultar por WhatsApp
+      </button>
+    </div>
+  </section>
+</ng-template>
+
+<ng-template #technicalError>
+  <section class="product-card product-unavailable">
+    <h1>No pudimos cargar el producto</h1>
+    <p>Intentá nuevamente en unos segundos.</p>
+    <div class="product-actions product-actions-single">
+      <a class="btn btn-outline-secondary" routerLink="/listapreciosactual">Volver a precios</a>
+    </div>
+  </section>
+</ng-template>
+
+<div
+  *ngIf="warningModalOpen"
+  class="product-warning-backdrop"
+  (click)="cancelWarningModal()"
+></div>
+
+<div
+  *ngIf="warningModalOpen"
+  class="product-warning-modal"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="product-warning-title"
+>
+  <div class="product-warning-content" (click)="$event.stopPropagation()">
+    <div id="product-warning-title" class="product-warning-title">{{ warningTitle }}</div>
+    <div class="product-warning-message">{{ warningMessage }}</div>
+
+    <div class="product-warning-actions">
+      <button type="button" class="btn btn-outline-secondary" (click)="cancelWarningModal()">Cancelar</button>
+      <button type="button" class="btn btn-success" (click)="confirmWarningWhatsapp()">Continuar</button>
+    </div>
+  </div>
+</div>

@@ -16,7 +16,7 @@
                             (click)="toggleNavbar()">Home</a></li>
                              <li><a class="nav-link px-2 text-white  text-center" [routerLink]="['/listapreciosactual']"
                             (click)="toggleNavbar()">Precios</a></li>
-                         <li class="nav-item dropdown">
+                         <li *ngIf="showEquipmentAndVersus" class="nav-item dropdown">
                         <a class="nav-link text-white dropdown-toggle ms-2  text-center" role="button" data-bs-toggle="dropdown"
                             aria-expanded="false">
                             Equipos
@@ -34,7 +34,7 @@
                                     (click)="toggleNavbar()">Todos</a></li>
                         </ul>
                     </li>
-                    <li><a href="#" class="nav-link px-2 text-white aurora-title text-center" [routerLink]="'comparatives'"
+                    <li *ngIf="showEquipmentAndVersus"><a href="#" class="nav-link px-2 text-white aurora-title text-center" [routerLink]="'comparatives'"
                             (click)="toggleNavbar()">Versus</a></li>
                     <li><a href="#" class="nav-link px-2 text-white  text-center" [routerLink]="'warranty'"
                             (click)="toggleNavbar()">Garantia</a></li>
