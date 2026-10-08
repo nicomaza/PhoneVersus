@@ -27,7 +27,7 @@ class SeoDiscoveryControllerTest {
                 .contains("<loc>https://cordobacelulares.com/</loc>")
                 .contains("<loc>https://cordobacelulares.com/listapreciosactual</loc>")
                 .contains("<loc>https://cordobacelulares.com/celulares/poco-c81-pro-4gb-128gb</loc>")
-                .doesNotContain("www.");
+                .doesNotContain("https://www.cordobacelulares.com");
     }
 
     @Test

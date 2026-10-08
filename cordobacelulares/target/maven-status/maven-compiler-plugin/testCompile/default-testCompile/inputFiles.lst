@@ -1,5 +1,6 @@
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\test\java\celulares\cordobacelulares\config\GlobalExceptionHandlerTest.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\test\java\celulares\cordobacelulares\controller\SeoDiscoveryControllerTest.java
+C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\test\java\celulares\cordobacelulares\controller\SeoProductPageControllerTest.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\test\java\celulares\cordobacelulares\CordobacelularesApplicationTests.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\test\java\celulares\cordobacelulares\services\implement\AdminCatalogServiceTest.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\test\java\celulares\cordobacelulares\services\implement\BlockedCatalogProductServiceTest.java
@@ -14,4 +15,5 @@ C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\test\java\cel
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\test\java\celulares\cordobacelulares\services\implement\TiendaPorteServiceImplCatalogTest.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\test\java\celulares\cordobacelulares\services\SeoCatalogServiceTest.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\test\java\celulares\cordobacelulares\services\SeoCatalogSyncSchedulerTest.java
+C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\test\java\celulares\cordobacelulares\services\SeoProductPageServiceTest.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\test\java\celulares\cordobacelulares\utils\SeoProductSlugTest.java

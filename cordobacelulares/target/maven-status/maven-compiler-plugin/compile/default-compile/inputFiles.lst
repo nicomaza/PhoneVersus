@@ -19,6 +19,7 @@ C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\cel
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\controller\PriceConfigurationController.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\controller\PublicSeoCatalogController.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\controller\SeoDiscoveryController.java
+C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\controller\SeoProductPageController.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\controller\SupplierSheetController.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\controller\TiendaPorteController.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\controller\TiendaPorteCredentialController.java
@@ -40,6 +41,7 @@ C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\cel
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\dtos\priceconfiguration\PriceConfigurationUpdateRequest.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\dtos\seo\SeoCatalogProductResponse.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\dtos\seo\SeoCatalogSyncResult.java
+C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\dtos\seo\SeoProductPageView.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\dtos\suppliersheet\SupplierSheetPreviewProductResponse.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\dtos\suppliersheet\SupplierSheetPreviewResponse.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\dtos\suppliersheet\SupplierSheetProduct.java
@@ -169,6 +171,7 @@ C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\cel
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\services\PriceConfigurationService.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\services\SeoCatalogService.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\services\SeoCatalogSyncScheduler.java
+C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\services\SeoProductPageService.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\services\SupplierSheetService.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\services\TiendaPorteAuthenticationInvalidator.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\services\TiendaPorteCredentialService.java

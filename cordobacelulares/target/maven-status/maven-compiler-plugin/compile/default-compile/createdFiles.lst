@@ -56,6 +56,7 @@ celulares\cordobacelulares\integration\liberadosya\matching\IndexedLiberadosYaPr
 celulares\cordobacelulares\utils\TiendaPorteTextUtils.class
 celulares\cordobacelulares\dtos\tiendaporte\comparativa\BombaiComparativaResponse.class
 celulares\cordobacelulares\services\implement\BombaiComparativaService$ComparisonValue.class
+celulares\cordobacelulares\services\SeoProductPageService$1.class
 celulares\cordobacelulares\dtos\whatsapp\RequestWhatsapp.class
 celulares\cordobacelulares\controller\TiendaPorteCredentialController.class
 celulares\cordobacelulares\controller\ColorController.class
@@ -78,6 +79,7 @@ celulares\cordobacelulares\dtos\tiendaporte\response\TiendaPorteColorStockRespon
 celulares\cordobacelulares\services\implement\TiendaPorteCatalogCacheService$RefreshStart.class
 celulares\cordobacelulares\entities\PhoneEntity.class
 celulares\cordobacelulares\integration\liberadosya\exception\LiberadosYaIntegrationException.class
+celulares\cordobacelulares\services\SeoProductPageService$ProductKind.class
 celulares\cordobacelulares\controller\AdminCatalogController.class
 celulares\cordobacelulares\services\implement\CatalogVariantIdentity.class
 celulares\cordobacelulares\dtos\model\ModelDto.class
@@ -91,7 +93,9 @@ celulares\cordobacelulares\services\implement\CatalogProductPolicy$SelectionStat
 celulares\cordobacelulares\dtos\tiendaporte\comparativa\BombaiComparativaCompetitorPricesResponse.class
 celulares\cordobacelulares\integration\liberadosya\matching\LiberadosYaProductIdentityParser.class
 celulares\cordobacelulares\exceptions\TiendaPorteBadRequestException.class
+celulares\cordobacelulares\controller\SeoProductPageController.class
 celulares\cordobacelulares\integration\liberadosya\exception\LiberadosYaCatalogNotAvailableException.class
+celulares\cordobacelulares\dtos\seo\SeoProductPageView.class
 celulares\cordobacelulares\services\implement\TiendaPorteServiceImpl$BrandAccumulator.class
 celulares\cordobacelulares\integration\liberadosya\scraping\LiberadosYaProductImageSanitizer$SanitizedImages.class
 celulares\cordobacelulares\services\implement\TiendaPorteServiceImpl$ColorStockValue.class
@@ -109,8 +113,10 @@ celulares\cordobacelulares\services\implement\CatalogCategoryResolver$ResolveReq
 celulares\cordobacelulares\services\implement\TiendaPorteCatalogCacheService.class
 celulares\cordobacelulares\dtos\tiendaporte\external\TiendaPorteCsrfResponse.class
 celulares\cordobacelulares\integration\liberadosya\scraping\LiberadosYaPriceParser.class
+celulares\cordobacelulares\services\SeoProductPageService.class
 celulares\cordobacelulares\controller\CatalogCacheAdminController.class
 celulares\cordobacelulares\integration\liberadosya\matching\LiberadosYaCatalogIndex.class
+celulares\cordobacelulares\services\SeoProductPageService$CurrentProduct.class
 celulares\cordobacelulares\entities\ColorEntity.class
 celulares\cordobacelulares\services\implement\SupplierSheetServiceImpl$ParseResult.class
 celulares\cordobacelulares\integration\liberadosya\dto\LiberadosYaStatusResponse.class

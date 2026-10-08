@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="es-AR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${page.title}">Producto | Córdoba Celulares</title>
+    <meta name="description" th:content="${page.description}" content="Producto en Córdoba Celulares">
+    <link rel="canonical" th:href="${page.canonicalUrl}" href="https://cordobacelulares.com/">
+
+    <meta property="og:title" th:content="${page.title}" content="Producto | Córdoba Celulares">
+    <meta property="og:description" th:content="${page.description}" content="Producto en Córdoba Celulares">
+    <meta property="og:type" content="product">
+    <meta property="og:url" th:content="${page.canonicalUrl}" content="https://cordobacelulares.com/">
+
+    <link rel="stylesheet" th:href="@{/seo-assets/seo-product.css}" href="/seo-assets/seo-product.css">
+    <script type="application/ld+json" th:utext="${page.productJsonLd}"></script>
+    <script type="application/ld+json" th:utext="${page.breadcrumbJsonLd}"></script>
+</head>
+<body>
+<main class="product-page">
+    <div class="product-shell">
+        <article class="product-card">
+            <nav class="product-breadcrumb" aria-label="Navegación">
+                <a href="/">Inicio</a>
+                <span aria-hidden="true">&gt;</span>
+                <a href="/listapreciosactual">Celulares</a>
+                <span aria-hidden="true">&gt;</span>
+                <span th:text="${page.marca}">Marca</span>
+                <span aria-hidden="true">&gt;</span>
+                <span aria-current="page" th:text="${page.modelo}">Modelo</span>
+            </nav>
+
+            <header class="product-header">
+                <p class="product-brand" th:text="${page.marca}">Marca</p>
+                <h1 th:text="${page.modelo}">Modelo</h1>
+                <p th:if="${page.available}" th:text="${page.intro}">Precio actualizado en Córdoba Celulares.</p>
+            </header>
+
+            <div th:if="${page.available}">
+                <section th:if="${page.hasAnyPrice()}" class="product-prices" aria-labelledby="product-prices-title">
+                    <h2 id="product-prices-title">Precios</h2>
+
+                    <div th:if="${page.precioEfectivo != null}" class="product-price-row product-price-main">
+                        <span>Efectivo</span>
+                        <strong th:text="${page.precioEfectivo}">$ 0</strong>
+                    </div>
+
+                    <div th:if="${page.precioTransferencia != null}" class="product-price-row">
+                        <span>Transferencia</span>
+                        <strong th:text="${page.precioTransferencia}">$ 0</strong>
+                    </div>
+
+                    <div th:if="${page.precioTarjeta3Pagos != null}" class="product-price-row">
+                        <span>Tarjeta 3 pagos</span>
+                        <strong th:text="${page.precioTarjeta3Pagos}">$ 0</strong>
+                    </div>
+
+                    <div th:if="${page.precioTarjeta6Pagos != null}" class="product-price-row">
+                        <span>Tarjeta 6 pagos</span>
+                        <span class="product-price-value">
+                            <strong th:text="${page.precioTarjeta6Pagos}">$ 0</strong>
+                            <small th:if="${page.cuotaTarjeta6 != null}">
+                                6 cuotas de <span th:text="${page.cuotaTarjeta6}">$ 0</span>
+                            </small>
+                        </span>
+                    </div>
+                </section>
+
+                <section th:if="${!page.colores.isEmpty()}" class="product-details">
+                    <h2>Colores disponibles</h2>
+                    <div class="product-colors">
+                        <span th:each="color : ${page.colores}" th:text="${color}">Color</span>
+                    </div>
+                </section>
+
+                <section class="product-conditions" aria-labelledby="product-conditions-title">
+                    <h2 id="product-conditions-title">Condiciones</h2>
+                    <ul>
+                        <li>Atención únicamente con turno asignado.</li>
+                        <li th:text="${page.conditionLabel}">Condición del producto.</li>
+                        <li>Precios en pesos argentinos (ARS).</li>
+                        <li>Aceptamos dólares y criptomonedas.</li>
+                        <li>Tarjetas: Se reciben TODAS las tarjetas.</li>
+                    </ul>
+                </section>
+
+                <aside th:if="${page.whatsappWarning != null}" class="product-warning" role="note">
+                    <strong>Antes de consultar</strong>
+                    <span th:text="${page.whatsappWarning}">Advertencia comercial.</span>
+                </aside>
+            </div>
+
+            <section th:unless="${page.available}" class="product-unavailable" aria-labelledby="unavailable-title">
+                <h2 id="unavailable-title">Producto no disponible actualmente</h2>
+                <p>Este modelo forma parte de nuestro catálogo histórico, pero hoy no tiene disponibilidad.</p>
+            </section>
+
+            <div class="product-actions">
+                <a class="button button-primary"
+                   th:href="${page.whatsappUrl}"
+                   href="https://wa.me/5493512129922"
+                   target="_blank"
+                   rel="noopener noreferrer">Consultar por WhatsApp</a>
+                <a class="button button-secondary" href="/listapreciosactual">Volver a precios</a>
+            </div>
+        </article>
+    </div>
+</main>
+</body>
+</html>
