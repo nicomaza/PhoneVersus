@@ -1,6 +1,8 @@
-import { CommonModule } from '@angular/common';
-import { Component, ElementRef, HostListener, OnDestroy, ViewChild } from '@angular/core';
+import { CommonModule, DOCUMENT } from '@angular/common';
+import { Component, ElementRef, HostListener, Inject, OnDestroy, ViewChild } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { Meta, Title } from '@angular/platform-browser';
+import { RouterLink } from '@angular/router';
 import { debounceTime, distinctUntilChanged, Subscription } from 'rxjs';
 import {
   CatalogProductOrigin,
@@ -13,6 +15,7 @@ import {
   TiendaPorteModelResponse
 } from '../../services/nuevos-precios.service';
 import { CatalogWhatsappService } from '../../services/catalog-whatsapp.service';
+import { HomeBannerService, PublicHomeBanner } from '../../services/home-banner.service';
 import {
   catalogProductConditionLabel,
   catalogProductWhatsappWarning,
@@ -63,11 +66,15 @@ export interface NuevoProductoLista {
 @Component({
   selector: 'app-nuevos-precios',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink],
   templateUrl: './nuevos-precios.component.html',
   styleUrl: './nuevos-precios.component.css'
 })
 export class NuevosPreciosComponent implements OnDestroy {
+  readonly homeBanners: PublicHomeBanner[] = [];
+  currentBannerIndex = 0;
+  carouselPointerInside = false;
+
   private readonly baseCategorias = [
     'IPHONE',
     'XIAOMI',
@@ -124,6 +131,13 @@ export class NuevosPreciosComponent implements OnDestroy {
   private readonly categoryLoadingMore: Record<string, boolean> = {};
   private readonly paginatedCategories = new Set<string>();
   private readonly subscriptions = new Subscription();
+  private carouselTimer?: ReturnType<typeof setInterval>;
+  private carouselManuallyPaused = false;
+  private carouselTouchStartX: number | null = null;
+  private readonly reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  private readonly previousTitle: string;
+  private readonly previousDescription: string | null;
+  private readonly previousCanonical: string | null;
   private readonly scrollHandler = (): void => this.handleWindowScroll();
   private readonly failedFeatureImages = new Set<string>();
   private publishedContentSlugs = new Set<string>();
@@ -173,12 +187,21 @@ export class NuevosPreciosComponent implements OnDestroy {
 
   constructor(
     private service: NuevosPreciosService,
-    private whatsappService: CatalogWhatsappService
+    private whatsappService: CatalogWhatsappService,
+    private homeBannerService: HomeBannerService,
+    private title: Title,
+    private meta: Meta,
+    @Inject(DOCUMENT) private document: Document
   ) {
+    this.previousTitle = this.title.getTitle();
+    this.previousDescription = this.meta.getTag("name='description'")?.content ?? null;
+    this.previousCanonical = this.document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.href ?? null;
+    this.applyHomeMetadata();
     window.addEventListener('scroll', this.scrollHandler, { passive: true });
     this.applyFilter('');
     this.loadCatalogInBackground();
     this.loadPublishedContentSlugs();
+    this.loadHomeBanners();
 
     this.subscriptions.add(
       this.searchCtrl.valueChanges
@@ -212,8 +235,76 @@ export class NuevosPreciosComponent implements OnDestroy {
 
   ngOnDestroy(): void {
     this.subscriptions.unsubscribe();
+    this.stopCarousel();
     window.removeEventListener('scroll', this.scrollHandler);
     document.body.classList.remove('modal-open');
+    this.restoreMetadata();
+  }
+
+  get isCatalogModalOpen(): boolean {
+    return this.modalOpen || this.featuresModalOpen || this.warningModalOpen;
+  }
+
+  bannerLink(banner: PublicHomeBanner): string | null {
+    const value = banner.linkUrl?.trim();
+    if (!value) {
+      return null;
+    }
+    if (value.startsWith('/') && !value.startsWith('//')) {
+      return value;
+    }
+    try {
+      const url = new URL(value);
+      return url.protocol === 'https:' || url.protocol === 'http:' ? url.href : null;
+    } catch {
+      return null;
+    }
+  }
+
+  selectBanner(index: number): void {
+    if (index < 0 || index >= this.homeBanners.length) {
+      return;
+    }
+    this.currentBannerIndex = index;
+    this.carouselManuallyPaused = true;
+    this.stopCarousel();
+  }
+
+  previousBanner(): void {
+    const next = this.currentBannerIndex === 0 ? this.homeBanners.length - 1 : this.currentBannerIndex - 1;
+    this.selectBanner(next);
+  }
+
+  nextBanner(): void {
+    this.selectBanner((this.currentBannerIndex + 1) % this.homeBanners.length);
+  }
+
+  onCarouselPointer(inside: boolean): void {
+    this.carouselPointerInside = inside;
+    inside ? this.stopCarousel() : this.startCarousel();
+  }
+
+  onCarouselTouchStart(event: TouchEvent): void {
+    this.carouselManuallyPaused = true;
+    this.stopCarousel();
+    this.carouselTouchStartX = event.changedTouches[0]?.clientX ?? null;
+  }
+
+  onCarouselTouchEnd(event: TouchEvent): void {
+    const endX = event.changedTouches[0]?.clientX;
+    if (this.carouselTouchStartX === null || endX === undefined) {
+      return;
+    }
+    const distance = endX - this.carouselTouchStartX;
+    this.carouselTouchStartX = null;
+    if (Math.abs(distance) < 45) {
+      return;
+    }
+    distance > 0 ? this.previousBanner() : this.nextBanner();
+  }
+
+  openFloatingWhatsapp(): void {
+    this.whatsappService.openHomeConsultation();
   }
 
   fmtMoney(n?: number | null): string {
@@ -1768,5 +1859,63 @@ export class NuevosPreciosComponent implements OnDestroy {
 
     scored.sort((a, b) => b.score - a.score);
     return scored.map(x => x.p);
+  }
+
+  private loadHomeBanners(): void {
+    this.subscriptions.add(
+      this.homeBannerService.listPublic().subscribe({
+        next: banners => {
+          this.homeBanners.splice(0, this.homeBanners.length, ...banners);
+          this.currentBannerIndex = 0;
+          this.startCarousel();
+        },
+        error: () => {
+          this.homeBanners.splice(0);
+          this.stopCarousel();
+        }
+      })
+    );
+  }
+
+  private startCarousel(): void {
+    this.stopCarousel();
+    if (this.reducedMotion || this.carouselManuallyPaused || this.carouselPointerInside || this.homeBanners.length < 2) {
+      return;
+    }
+    this.carouselTimer = setInterval(() => {
+      this.currentBannerIndex = (this.currentBannerIndex + 1) % this.homeBanners.length;
+    }, 5000);
+  }
+
+  private stopCarousel(): void {
+    if (this.carouselTimer !== undefined) {
+      clearInterval(this.carouselTimer);
+      this.carouselTimer = undefined;
+    }
+  }
+
+  private applyHomeMetadata(): void {
+    const pageTitle = 'Celulares nuevos y liberados en C\u00F3rdoba | C\u00F3rdoba Celulares';
+    const description = 'Celulares nuevos y liberados en C\u00F3rdoba, sellados de f\u00E1brica y con garant\u00EDa. Consult\u00E1 modelos, stock y precios actualizados.';
+    const canonicalUrl = 'https://cordobacelulares.com/';
+    this.title.setTitle(pageTitle);
+    this.meta.updateTag({ name: 'description', content: description });
+    this.meta.updateTag({ property: 'og:title', content: pageTitle }, "property='og:title'");
+    this.meta.updateTag({ property: 'og:description', content: description }, "property='og:description'");
+    this.meta.updateTag({ property: 'og:url', content: canonicalUrl }, "property='og:url'");
+    this.document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.setAttribute('href', canonicalUrl);
+  }
+
+  private restoreMetadata(): void {
+    this.title.setTitle(this.previousTitle);
+    if (this.previousDescription === null) {
+      this.meta.removeTag("name='description'");
+    } else {
+      this.meta.updateTag({ name: 'description', content: this.previousDescription });
+    }
+    const canonical = this.document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+    if (canonical && this.previousCanonical) {
+      canonical.setAttribute('href', this.previousCanonical);
+    }
   }
 }

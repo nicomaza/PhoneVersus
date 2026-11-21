@@ -1,0 +1,15 @@
+:host { display: block; background: #fbfbfd; }
+.buy-page { min-height: calc(100vh - 120px); padding: 92px 16px 42px; }
+.buy-card { width: min(100%, 760px); margin: 0 auto; padding: clamp(22px, 5vw, 42px); border: 1px solid #e5e7eb; border-radius: 20px; background: #fff; box-shadow: 0 18px 45px rgba(15, 23, 42, .06); }
+.buy-eyebrow { margin: 0 0 5px; color: #dc3545; font-size: .78rem; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+h1 { margin: 0; color: #1f2937; font-size: clamp(1.7rem, 5vw, 2.35rem); font-weight: 850; }
+.buy-lead { margin: 10px 0 26px; color: #64748b; line-height: 1.55; }
+ol { display: grid; gap: 14px; margin: 0; padding: 0; list-style: none; counter-reset: steps; }
+li { position: relative; min-height: 58px; padding: 10px 10px 10px 58px; counter-increment: steps; }
+li::before { content: counter(steps); position: absolute; top: 7px; left: 0; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%; background: #f8d7da; color: #842029; font-weight: 800; }
+li strong, li span { display: block; }
+li strong { margin-bottom: 3px; color: #1f2937; }
+li span { color: #64748b; line-height: 1.45; }
+.buy-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 28px; }
+.buy-actions .btn { min-height: 46px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
+@media (max-width: 520px) { .buy-actions .btn { width: 100%; } }

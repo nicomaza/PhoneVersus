@@ -24,8 +24,12 @@ services:
       - SPRING_DATASOURCE_USERNAME=nicolas
       - SPRING_DATASOURCE_PASSWORD=nicolas12
       - SEO_PRODUCT_MEDIA_DIRECTORY=/data/product-media
+      - HOME_BANNER_MEDIA_DIRECTORY=/data/home-banner-media
+      - BOMBAI_ADMIN_USERNAME=${BOMBAI_ADMIN_USERNAME:?BOMBAI_ADMIN_USERNAME requerida}
+      - BOMBAI_ADMIN_PASSWORD=${BOMBAI_ADMIN_PASSWORD:?BOMBAI_ADMIN_PASSWORD requerida}
     volumes:
       - product_media_volume:/data/product-media
+      - home_banner_media_volume:/data/home-banner-media
     networks:
       - database
       - backend
@@ -43,6 +47,7 @@ services:
 volumes:
   postgres_volume:
   product_media_volume:
+  home_banner_media_volume:
 
 networks:
   database:

@@ -19,6 +19,7 @@ interface AdminNavItem {
 export class AdminConfigLayoutComponent implements OnInit, OnDestroy {
   readonly navItems: AdminNavItem[] = [
     { label: 'Cotizaciones', path: '/config/bombai/cotizaciones', icon: 'bi-currency-dollar' },
+    { label: 'Banners del inicio', path: '/config/bombai/banners-inicio', icon: 'bi-images' },
     { label: 'Credenciales', path: '/config/bombai/credenciales', icon: 'bi-key' },
     { label: 'Equipos', path: '/config/bombai/equipos', icon: 'bi-phone' },
     { label: 'Contenido productos', path: '/config/bombai/contenido-productos', icon: 'bi-file-earmark-richtext' },

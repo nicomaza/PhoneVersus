@@ -20,6 +20,8 @@ import { ComparativaComponent } from './admin-config/comparativa/comparativa.com
 import { ProductoPublicoComponent } from './producto-publico/producto-publico.component';
 import { ProductContentAdminComponent } from './admin-config/product-content-admin/product-content-admin.component';
 import { ProductContentEditorComponent } from './admin-config/product-content-editor/product-content-editor.component';
+import { HomeBannersAdminComponent } from './admin-config/home-banners-admin/home-banners-admin.component';
+import { ComoComprarComponent } from './como-comprar/como-comprar.component';
 
 
 export const routes: Routes = [{
@@ -60,6 +62,11 @@ export const routes: Routes = [{
 {
     path: 'warranty',
     component: WarrantyComponent
+},
+{
+    path: 'como-comprar',
+    title: 'Cómo comprar | Córdoba Celulares',
+    component: ComoComprarComponent
 },
 {
     path: 'glossary',
@@ -111,6 +118,14 @@ export const routes: Routes = [{
             }
         },
         {
+            path: 'banners-inicio',
+            component: HomeBannersAdminComponent,
+            data: {
+                title: 'Banners del inicio',
+                description: 'Administración del carrusel publicitario de la página principal.'
+            }
+        },
+        {
             path: 'equipos',
             component: TiendaPorteProductsAdminComponent,
             data: {
@@ -155,10 +170,12 @@ export const routes: Routes = [{
 
 {
     path: 'listapreciosactual',
+    title: 'Celulares nuevos y liberados en Córdoba | Córdoba Celulares',
     component: NuevosPreciosComponent
 },
 {
     path: 'nuevosprecios',
+    title: 'Celulares nuevos y liberados en Córdoba | Córdoba Celulares',
     component: NuevosPreciosComponent
 },
 {
@@ -167,11 +184,12 @@ export const routes: Routes = [{
 },
 {
     path: '',
-    redirectTo: 'home',
+    title: 'Celulares nuevos y liberados en Córdoba | Córdoba Celulares',
+    component: NuevosPreciosComponent,
     pathMatch: 'full'
 },
 {
     path: '**',
-    redirectTo: 'home'
+    redirectTo: ''
 }
 ];

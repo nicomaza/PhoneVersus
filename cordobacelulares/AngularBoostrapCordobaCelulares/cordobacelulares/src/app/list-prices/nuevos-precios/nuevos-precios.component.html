@@ -1,6 +1,65 @@
 <!-- nuevos-precios.component.html -->
 <div class="lp-container" style="--lp-top-offset: 60px;">
 
+  <section
+    *ngIf="homeBanners.length > 0"
+    class="home-carousel"
+    aria-roledescription="carrusel"
+    aria-label="Promociones"
+    (mouseenter)="onCarouselPointer(true)"
+    (mouseleave)="onCarouselPointer(false)"
+    (focusin)="onCarouselPointer(true)"
+    (focusout)="onCarouselPointer(false)"
+    (touchstart)="onCarouselTouchStart($event)"
+    (touchend)="onCarouselTouchEnd($event)"
+  >
+    <div class="home-carousel-track">
+      <article
+        *ngFor="let banner of homeBanners; let index = index"
+        class="home-carousel-slide"
+        [class.home-carousel-slide-active]="index === currentBannerIndex"
+        [attr.aria-hidden]="index !== currentBannerIndex"
+      >
+        <ng-container *ngIf="bannerLink(banner) as link; else bannerWithoutLink">
+          <a class="home-carousel-media" [href]="link" target="_blank" rel="noopener noreferrer">
+            <picture>
+              <source media="(max-width: 767px)" [srcset]="banner.mobileImageUrl || banner.desktopImageUrl" />
+              <img [src]="banner.desktopImageUrl" [alt]="banner.altText"
+                [attr.loading]="index === 0 ? 'eager' : 'lazy'"
+                [attr.fetchpriority]="index === 0 ? 'high' : 'low'" />
+            </picture>
+          </a>
+        </ng-container>
+        <ng-template #bannerWithoutLink>
+          <div class="home-carousel-media">
+            <picture>
+              <source media="(max-width: 767px)" [srcset]="banner.mobileImageUrl || banner.desktopImageUrl" />
+              <img [src]="banner.desktopImageUrl" [alt]="banner.altText"
+                [attr.loading]="index === 0 ? 'eager' : 'lazy'"
+                [attr.fetchpriority]="index === 0 ? 'high' : 'low'" />
+            </picture>
+          </div>
+        </ng-template>
+      </article>
+    </div>
+
+    <ng-container *ngIf="homeBanners.length > 1">
+      <button type="button" class="home-carousel-arrow home-carousel-prev" aria-label="Banner anterior" (click)="previousBanner()">
+        <i class="bi bi-chevron-left" aria-hidden="true"></i>
+      </button>
+      <button type="button" class="home-carousel-arrow home-carousel-next" aria-label="Banner siguiente" (click)="nextBanner()">
+        <i class="bi bi-chevron-right" aria-hidden="true"></i>
+      </button>
+      <div class="home-carousel-indicators" aria-label="Elegir banner">
+        <button *ngFor="let banner of homeBanners; let index = index" type="button"
+          [class.active]="index === currentBannerIndex"
+          [attr.aria-label]="'Mostrar banner ' + (index + 1)"
+          [attr.aria-current]="index === currentBannerIndex ? 'true' : null"
+          (click)="selectBanner(index)"></button>
+      </div>
+    </ng-container>
+  </section>
+
   <!-- Buscador -->
   <div class="lp-search">
     <div class="lp-search-card">
@@ -36,13 +95,16 @@
     </div>
   </div>
 
-  <section class="lp-seo-intro" aria-labelledby="lp-seo-intro-title">
-    <h1 id="lp-seo-intro-title">Celulares nuevos y liberados en Córdoba</h1>
-    <p>
-      Consultá precios actualizados de celulares originales Samsung, Xiaomi, Redmi, POCO, Motorola, iPhone y más.
-      Equipos nuevos, sellados de fábrica y con garantía.
-    </p>
+  <section class="lp-home-heading" aria-labelledby="lp-home-title">
+    <h1 id="lp-home-title">Celulares nuevos y liberados en C&oacute;rdoba</h1>
+    <p>Equipos nuevos, sellados de f&aacute;brica y con garant&iacute;a.</p>
   </section>
+
+  <nav class="lp-info-links" aria-label="Informaci&oacute;n de compra">
+    <a routerLink="/warranty"><i class="bi bi-shield-check" aria-hidden="true"></i><span>Garant&iacute;a</span></a>
+    <a routerLink="/como-comprar"><i class="bi bi-bag-check" aria-hidden="true"></i><span>C&oacute;mo comprar</span></a>
+    <a routerLink="/faqs"><i class="bi bi-question-circle" aria-hidden="true"></i><span>Preguntas frecuentes</span></a>
+  </nav>
 
   <div *ngIf="catalogLoading" class="lp-loading">Cargando cat&aacute;logo actualizado...</div>
   <div *ngIf="catalogErrorMessage && !hasSearch" class="lp-empty">{{ catalogErrorMessage }}</div>
@@ -191,7 +253,25 @@
       </div>
     </div>
   </ng-template>
+
+  <section class="lp-seo-description" aria-label="Sobre nuestro cat&aacute;logo">
+    <h2>Cat&aacute;logo de celulares en C&oacute;rdoba</h2>
+    <p>
+      Consult&aacute; precios actualizados de celulares originales Samsung, Xiaomi, Redmi, POCO, Motorola, iPhone y m&aacute;s.
+      Encontr&aacute; equipos nuevos y liberados, revis&aacute; las opciones disponibles y comunicate con nosotros para confirmar stock.
+    </p>
+  </section>
 </div>
+
+<button
+  *ngIf="!isCatalogModalOpen"
+  type="button"
+  class="home-whatsapp"
+  aria-label="Consultar por WhatsApp"
+  (click)="openFloatingWhatsapp()"
+>
+  <i class="bi bi-whatsapp" aria-hidden="true"></i>
+</button>
 
 <!-- Modal (sin dependencia extra, bootstrap-friendly) -->
 <div *ngIf="modalOpen" class="modal-backdrop fade show lp-backdrop" (click)="closeModal()"></div>

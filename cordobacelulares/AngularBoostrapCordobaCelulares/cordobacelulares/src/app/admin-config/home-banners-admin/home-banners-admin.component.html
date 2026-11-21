@@ -1,0 +1,135 @@
+<section class="banner-admin">
+  <form #createForm="ngForm" class="panel create-panel" (ngSubmit)="createBanner(createForm)">
+    <div class="panel-heading">
+      <div>
+        <h3>Nuevo banner</h3>
+        <p>La imagen desktop es obligatoria. Mobile puede usar la misma imagen.</p>
+      </div>
+    </div>
+
+    <div class="form-grid">
+      <label>
+        <span>T&iacute;tulo</span>
+        <input class="form-control" name="newTitle" [(ngModel)]="newTitle" maxlength="255" required />
+      </label>
+      <label>
+        <span>Texto alternativo</span>
+        <input class="form-control" name="newAltText" [(ngModel)]="newAltText" maxlength="500" required />
+      </label>
+      <label class="form-wide">
+        <span>Enlace opcional</span>
+        <input class="form-control" name="newLinkUrl" [(ngModel)]="newLinkUrl" maxlength="2048" placeholder="https://... o /ruta" />
+      </label>
+      <label>
+        <span>Imagen desktop (m&aacute;x. 5 MB)</span>
+        <input class="form-control" type="file" accept="image/jpeg,image/png,image/webp" required
+          (change)="selectCreateImage('desktop', $event)" />
+      </label>
+      <label>
+        <span>Imagen mobile opcional</span>
+        <input class="form-control" type="file" accept="image/jpeg,image/png,image/webp"
+          (change)="selectCreateImage('mobile', $event)" />
+      </label>
+    </div>
+
+    <div *ngIf="desktopPreview || mobilePreview" class="create-previews">
+      <figure *ngIf="desktopPreview">
+        <figcaption>Desktop</figcaption>
+        <img [src]="desktopPreview" alt="Vista previa desktop" />
+      </figure>
+      <figure *ngIf="mobilePreview || desktopPreview">
+        <figcaption>Mobile</figcaption>
+        <img [src]="mobilePreview || desktopPreview" alt="Vista previa mobile" />
+      </figure>
+    </div>
+
+    <button class="btn btn-dark" type="submit" [disabled]="creating">
+      <span *ngIf="creating" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+      {{ creating ? 'Creando...' : 'Crear banner' }}
+    </button>
+  </form>
+
+  <div *ngIf="successMessage" class="status success" role="status">{{ successMessage }}</div>
+  <div *ngIf="errorMessage" class="status error" role="alert">{{ errorMessage }}</div>
+
+  <div *ngIf="loading" class="loading-state">
+    <span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Cargando banners...
+  </div>
+
+  <div *ngIf="!loading && banners.length === 0" class="empty-state">
+    Todav&iacute;a no hay banners cargados.
+  </div>
+
+  <div *ngIf="!loading && banners.length > 0" class="banner-list">
+    <article *ngFor="let banner of banners; let index = index" class="panel banner-card" [class.inactive]="!banner.active">
+      <header class="banner-card-header">
+        <div>
+          <span class="order-label">Orden {{ index + 1 }}</span>
+          <strong>{{ banner.title }}</strong>
+          <span class="state" [class.state-active]="banner.active">{{ banner.active ? 'Activo' : 'Inactivo' }}</span>
+        </div>
+        <div class="order-actions">
+          <button type="button" class="icon-btn" aria-label="Subir banner" [disabled]="index === 0 || ordering" (click)="moveBanner(index, -1)">
+            <i class="bi bi-arrow-up" aria-hidden="true"></i>
+          </button>
+          <button type="button" class="icon-btn" aria-label="Bajar banner" [disabled]="index === banners.length - 1 || ordering" (click)="moveBanner(index, 1)">
+            <i class="bi bi-arrow-down" aria-hidden="true"></i>
+          </button>
+        </div>
+      </header>
+
+      <div class="banner-previews">
+        <figure>
+          <figcaption>Desktop</figcaption>
+          <img [src]="banner.desktopImageUrl" [alt]="banner.altText" />
+          <label class="file-action">
+            Reemplazar desktop
+            <input type="file" accept="image/jpeg,image/png,image/webp" [disabled]="banner.busy"
+              (change)="replaceImage(banner, 'desktop', $event)" />
+          </label>
+        </figure>
+        <figure class="mobile-preview">
+          <figcaption>Mobile <span *ngIf="!hasCustomMobile(banner)">(usa desktop)</span></figcaption>
+          <img [src]="banner.mobileImageUrl" [alt]="banner.altText" />
+          <div class="mobile-image-actions">
+            <label class="file-action">
+              {{ hasCustomMobile(banner) ? 'Reemplazar mobile' : 'Subir mobile' }}
+              <input type="file" accept="image/jpeg,image/png,image/webp" [disabled]="banner.busy"
+                (change)="replaceImage(banner, 'mobile', $event)" />
+            </label>
+            <button *ngIf="hasCustomMobile(banner)" type="button" class="link-button" [disabled]="banner.busy" (click)="removeMobile(banner)">
+              Quitar mobile
+            </button>
+          </div>
+        </figure>
+      </div>
+
+      <div class="form-grid edit-grid">
+        <label>
+          <span>T&iacute;tulo</span>
+          <input class="form-control" [(ngModel)]="banner.draftTitle" maxlength="255" [disabled]="banner.busy" />
+        </label>
+        <label>
+          <span>Texto alternativo</span>
+          <input class="form-control" [(ngModel)]="banner.draftAltText" maxlength="500" [disabled]="banner.busy" />
+        </label>
+        <label class="form-wide">
+          <span>Enlace opcional</span>
+          <input class="form-control" [(ngModel)]="banner.draftLinkUrl" maxlength="2048" [disabled]="banner.busy" />
+        </label>
+      </div>
+
+      <footer class="banner-actions">
+        <button type="button" class="btn btn-dark" [disabled]="banner.busy || !banner.draftTitle.trim() || !banner.draftAltText.trim()" (click)="saveMetadata(banner)">
+          Guardar cambios
+        </button>
+        <button type="button" class="btn btn-outline-secondary" [disabled]="banner.busy" (click)="toggleActive(banner)">
+          {{ banner.active ? 'Desactivar' : 'Activar' }}
+        </button>
+        <button type="button" class="btn btn-outline-danger delete-button" [disabled]="banner.busy" (click)="deleteBanner(banner)">
+          Eliminar
+        </button>
+      </footer>
+    </article>
+  </div>
+</section>

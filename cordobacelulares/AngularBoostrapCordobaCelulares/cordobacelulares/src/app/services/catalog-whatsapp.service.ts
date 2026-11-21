@@ -46,6 +46,11 @@ export class CatalogWhatsappService {
     window.open(this.buildUrl(message), '_blank', 'noopener,noreferrer');
   }
 
+  openHomeConsultation(): void {
+    const message = 'Hola! Estoy viendo la p\u00E1gina de C\u00F3rdoba Celulares y quisiera hacer una consulta.';
+    window.open(this.buildUrl(message), '_blank', 'noopener,noreferrer');
+  }
+
   buildProductMessage(product: CatalogWhatsappProduct): string {
     const installment = tarjeta6Installment(product.precioTarjeta6Pagos);
     const sheetEmoji = this.isGoogleSheetProduct(product) ? ` ${this.sheetEmoji}` : '';
