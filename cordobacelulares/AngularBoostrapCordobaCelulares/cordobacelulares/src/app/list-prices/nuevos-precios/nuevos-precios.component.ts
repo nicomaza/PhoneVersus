@@ -14,7 +14,10 @@ import {
   TiendaPorteColorStockResponse,
   TiendaPorteModelResponse
 } from '../../services/nuevos-precios.service';
-import { CatalogWhatsappService } from '../../services/catalog-whatsapp.service';
+import {
+  CatalogWhatsappFinancing,
+  CatalogWhatsappService
+} from '../../services/catalog-whatsapp.service';
 import { HomeBannerService, PublicHomeBanner } from '../../services/home-banner.service';
 import {
   catalogProductConditionLabel,
@@ -31,6 +34,8 @@ type ColorStockLista = { color: string; stock: number | null };
 type FeatureErrorKind = 'not-found' | 'ambiguous' | 'unavailable' | 'general';
 type FeatureDisplayEntry = { label: string; value: string };
 type FeatureDisplaySection = { label: string; entries: FeatureDisplayEntry[] };
+type FinancingKey = 'tarjeta1' | 'qr1' | 'planZ3' | 'tarjeta3' | 'tarjeta6';
+type FinancingOption = CatalogWhatsappFinancing & { key: FinancingKey };
 
 export interface NuevoProductoLista {
   marca: string;
@@ -53,6 +58,9 @@ export interface NuevoProductoLista {
   precioPesos?: number | null;
   precioUsdt?: number | null;
   precioTransferenciaBancaria?: number | null;
+  precioTarjeta1Pago?: number | null;
+  precioQr1Pago?: number | null;
+  precioPlanZ3Pagos?: number | null;
   precioTarjeta3Pagos?: number | null;
   precioTarjeta6Pagos?: number | null;
   precioTarjeta12Pagos?: number | null;
@@ -104,6 +112,8 @@ export class NuevosPreciosComponent implements OnDestroy {
 
   selected: NuevoProductoLista | null = null;
   modalOpen = false;
+  financingDropdownOpen = false;
+  selectedFinancingKey: FinancingKey = 'tarjeta6';
   featuresModalOpen = false;
   featuresLoading = false;
   featuresError: FeatureErrorKind | null = null;
@@ -212,6 +222,13 @@ export class NuevosPreciosComponent implements OnDestroy {
 
   @HostListener('document:keydown.escape', ['$event'])
   onEscape(event: KeyboardEvent): void {
+    if (this.financingDropdownOpen) {
+      event.preventDefault();
+      event.stopPropagation();
+      this.financingDropdownOpen = false;
+      return;
+    }
+
     if (this.featuresModalOpen) {
       event.preventDefault();
       event.stopPropagation();
@@ -231,6 +248,11 @@ export class NuevosPreciosComponent implements OnDestroy {
       event.stopPropagation();
       this.closeModal();
     }
+  }
+
+  @HostListener('document:click')
+  closeFinancingDropdown(): void {
+    this.financingDropdownOpen = false;
   }
 
   ngOnDestroy(): void {
@@ -355,6 +377,53 @@ export class NuevosPreciosComponent implements OnDestroy {
     return this.cuotaTarjeta6(p) !== null;
   }
 
+  financingOptions(p: NuevoProductoLista): FinancingOption[] {
+    const definitions: Array<{
+      key: FinancingKey;
+      label: string;
+      total: number | null | undefined;
+      installments?: number;
+    }> = [
+      { key: 'tarjeta1', label: 'Tarjeta 1 pago', total: p.precioTarjeta1Pago },
+      { key: 'qr1', label: 'QR 1 pago', total: p.precioQr1Pago },
+      { key: 'planZ3', label: 'Plan Z · 3 pagos', total: p.precioPlanZ3Pagos, installments: 3 },
+      { key: 'tarjeta3', label: 'Tarjeta 3 cuotas', total: p.precioTarjeta3Pagos, installments: 3 },
+      { key: 'tarjeta6', label: 'Tarjeta 6 cuotas', total: p.precioTarjeta6Pagos, installments: 6 }
+    ];
+
+    return definitions
+      .filter((definition): definition is typeof definition & { total: number } =>
+        this.hasValidMoney(definition.total) && definition.total > 0
+      )
+      .map(definition => ({
+        key: definition.key,
+        label: definition.label,
+        total: definition.total,
+        installments: definition.installments ?? null,
+        installmentAmount: definition.installments
+          ? definition.total / definition.installments
+          : null
+      }));
+  }
+
+  selectedFinancing(p: NuevoProductoLista): FinancingOption | null {
+    return this.financingOptions(p)
+      .find(option => option.key === this.selectedFinancingKey) ?? null;
+  }
+
+  toggleFinancingDropdown(event: MouseEvent, hasOptions: boolean): void {
+    event.stopPropagation();
+    if (hasOptions) {
+      this.financingDropdownOpen = !this.financingDropdownOpen;
+    }
+  }
+
+  selectFinancing(option: FinancingOption, event: MouseEvent): void {
+    event.stopPropagation();
+    this.selectedFinancingKey = option.key;
+    this.financingDropdownOpen = false;
+  }
+
   isPerfume(p: NuevoProductoLista | null | undefined): boolean {
     return isCatalogPerfume(p);
   }
@@ -414,6 +483,11 @@ export class NuevosPreciosComponent implements OnDestroy {
   openDetails(p: NuevoProductoLista): void {
     this.resetCharacteristicsState();
     this.selected = p;
+    this.selectedFinancingKey = 'tarjeta6';
+    this.financingDropdownOpen = false;
+    if (!this.selectedFinancing(p)) {
+      this.selectedFinancingKey = this.financingOptions(p)[0]?.key ?? 'tarjeta6';
+    }
     this.modalOpen = true;
     document.body.classList.add('modal-open');
     this.preloadCharacteristics(p);
@@ -423,6 +497,7 @@ export class NuevosPreciosComponent implements OnDestroy {
     this.closeFeaturesModal(false);
     this.resetCharacteristicsState();
     this.modalOpen = false;
+    this.financingDropdownOpen = false;
     this.selected = null;
     if (!this.warningModalOpen) {
       document.body.classList.remove('modal-open');
@@ -1203,7 +1278,7 @@ export class NuevosPreciosComponent implements OnDestroy {
   }
 
   private openWhatsApp(p: NuevoProductoLista): void {
-    this.whatsappService.openProductConsultation(p);
+    this.whatsappService.openProductConsultation(p, this.selectedFinancing(p));
   }
 
   private warningForProduct(p: NuevoProductoLista): { title: string; message: string } | null {
@@ -1477,6 +1552,9 @@ export class NuevosPreciosComponent implements OnDestroy {
       precioPesos,
       precioUsdt: this.safeMoney(model?.precioUsdt),
       precioTransferenciaBancaria,
+      precioTarjeta1Pago: this.safeMoney(model?.precioTarjeta1Pago),
+      precioQr1Pago: this.safeMoney(model?.precioQr1Pago),
+      precioPlanZ3Pagos: this.safeMoney(model?.precioPlanZ3Pagos),
       precioTarjeta3Pagos: this.safeMoney(model?.precioTarjeta3Pagos),
       precioTarjeta6Pagos,
       precioTarjeta12Pagos: this.safeMoney(model?.precioTarjeta12Pagos),

@@ -24,6 +24,9 @@ export interface TiendaPorteModelResponse {
   precioPesos?: number | null;
   precioUsdt?: number | null;
   precioTransferenciaBancaria?: number | null;
+  precioTarjeta1Pago?: number | null;
+  precioQr1Pago?: number | null;
+  precioPlanZ3Pagos?: number | null;
   precioTarjeta3Pagos?: number | null;
   precioTarjeta6Pagos?: number | null;
   precioTarjeta12Pagos?: number | null;

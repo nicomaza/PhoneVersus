@@ -97,7 +97,7 @@
 
   <section class="lp-home-heading" aria-labelledby="lp-home-title">
     <h1 id="lp-home-title">Celulares nuevos y liberados en C&oacute;rdoba</h1>
-    <p>Equipos nuevos, sellados de f&aacute;brica y con garant&iacute;a.</p>
+    <p>Solo vendemos equipos nuevos, sellados de f&aacute;brica y con garant&iacute;a.</p>
   </section>
 
   <nav class="lp-info-links" aria-label="Informaci&oacute;n de compra">
@@ -305,12 +305,61 @@
             <div class="lp-k">Transferencia</div>
             <div class="lp-v">{{ fmtPriceNoCents(p.precioTransferenciaBancaria) }}</div>
           </div>
-          <div class="lp-price-row">
-            <div class="lp-k">Tarjeta 6 pagos</div>
-            <div class="lp-v">
-              <div>{{ fmtPrice(p.precioTarjeta6Pagos) }}</div>
-              <div *ngIf="hasCuotaTarjeta6(p)" class="lp-subprice">
-                6 cuotas de {{ fmtPrice(cuotaTarjeta6(p)) }}
+          <div class="lp-price-row lp-financing-row">
+            <div class="lp-k">Financiaci&oacute;n</div>
+            <div class="lp-financing-picker" (click)="$event.stopPropagation()">
+              <button
+                type="button"
+                class="lp-financing-trigger"
+                [disabled]="financingOptions(p).length === 0"
+                aria-haspopup="listbox"
+                [attr.aria-expanded]="financingDropdownOpen"
+                aria-controls="lp-financing-options"
+                (click)="toggleFinancingDropdown($event, financingOptions(p).length > 0)"
+              >
+                <ng-container *ngIf="selectedFinancing(p) as financing; else noFinancing">
+                  <span class="lp-financing-copy">
+                    <span class="lp-financing-label">{{ financing.label }}</span>
+                    <span class="lp-financing-value">
+                      <strong>{{ fmtPrice(financing.total) }}</strong>
+                      <small *ngIf="financing.installments && financing.installmentAmount">
+                        ({{ financing.installments }} cuotas de {{ fmtPrice(financing.installmentAmount) }})
+                      </small>
+                    </span>
+                  </span>
+                </ng-container>
+                <ng-template #noFinancing>
+                  <span class="lp-financing-copy">
+                    <span class="lp-financing-label">No disponible</span>
+                  </span>
+                </ng-template>
+                <i class="bi bi-chevron-down lp-financing-chevron" aria-hidden="true"></i>
+              </button>
+
+              <div
+                *ngIf="financingDropdownOpen"
+                id="lp-financing-options"
+                class="lp-financing-menu"
+                role="listbox"
+                aria-label="Modalidad de financiación"
+              >
+                <button
+                  *ngFor="let financing of financingOptions(p)"
+                  type="button"
+                  class="lp-financing-option"
+                  role="option"
+                  [class.is-selected]="financing.key === selectedFinancingKey"
+                  [attr.aria-selected]="financing.key === selectedFinancingKey"
+                  (click)="selectFinancing(financing, $event)"
+                >
+                  <span class="lp-financing-label">{{ financing.label }}</span>
+                  <span class="lp-financing-value">
+                    <strong>{{ fmtPrice(financing.total) }}</strong>
+                    <small *ngIf="financing.installments && financing.installmentAmount">
+                      ({{ financing.installments }} cuotas de {{ fmtPrice(financing.installmentAmount) }})
+                    </small>
+                  </span>
+                </button>
               </div>
             </div>
           </div>

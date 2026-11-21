@@ -393,6 +393,80 @@ app-nuevos-precios .lp-price-row{
 app-nuevos-precios .lp-price-row:last-child{border-bottom:0}
 app-nuevos-precios .lp-k{color:#6b7280}
 app-nuevos-precios .lp-v{text-align:right}
+app-nuevos-precios .lp-financing-row{align-items:flex-start}
+app-nuevos-precios .lp-financing-picker{
+  width:min(100%,380px);
+  margin-left:auto;
+}
+app-nuevos-precios .lp-financing-trigger,
+app-nuevos-precios .lp-financing-option{
+  width:100%;
+  border:1px solid rgba(17,24,39,.14);
+  background:#fff;
+  color:#202633;
+}
+app-nuevos-precios .lp-financing-trigger{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:9px 11px;
+  border-radius:11px;
+  text-align:left;
+}
+app-nuevos-precios .lp-financing-trigger:focus-visible,
+app-nuevos-precios .lp-financing-option:focus-visible{
+  outline:3px solid rgba(13,110,253,.22);
+  outline-offset:1px;
+}
+app-nuevos-precios .lp-financing-trigger:disabled{
+  cursor:not-allowed;
+  color:#6b7280;
+  background:#f4f5f7;
+}
+app-nuevos-precios .lp-financing-copy,
+app-nuevos-precios .lp-financing-option{
+  display:grid;
+  grid-template-columns:minmax(110px,1fr) minmax(150px,auto);
+  align-items:center;
+  gap:8px 14px;
+}
+app-nuevos-precios .lp-financing-copy{flex:1;min-width:0}
+app-nuevos-precios .lp-financing-label{font-weight:650}
+app-nuevos-precios .lp-financing-value{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  min-width:0;
+  text-align:right;
+  line-height:1.25;
+}
+app-nuevos-precios .lp-financing-value small{
+  color:#6b7280;
+  font-size:.76rem;
+  white-space:nowrap;
+}
+app-nuevos-precios .lp-financing-chevron{flex:0 0 auto;color:#6b7280;font-size:.8rem}
+app-nuevos-precios .lp-financing-menu{
+  display:grid;
+  gap:5px;
+  margin-top:6px;
+  padding:6px;
+  border:1px solid rgba(17,24,39,.1);
+  border-radius:12px;
+  background:#fff;
+  box-shadow:0 10px 24px rgba(17,24,39,.12);
+}
+app-nuevos-precios .lp-financing-option{
+  padding:9px 10px;
+  border-color:transparent;
+  border-radius:8px;
+  text-align:left;
+}
+app-nuevos-precios .lp-financing-option:hover,
+app-nuevos-precios .lp-financing-option.is-selected{
+  border-color:rgba(13,110,253,.18);
+  background:#f1f6ff;
+}
 app-nuevos-precios .lp-legend{
   padding-top:12px;
   border-top:1px solid rgba(17,24,39,.08);
@@ -524,6 +598,19 @@ app-nuevos-precios .lp-warning-actions{
     max-height:86vh;
     border-radius:18px 18px 0 0;
   }
+  app-nuevos-precios .lp-financing-row{display:block}
+  app-nuevos-precios .lp-financing-row > .lp-k{margin-bottom:6px}
+  app-nuevos-precios .lp-financing-picker{width:100%;margin-left:0}
+  app-nuevos-precios .lp-financing-copy,
+  app-nuevos-precios .lp-financing-option{
+    grid-template-columns:1fr;
+    gap:3px;
+  }
+  app-nuevos-precios .lp-financing-value{
+    align-items:flex-start;
+    text-align:left;
+  }
+  app-nuevos-precios .lp-financing-value small{white-space:normal}
 }
 @media (max-width:420px){
   app-nuevos-precios .lp-warning-content{padding:18px;border-radius:16px}

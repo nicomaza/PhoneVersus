@@ -57,6 +57,9 @@ class TiendaPortePriceCalculatorTest {
         assertThat(prices.getPrecioUsd()).isEqualByComparingTo("100.00");
         assertThat(prices.getPrecioPesos()).isNull();
         assertThat(prices.getPrecioTransferenciaBancaria()).isNull();
+        assertThat(prices.getPrecioTarjeta1Pago()).isNull();
+        assertThat(prices.getPrecioQr1Pago()).isNull();
+        assertThat(prices.getPrecioPlanZ3Pagos()).isNull();
         assertThat(prices.getPrecioTarjeta3Pagos()).isNull();
         assertThat(prices.getPrecioTarjeta6Pagos()).isNull();
         assertThat(prices.getPrecioTarjeta12Pagos()).isNull();
@@ -69,6 +72,9 @@ class TiendaPortePriceCalculatorTest {
         assertThat(prices.getPrecioUsd()).isEqualByComparingTo("100.00");
         assertThat(prices.getPrecioPesos()).isNull();
         assertThat(prices.getPrecioTransferenciaBancaria()).isNull();
+        assertThat(prices.getPrecioTarjeta1Pago()).isNull();
+        assertThat(prices.getPrecioQr1Pago()).isNull();
+        assertThat(prices.getPrecioPlanZ3Pagos()).isNull();
         assertThat(prices.getPrecioTarjeta3Pagos()).isNull();
         assertThat(prices.getPrecioTarjeta6Pagos()).isNull();
         assertThat(prices.getPrecioTarjeta12Pagos()).isNull();
@@ -80,6 +86,9 @@ class TiendaPortePriceCalculatorTest {
 
         assertThat(prices.getPrecioPesos()).isEqualByComparingTo("100.00");
         assertThat(prices.getPrecioTransferenciaBancaria()).isEqualByComparingTo("103.00");
+        assertThat(prices.getPrecioTarjeta1Pago()).isEqualByComparingTo("105.00");
+        assertThat(prices.getPrecioQr1Pago()).isEqualByComparingTo("107.00");
+        assertThat(prices.getPrecioPlanZ3Pagos()).isEqualByComparingTo("115.00");
         assertThat(prices.getPrecioTarjeta3Pagos()).isEqualByComparingTo("110.00");
         assertThat(prices.getPrecioTarjeta6Pagos()).isEqualByComparingTo("120.00");
         assertThat(prices.getPrecioTarjeta12Pagos()).isEqualByComparingTo("135.00");
@@ -107,6 +116,9 @@ class TiendaPortePriceCalculatorTest {
     private PriceConfiguration priceConfiguration() {
         PriceConfiguration configuration = new PriceConfiguration();
         configuration.setTransferenciaBancaria(money("3"));
+        configuration.setTarjeta1Pago(money("5"));
+        configuration.setQr1Pago(money("7"));
+        configuration.setPlanZ3Pagos(money("15"));
         configuration.setTarjeta3Pagos(money("10"));
         configuration.setTarjeta6Pagos(money("20"));
         configuration.setTarjeta12Pagos(money("35"));

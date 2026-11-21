@@ -511,6 +511,9 @@ public class TiendaPorteServiceImpl implements TiendaPorteService {
                 prices.getPrecioPesos(),
                 prices.getPrecioUsdt(),
                 prices.getPrecioTransferenciaBancaria(),
+                prices.getPrecioTarjeta1Pago(),
+                prices.getPrecioQr1Pago(),
+                prices.getPrecioPlanZ3Pagos(),
                 prices.getPrecioTarjeta3Pagos(),
                 prices.getPrecioTarjeta6Pagos(),
                 prices.getPrecioTarjeta12Pagos()
@@ -873,6 +876,9 @@ public class TiendaPorteServiceImpl implements TiendaPorteService {
                     prices.getPrecioPesos(),
                     prices.getPrecioUsdt(),
                     prices.getPrecioTransferenciaBancaria(),
+                    prices.getPrecioTarjeta1Pago(),
+                    prices.getPrecioQr1Pago(),
+                    prices.getPrecioPlanZ3Pagos(),
                     prices.getPrecioTarjeta3Pagos(),
                     prices.getPrecioTarjeta6Pagos(),
                     prices.getPrecioTarjeta12Pagos()

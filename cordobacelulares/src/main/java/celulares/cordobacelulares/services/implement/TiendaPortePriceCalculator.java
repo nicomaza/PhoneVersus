@@ -2,6 +2,7 @@ package celulares.cordobacelulares.services.implement;
 
 import celulares.cordobacelulares.dtos.tiendaporte.internal.TiendaPorteCalculatedPrices;
 import celulares.cordobacelulares.entities.PriceConfiguration;
+import celulares.cordobacelulares.exceptions.TiendaPorteBadRequestException;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -27,6 +28,7 @@ public class TiendaPortePriceCalculator {
             PriceConfiguration configuration,
             BigDecimal dolarBilleteAplicado
     ) {
+        validateConfiguration(configuration);
         BigDecimal normalizedUsd = normalizeUsd(precioUsd);
         BigDecimal precioBasePesos = resolvePrecioBasePesos(precioPesos, normalizedUsd, dolarBilleteAplicado);
 
@@ -35,6 +37,9 @@ public class TiendaPortePriceCalculator {
                 precioBasePesos,
                 calculatePriceFromUsd(normalizedUsd, configuration == null ? null : configuration.getUsdt()),
                 calcularPrecioConRecargo(precioBasePesos, configuration == null ? null : configuration.getTransferenciaBancaria()),
+                calcularPrecioConRecargo(precioBasePesos, configuration == null ? null : configuration.getTarjeta1Pago()),
+                calcularPrecioConRecargo(precioBasePesos, configuration == null ? null : configuration.getQr1Pago()),
+                calcularPrecioConRecargo(precioBasePesos, configuration == null ? null : configuration.getPlanZ3Pagos()),
                 calcularPrecioConRecargo(precioBasePesos, configuration == null ? null : configuration.getTarjeta3Pagos()),
                 calcularPrecioConRecargo(precioBasePesos, configuration == null ? null : configuration.getTarjeta6Pagos()),
                 calcularPrecioConRecargo(precioBasePesos, configuration == null ? null : configuration.getTarjeta12Pagos())
@@ -42,7 +47,10 @@ public class TiendaPortePriceCalculator {
     }
 
     public BigDecimal calcularPrecioConRecargo(BigDecimal precioBase, BigDecimal porcentaje) {
-        if (precioBase == null || precioBase.signum() < 0) {
+        if (precioBase == null) {
+            return null;
+        }
+        if (precioBase.signum() < 0) {
             return ZERO;
         }
         BigDecimal normalizedBase = precioBase.setScale(2, RoundingMode.HALF_UP);
@@ -61,16 +69,16 @@ public class TiendaPortePriceCalculator {
     }
 
     private BigDecimal resolvePrecioBasePesos(BigDecimal precioPesos, BigDecimal precioUsd, BigDecimal dolarBilleteAplicado) {
-        if (precioUsd.signum() == 0) {
-            return ZERO;
-        }
         BigDecimal normalizedPesos = normalizePrecioPesos(precioPesos);
         if (normalizedPesos != null) {
             return normalizedPesos;
         }
+        if (precioUsd.signum() == 0) {
+            return null;
+        }
         BigDecimal quotation = normalizeQuotation(dolarBilleteAplicado);
         if (quotation == null) {
-            return ZERO;
+            return null;
         }
         return precioUsd.multiply(quotation).setScale(2, RoundingMode.HALF_UP);
     }
@@ -95,6 +103,25 @@ public class TiendaPortePriceCalculator {
             return null;
         }
         return quotation;
+    }
+
+    private void validateConfiguration(PriceConfiguration configuration) {
+        if (configuration == null) {
+            return;
+        }
+        validatePercentage("transferenciaBancaria", configuration.getTransferenciaBancaria());
+        validatePercentage("tarjeta1Pago", configuration.getTarjeta1Pago());
+        validatePercentage("qr1Pago", configuration.getQr1Pago());
+        validatePercentage("planZ3Pagos", configuration.getPlanZ3Pagos());
+        validatePercentage("tarjeta3Pagos", configuration.getTarjeta3Pagos());
+        validatePercentage("tarjeta6Pagos", configuration.getTarjeta6Pagos());
+        validatePercentage("tarjeta12Pagos", configuration.getTarjeta12Pagos());
+    }
+
+    private void validatePercentage(String field, BigDecimal value) {
+        if (value != null && value.signum() < 0) {
+            throw new TiendaPorteBadRequestException("Configuracion invalida: " + field + " no puede ser negativo");
+        }
     }
 
 }

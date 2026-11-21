@@ -1,24 +1,53 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 
+import { CatalogWhatsappService } from '../../services/catalog-whatsapp.service';
+import { HomeBannerService } from '../../services/home-banner.service';
 import { NuevosPreciosService, TiendaPorteBrandResponse } from '../../services/nuevos-precios.service';
 import { NuevoProductoLista, NuevosPreciosComponent } from './nuevos-precios.component';
 
 describe('NuevosPreciosComponent catalog variants', () => {
   let fixture: ComponentFixture<NuevosPreciosComponent>;
   let component: NuevosPreciosComponent;
+  let whatsappService: jasmine.SpyObj<CatalogWhatsappService>;
 
   beforeEach(async () => {
     const service = jasmine.createSpyObj<NuevosPreciosService>('NuevosPreciosService', [
       'getCatalogoPrincipal',
-      'getLiberadosYaProductMatch'
+      'getLiberadosYaProductMatch',
+      'getPublishedProductSlugs',
+      'hasCatalogCache',
+      'getCategoryFromCatalog',
+      'getCachedCategory'
     ]);
     service.getCatalogoPrincipal.and.returnValue(of(catalogResponse()));
     service.getLiberadosYaProductMatch.and.returnValue(of({}));
+    service.getPublishedProductSlugs.and.returnValue(of([]));
+    service.hasCatalogCache.and.returnValue(true);
+    service.getCategoryFromCatalog.and.callFake(category =>
+      catalogResponse().filter(group => group.marca === category)
+    );
+    service.getCachedCategory.and.returnValue(null);
+
+    const homeBannerService = jasmine.createSpyObj<HomeBannerService>('HomeBannerService', ['listPublic']);
+    homeBannerService.listPublic.and.returnValue(of([]));
+
+    whatsappService = jasmine.createSpyObj<CatalogWhatsappService>(
+      'CatalogWhatsappService',
+      ['openProductConsultation', 'openHomeConsultation', 'isGoogleSheetProduct'],
+      { sheetEmoji: '📲' }
+    );
+    whatsappService.isGoogleSheetProduct.and.returnValue(false);
 
     await TestBed.configureTestingModule({
       imports: [NuevosPreciosComponent],
-      providers: [{ provide: NuevosPreciosService, useValue: service }]
+      providers: [
+        { provide: NuevosPreciosService, useValue: service },
+        { provide: HomeBannerService, useValue: homeBannerService },
+        { provide: CatalogWhatsappService, useValue: whatsappService },
+        provideRouter([])
+      ]
     }).compileComponents();
 
     fixture = TestBed.createComponent(NuevosPreciosComponent);
@@ -146,7 +175,6 @@ describe('NuevosPreciosComponent catalog variants', () => {
     fixture.detectChanges();
     const modalText = fixture.nativeElement.querySelector('.lp-modal-content')?.textContent ?? '';
     expect(modalText).not.toContain('Efectivo');
-    expect(modalText).not.toContain('111.111');
   });
 
   it('keeps transfer and card prices visible for a perfume', () => {
@@ -158,8 +186,8 @@ describe('NuevosPreciosComponent catalog variants', () => {
 
     expect(modalText).toContain('Transferencia');
     expect(modalText).toContain('222.222');
-    expect(modalText).toContain('Tarjeta 6 pagos');
-    expect(modalText).toContain('333.333');
+    expect(modalText).toContain('Tarjeta 6 cuotas');
+    expect(modalText).toContain('666.666');
   });
 
   it('keeps all three prices visible for a non-perfume product', () => {
@@ -175,10 +203,10 @@ describe('NuevosPreciosComponent catalog variants', () => {
     const labels = Array.from(modal.querySelectorAll('.lp-k'))
       .map(label => label.textContent?.trim());
 
-    expect(labels).toEqual(['Efectivo', 'Transferencia', 'Tarjeta 6 pagos']);
+    expect(labels).toEqual(['Efectivo', 'Transferencia', 'Financiación']);
     expect(modal.textContent).toContain('111.111');
     expect(modal.textContent).toContain('222.222');
-    expect(modal.textContent).toContain('333.333');
+    expect(modal.textContent).toContain('666.666');
   });
 
   it('removes the whole cash blocks for a perfume without leaving empty rows or separators', () => {
@@ -196,10 +224,78 @@ describe('NuevosPreciosComponent catalog variants', () => {
     expect(rows.length).toBe(2);
     for (const row of rows) {
       expect(row.querySelector('.lp-k')?.textContent?.trim()).toBeTruthy();
-      expect(row.querySelector('.lp-v')?.textContent?.trim()).toBeTruthy();
+      expect(row.querySelector('.lp-v, .lp-financing-trigger')?.textContent?.trim()).toBeTruthy();
     }
     expect(rows[rows.length - 1].matches(':last-child')).toBeTrue();
     expect(getComputedStyle(rows[rows.length - 1]).borderBottomWidth).toBe('0px');
+  });
+
+  it('shows every valid financing option with its total and installments', () => {
+    const phone = renderSingleProduct('SAMSUNG', priceModel('Galaxy financiado'));
+    component.openDetails(phone);
+    fixture.detectChanges();
+
+    const trigger = fixture.nativeElement.querySelector('.lp-financing-trigger') as HTMLButtonElement;
+    expect(trigger.textContent).toContain('Tarjeta 6 cuotas');
+    expect(trigger.textContent).toContain('666.666');
+    expect(trigger.textContent).toContain('6 cuotas de $ 111.111');
+
+    trigger.click();
+    fixture.detectChanges();
+    const optionText = Array.from(
+      fixture.nativeElement.querySelectorAll('.lp-financing-option') as NodeListOf<HTMLElement>
+    ).map(option => (option.textContent ?? '').replace(/\s+/g, ' ').trim());
+
+    expect(optionText).toEqual([
+      'Tarjeta 1 pago$ 300.000',
+      'QR 1 pago$ 310.000',
+      'Plan Z · 3 pagos$ 330.000 (3 cuotas de $ 110.000)',
+      'Tarjeta 3 cuotas$ 360.000 (3 cuotas de $ 120.000)',
+      'Tarjeta 6 cuotas$ 666.666 (6 cuotas de $ 111.111)'
+    ]);
+  });
+
+  it('omits invalid financing amounts and resets the next product to Tarjeta 6 cuotas', () => {
+    const first = renderSingleProduct('SAMSUNG', {
+      ...priceModel('Galaxy uno'),
+      precioQr1Pago: 0,
+      precioPlanZ3Pagos: null
+    });
+    component.openDetails(first);
+    component.selectFinancing(component.financingOptions(first)[0], new MouseEvent('click'));
+    expect(component.selectedFinancing(first)?.label).toBe('Tarjeta 1 pago');
+    expect(component.financingOptions(first).map(option => option.label)).not.toContain('QR 1 pago');
+    expect(component.financingOptions(first).map(option => option.label)).not.toContain('Plan Z · 3 pagos');
+
+    const second = (component as any).mapResponse([{
+      marca: 'MOTOROLA',
+      modelos: [priceModel('Moto dos')]
+    }])[0] as NuevoProductoLista;
+    component.openDetails(second);
+
+    expect(component.selectedFinancing(second)?.label).toBe('Tarjeta 6 cuotas');
+  });
+
+  it('keeps the selected financing through the warning flow before WhatsApp', () => {
+    const product = renderSingleProduct('ARTICULOS VARIOS', priceModel('Accesorio'));
+    component.openDetails(product);
+    const planZ = component.financingOptions(product)
+      .find(option => option.label === 'Plan Z · 3 pagos')!;
+    component.selectFinancing(planZ, new MouseEvent('click'));
+
+    component.abrirWhatsApp(product);
+    expect(component.warningModalOpen).toBeTrue();
+    component.confirmWarningWhatsapp();
+
+    expect(whatsappService.openProductConsultation).toHaveBeenCalledWith(
+      product,
+      jasmine.objectContaining({
+        label: 'Plan Z · 3 pagos',
+        total: 330000,
+        installments: 3,
+        installmentAmount: 110000
+      })
+    );
   });
 
   it('renders all eight Google Sheet products inside the SONY category', () => {
@@ -262,7 +358,11 @@ describe('NuevosPreciosComponent catalog variants', () => {
       colores: [],
       precioPesos: 111111,
       precioTransferenciaBancaria: 222222,
-      precioTarjeta6Pagos: 333333
+      precioTarjeta1Pago: 300000,
+      precioQr1Pago: 310000,
+      precioPlanZ3Pagos: 330000,
+      precioTarjeta3Pagos: 360000,
+      precioTarjeta6Pagos: 666666
     };
   }
 

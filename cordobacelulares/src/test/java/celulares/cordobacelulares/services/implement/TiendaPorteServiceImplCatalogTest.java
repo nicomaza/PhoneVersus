@@ -135,6 +135,38 @@ class TiendaPorteServiceImplCatalogTest {
     }
 
     @Test
+    void propagatesNewPaymentPricesForTiendaPorteAndGoogleSheetProducts() {
+        PriceConfiguration configuration = priceConfiguration("1000");
+        configuration.setTarjeta1Pago(new BigDecimal("5"));
+        configuration.setQr1Pago(new BigDecimal("7"));
+        configuration.setPlanZ3Pagos(new BigDecimal("15"));
+        TiendaPorteServiceImpl catalogService = catalogService(
+                List.of(product(10L, "REALME C75", "REALME", "REALME", "100")),
+                List.of(supplierProduct("SAMSUNG", "SAMSUNG", "SAMSUNG A56", "200")),
+                configuration
+        );
+
+        List<TiendaPorteModelResponse> models = catalogService.getAll(null, null).stream()
+                .flatMap(brand -> brand.getModelos().stream())
+                .toList();
+
+        assertThat(models).filteredOn(model -> model.getOrigen() == CatalogProductOrigin.TIENDA_PORTE)
+                .singleElement()
+                .satisfies(model -> {
+                    assertThat(model.getPrecioTarjeta1Pago()).isEqualByComparingTo("105000.00");
+                    assertThat(model.getPrecioQr1Pago()).isEqualByComparingTo("107000.00");
+                    assertThat(model.getPrecioPlanZ3Pagos()).isEqualByComparingTo("115000.00");
+                });
+        assertThat(models).filteredOn(model -> model.getOrigen() == CatalogProductOrigin.GOOGLE_SHEET)
+                .singleElement()
+                .satisfies(model -> {
+                    assertThat(model.getPrecioTarjeta1Pago()).isEqualByComparingTo("210000.00");
+                    assertThat(model.getPrecioQr1Pago()).isEqualByComparingTo("214000.00");
+                    assertThat(model.getPrecioPlanZ3Pagos()).isEqualByComparingTo("230000.00");
+                });
+    }
+
+    @Test
     void categoryPaginationWorksFromSnapshot() {
         TiendaPorteCatalogCacheService cacheService = mock(TiendaPorteCatalogCacheService.class);
         PriceConfigurationService priceConfigurationService = mock(PriceConfigurationService.class);
@@ -793,11 +825,19 @@ class TiendaPorteServiceImplCatalogTest {
             List<TiendaPorteExternalProduct> tiendaPorteProducts,
             List<SupplierSheetProduct> supplierProducts
     ) {
+        return catalogService(tiendaPorteProducts, supplierProducts, priceConfiguration("1000"));
+    }
+
+    private TiendaPorteServiceImpl catalogService(
+            List<TiendaPorteExternalProduct> tiendaPorteProducts,
+            List<SupplierSheetProduct> supplierProducts,
+            PriceConfiguration configuration
+    ) {
         TiendaPorteCatalogCacheService cacheService = mock(TiendaPorteCatalogCacheService.class);
         PriceConfigurationService priceConfigurationService = mock(PriceConfigurationService.class);
         SupplierSheetService supplierSheetService = mock(SupplierSheetService.class);
         when(cacheService.getProducts()).thenReturn(tiendaPorteProducts);
-        when(priceConfigurationService.getRequiredForCatalog()).thenReturn(priceConfiguration("1000"));
+        when(priceConfigurationService.getRequiredForCatalog()).thenReturn(configuration);
         when(supplierSheetService.getProducts()).thenReturn(supplierProducts);
         return new TiendaPorteServiceImpl(
                 cacheService,
