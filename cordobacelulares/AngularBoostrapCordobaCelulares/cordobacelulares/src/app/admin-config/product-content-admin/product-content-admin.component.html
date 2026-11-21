@@ -1,0 +1,54 @@
+<section class="content-panel">
+  <div class="filters">
+    <label class="search-field">
+      <span>Buscar marca o modelo</span>
+      <input type="search" class="form-control" [formControl]="searchControl" placeholder="Ej. Samsung A55">
+    </label>
+    <label>
+      <span>Marca</span>
+      <select class="form-select" [value]="brand" (change)="changeBrand($any($event.target).value)">
+        <option value="">Todas</option>
+        <option *ngFor="let option of brands" [value]="option">{{ option }}</option>
+      </select>
+    </label>
+  </div>
+
+  <div class="state-filters" aria-label="Filtrar por estado">
+    <button *ngFor="let option of states" type="button"
+            [class.active]="state === option.value"
+            (click)="changeState(option.value)">{{ option.label }}</button>
+  </div>
+
+  <p *ngIf="error" class="alert alert-danger">{{ error }}</p>
+  <div *ngIf="loading" class="loading">Cargando productos...</div>
+
+  <div *ngIf="!loading && !error" class="table-wrap">
+    <table>
+      <thead>
+      <tr>
+        <th>Producto</th><th>Slug</th><th>Catálogo</th><th>Contenido</th><th>Imágenes</th><th>Modificado</th><th></th>
+      </tr>
+      </thead>
+      <tbody>
+      <tr *ngFor="let item of products">
+        <td data-label="Producto"><strong>{{ item.marca }}</strong><span>{{ item.modelo }}</span></td>
+        <td data-label="Slug" class="slug">{{ item.slug }}</td>
+        <td data-label="Catálogo"><span class="catalog-state" [class.inactive]="!item.active">{{ item.active ? 'Activo' : 'Inactivo' }}</span></td>
+        <td data-label="Contenido"><span class="status" [ngClass]="statusClass(item)">{{ statusLabel(item) }}</span></td>
+        <td data-label="Imágenes">{{ item.imageCount }}</td>
+        <td data-label="Modificado">{{ formatDate(item.updatedAt) }}</td>
+        <td class="action-cell"><a class="btn btn-sm btn-dark" [routerLink]="['/config/bombai/contenido-productos', item.slug]">Editar contenido</a></td>
+      </tr>
+      <tr *ngIf="products.length === 0"><td colspan="7" class="empty">No hay productos para estos filtros.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <footer class="pagination" *ngIf="total > 0">
+    <span>{{ total }} productos · página {{ page }} de {{ totalPages }}</span>
+    <div>
+      <button class="btn btn-outline-secondary btn-sm" type="button" [disabled]="page <= 1" (click)="previousPage()">Anterior</button>
+      <button class="btn btn-outline-secondary btn-sm" type="button" [disabled]="page >= totalPages" (click)="nextPage()">Siguiente</button>
+    </div>
+  </footer>
+</section>

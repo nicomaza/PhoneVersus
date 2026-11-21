@@ -1,6 +1,7 @@
 package celulares.cordobacelulares.config;
 
 import celulares.cordobacelulares.dtos.common.ErrorApi;
+import celulares.cordobacelulares.exceptions.ApiBadRequestException;
 import celulares.cordobacelulares.exceptions.ApiConflictException;
 import celulares.cordobacelulares.exceptions.ApiInternalException;
 import celulares.cordobacelulares.exceptions.ApiNotFoundException;
@@ -64,6 +65,11 @@ public class GlobalExceptionHandler {
     }
     @ExceptionHandler(TiendaPorteBadRequestException.class)
     public ResponseEntity<ErrorApi> handleTiendaPorteBadRequestException(TiendaPorteBadRequestException ex) {
+        return buildError(HttpStatus.BAD_REQUEST, "Bad Request", ex.getMessage());
+    }
+
+    @ExceptionHandler(ApiBadRequestException.class)
+    public ResponseEntity<ErrorApi> handleApiBadRequestException(ApiBadRequestException ex) {
         return buildError(HttpStatus.BAD_REQUEST, "Bad Request", ex.getMessage());
     }
 

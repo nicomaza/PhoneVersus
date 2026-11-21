@@ -17,6 +17,15 @@ public class PriceConfigurationUpdateRequest {
     @Schema(description = "Porcentaje de recargo sobre precioPesos para transferencia bancaria. Ejemplo: 3 representa 3 por ciento.", example = "3")
     private BigDecimal transferenciaBancaria;
 
+    @Schema(description = "Porcentaje de recargo sobre precioPesos para tarjeta en 1 pago.", example = "7.50")
+    private BigDecimal tarjeta1Pago;
+
+    @Schema(description = "Porcentaje de recargo sobre precioPesos para QR en 1 pago.", example = "6.50")
+    private BigDecimal qr1Pago;
+
+    @Schema(description = "Porcentaje de recargo sobre precioPesos para Plan Z en 3 pagos.", example = "15.00")
+    private BigDecimal planZ3Pagos;
+
     @Schema(description = "Porcentaje de recargo sobre precioPesos para tarjeta en 3 pagos. Ejemplo: 10 representa 10 por ciento.", example = "10")
     private BigDecimal tarjeta3Pagos;
 

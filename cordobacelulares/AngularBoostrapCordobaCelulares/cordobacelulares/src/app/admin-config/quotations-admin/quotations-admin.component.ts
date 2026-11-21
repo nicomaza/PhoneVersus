@@ -2,7 +2,13 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AdminConfigHttpError, AdminConfigService } from '../services/admin-config.service';
-import { PriceConfigurationRequest, PriceConfigurationResponse } from '../models/admin-config.models';
+import {
+  ApiDateValue,
+  LiberadosYaMarkupByTransferScheme,
+  LiberadosYaQuotationResponse,
+  PriceConfigurationRequest,
+  PriceConfigurationResponse
+} from '../models/admin-config.models';
 
 type PriceConfigurationField = keyof PriceConfigurationRequest;
 
@@ -15,9 +21,12 @@ type PriceConfigurationField = keyof PriceConfigurationRequest;
 })
 export class QuotationsAdminComponent implements OnInit {
   configuration: PriceConfigurationResponse | null = null;
+  competition: LiberadosYaQuotationResponse | null = null;
   loading = false;
+  competitionLoading = false;
   saving = false;
   error = '';
+  competitionError = '';
   success = '';
   confirmDelete = false;
 
@@ -25,6 +34,9 @@ export class QuotationsAdminComponent implements OnInit {
     dolarBillete: [0, [Validators.required, Validators.min(0.01)]],
     usdt: [0, [Validators.required, Validators.min(0.01)]],
     transferenciaBancaria: [0, [Validators.required, Validators.min(0)]],
+    tarjeta1Pago: this.formBuilder.control<number | null>(null, [Validators.min(0)]),
+    qr1Pago: this.formBuilder.control<number | null>(null, [Validators.min(0)]),
+    planZ3Pagos: this.formBuilder.control<number | null>(null, [Validators.min(0)]),
     tarjeta3Pagos: [0, [Validators.required, Validators.min(0)]],
     tarjeta6Pagos: [0, [Validators.required, Validators.min(0)]],
     tarjeta12Pagos: [0, [Validators.required, Validators.min(0)]]
@@ -37,6 +49,28 @@ export class QuotationsAdminComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadConfiguration();
+    this.loadCompetition();
+  }
+
+  loadCompetition(): void {
+    this.competitionLoading = true;
+    this.competitionError = '';
+    this.adminConfigService.getLiberadosYaQuotations().subscribe({
+      next: competition => {
+        this.competition = competition;
+        if (competition.updateStatus === 'UNAVAILABLE') {
+          this.competitionError = competition.errorMessage || 'No hay cotizaciones disponibles de LiberadosYa.';
+        }
+      },
+      error: (error: Error) => {
+        this.competition = null;
+        this.competitionError = error.message;
+        this.competitionLoading = false;
+      },
+      complete: () => {
+        this.competitionLoading = false;
+      }
+    });
   }
 
   loadConfiguration(): void {
@@ -49,6 +83,9 @@ export class QuotationsAdminComponent implements OnInit {
           dolarBillete: this.toNumber(configuration.dolarBillete),
           usdt: this.toNumber(configuration.usdt),
           transferenciaBancaria: this.toNumber(configuration.transferenciaBancaria),
+          tarjeta1Pago: this.toNullableNumber(configuration.tarjeta1Pago),
+          qr1Pago: this.toNullableNumber(configuration.qr1Pago),
+          planZ3Pagos: this.toNullableNumber(configuration.planZ3Pagos),
           tarjeta3Pagos: this.toNumber(configuration.tarjeta3Pagos),
           tarjeta6Pagos: this.toNumber(configuration.tarjeta6Pagos),
           tarjeta12Pagos: this.toNumber(configuration.tarjeta12Pagos)
@@ -62,6 +99,9 @@ export class QuotationsAdminComponent implements OnInit {
             dolarBillete: 0,
             usdt: 0,
             transferenciaBancaria: 0,
+            tarjeta1Pago: null,
+            qr1Pago: null,
+            planZ3Pagos: null,
             tarjeta3Pagos: 0,
             tarjeta6Pagos: 0,
             tarjeta12Pagos: 0
@@ -132,6 +172,9 @@ export class QuotationsAdminComponent implements OnInit {
           dolarBillete: 0,
           usdt: 0,
           transferenciaBancaria: 0,
+          tarjeta1Pago: null,
+          qr1Pago: null,
+          planZ3Pagos: null,
           tarjeta3Pagos: 0,
           tarjeta6Pagos: 0,
           tarjeta12Pagos: 0
@@ -154,7 +197,7 @@ export class QuotationsAdminComponent implements OnInit {
 
   formatMoney(value: number | null | undefined): string {
     if (value === null || value === undefined || Number.isNaN(value)) {
-      return '-';
+      return '—';
     }
     return new Intl.NumberFormat('es-AR', {
       style: 'currency',
@@ -165,16 +208,31 @@ export class QuotationsAdminComponent implements OnInit {
 
   formatPercent(value: number | null | undefined): string {
     if (value === null || value === undefined || Number.isNaN(value)) {
-      return '-';
+      return '—';
     }
-    return `${value}%`;
+    return `${new Intl.NumberFormat('es-AR', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 4
+    }).format(value)}%`;
   }
 
-  formatDate(value: string | null | undefined): string {
-    if (!value) {
-      return '-';
+  formatDate(value: ApiDateValue | undefined): string {
+    if (value === null || value === undefined || value === '') {
+      return '—';
     }
-    return new Date(value).toLocaleString('es-AR');
+    const numericValue = typeof value === 'string' && /^\d+(?:\.\d+)?$/.test(value.trim())
+      ? Number(value)
+      : value;
+    const dateValue = typeof numericValue === 'number' && numericValue < 1_000_000_000_000
+      ? numericValue * 1000
+      : numericValue;
+    const date = new Date(dateValue);
+    return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString('es-AR');
+  }
+
+  hasMarkup(markup: LiberadosYaMarkupByTransferScheme | null | undefined): boolean {
+    return (markup?.general !== null && markup?.general !== undefined)
+      || (markup?.net7Net10 !== null && markup?.net7Net10 !== undefined);
   }
 
   private toRequest(): PriceConfigurationRequest {
@@ -183,6 +241,9 @@ export class QuotationsAdminComponent implements OnInit {
       dolarBillete: raw.dolarBillete,
       usdt: raw.usdt,
       transferenciaBancaria: raw.transferenciaBancaria,
+      tarjeta1Pago: raw.tarjeta1Pago,
+      qr1Pago: raw.qr1Pago,
+      planZ3Pagos: raw.planZ3Pagos,
       tarjeta3Pagos: raw.tarjeta3Pagos,
       tarjeta6Pagos: raw.tarjeta6Pagos,
       tarjeta12Pagos: raw.tarjeta12Pagos
@@ -194,5 +255,9 @@ export class QuotationsAdminComponent implements OnInit {
       return 0;
     }
     return value;
+  }
+
+  private toNullableNumber(value: number | null): number | null {
+    return value === null || Number.isNaN(value) ? null : value;
   }
 }

@@ -28,6 +28,7 @@ export function tarjeta6Installment(value: number | null | undefined): number | 
 
 export interface CatalogProductTypeRef {
   marca?: string | null;
+  modelo?: string | null;
 }
 
 export interface CatalogProductWarning {
@@ -44,7 +45,25 @@ export function isCatalogMiscellaneous(product: CatalogProductTypeRef | null | u
 }
 
 export function isCatalogPhone(product: CatalogProductTypeRef | null | undefined): boolean {
-  return !isCatalogPerfume(product) && !isCatalogMiscellaneous(product);
+  if (!product || isCatalogPerfume(product) || isCatalogMiscellaneous(product)) {
+    return false;
+  }
+  const model = normalizeCatalogWords(product.modelo);
+  const nonPhoneTokens = [
+    'camara', 'camera', 'tablet', 'ipad', 'watch', 'reloj', 'airpods', 'auricular',
+    'notebook', 'macbook', 'consola', 'joystick', 'parlante', 'tv', 'proyector'
+  ];
+  if (nonPhoneTokens.some(token => model.includes(token))) {
+    return false;
+  }
+  if (model.includes('iphone')) {
+    return true;
+  }
+  const brand = normalizeCatalogCategory(product.marca);
+  return [
+    'samsung', 'xiaomi', 'redmi', 'poco', 'motorola', 'moto', 'realme', 'infinix',
+    'huawei', 'honor', 'oppo', 'google', 'iphone'
+  ].some(token => brand.includes(token));
 }
 
 export function catalogProductConditionLabel(
@@ -58,7 +77,21 @@ export function catalogProductConditionLabel(
     return 'Dispositivos nuevos, sellados de fábrica y con garantía.';
   }
 
+  if (!isCatalogPhone(product)) {
+    return 'Producto nuevo, original y con garantía.';
+  }
+
   return 'Equipo nuevo, liberado, original, sellado de fábrica y con garantía.';
+}
+
+function normalizeCatalogWords(value: string | null | undefined): string {
+  return (value ?? '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 export function catalogProductWhatsappWarning(

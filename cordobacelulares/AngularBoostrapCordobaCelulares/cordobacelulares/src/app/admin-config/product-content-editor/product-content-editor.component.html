@@ -1,0 +1,97 @@
+<a class="back-link" routerLink="/config/bombai/contenido-productos"><i class="bi bi-arrow-left"></i> Volver al listado</a>
+
+<div *ngIf="loading" class="editor-card loading">Cargando contenido...</div>
+<p *ngIf="error" class="alert alert-danger">{{ error }}</p>
+<p *ngIf="message" class="alert alert-success">{{ message }}</p>
+
+<ng-container *ngIf="content as item">
+  <section class="editor-card product-summary">
+    <div><span>Marca</span><strong>{{ item.marca }}</strong></div>
+    <div><span>Modelo</span><strong>{{ item.modelo }}</strong></div>
+    <div><span>Slug</span><strong class="slug">{{ item.slug }}</strong></div>
+    <div><span>Catálogo</span><strong>{{ item.active ? 'Activo' : 'Inactivo' }}</strong></div>
+    <div><span>Contenido</span><strong>{{ statusLabel() }}</strong></div>
+  </section>
+
+  <section class="editor-card">
+    <h3>Descripción</h3>
+    <textarea class="form-control" rows="6" [(ngModel)]="item.description" placeholder="Descripción clara y útil del producto"></textarea>
+  </section>
+
+  <section class="editor-card">
+    <div class="section-heading"><h3>Destacados</h3><button type="button" class="btn btn-outline-dark btn-sm" (click)="addHighlight()">Agregar destacado</button></div>
+    <div *ngFor="let highlight of item.highlights; let i = index" class="editable-row">
+      <input class="form-control" [(ngModel)]="highlight.text" [attr.aria-label]="'Destacado ' + (i + 1)">
+      <div class="order-actions">
+        <button type="button" title="Subir" [disabled]="i === 0" (click)="moveHighlight(i, -1)">↑</button>
+        <button type="button" title="Bajar" [disabled]="i === item.highlights.length - 1" (click)="moveHighlight(i, 1)">↓</button>
+        <button type="button" title="Eliminar" (click)="removeHighlight(i)">×</button>
+      </div>
+    </div>
+    <p *ngIf="item.highlights.length === 0" class="empty-note">Todavía no hay destacados.</p>
+  </section>
+
+  <section class="editor-card">
+    <div class="section-heading"><h3>Especificaciones</h3><button type="button" class="btn btn-outline-dark btn-sm" (click)="addSection()">Agregar sección</button></div>
+    <article *ngFor="let section of item.specSections; let sectionIndex = index" class="spec-section">
+      <div class="spec-heading">
+        <input class="form-control" [(ngModel)]="section.title" placeholder="Nombre de sección, ej. Pantalla">
+        <div class="order-actions">
+          <button type="button" [disabled]="sectionIndex === 0" (click)="moveSection(sectionIndex, -1)">↑</button>
+          <button type="button" [disabled]="sectionIndex === item.specSections.length - 1" (click)="moveSection(sectionIndex, 1)">↓</button>
+          <button type="button" (click)="removeSection(sectionIndex)">×</button>
+        </div>
+      </div>
+      <div *ngFor="let spec of section.specs; let specIndex = index" class="spec-row">
+        <input class="form-control" [(ngModel)]="spec.label" placeholder="Etiqueta">
+        <input class="form-control" [(ngModel)]="spec.value" placeholder="Valor">
+        <div class="order-actions">
+          <button type="button" [disabled]="specIndex === 0" (click)="moveSpec(section, specIndex, -1)">↑</button>
+          <button type="button" [disabled]="specIndex === section.specs.length - 1" (click)="moveSpec(section, specIndex, 1)">↓</button>
+          <button type="button" (click)="removeSpec(section, specIndex)">×</button>
+        </div>
+      </div>
+      <button type="button" class="btn btn-link btn-sm" (click)="addSpec(section)">+ Agregar especificación</button>
+    </article>
+    <p *ngIf="item.specSections.length === 0" class="empty-note">Creá secciones libres para cualquier tipo de producto.</p>
+  </section>
+
+  <section class="editor-card">
+    <h3>Fuente oficial <small>opcional</small></h3>
+    <div class="two-columns">
+      <label><span>Nombre</span><input class="form-control" [(ngModel)]="item.sourceName" placeholder="Ej. Samsung Argentina"></label>
+      <label><span>URL</span><input type="url" class="form-control" [(ngModel)]="item.sourceUrl" placeholder="https://..."></label>
+    </div>
+  </section>
+
+  <section class="editor-card">
+    <div class="section-heading"><h3>Imágenes</h3><span>{{ item.images.length }} cargadas</span></div>
+    <label class="drop-zone" [class.drag-active]="dragActive"
+           (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)" (drop)="onDrop($event)">
+      <input type="file" accept="image/jpeg,image/png,image/webp" multiple (change)="chooseFiles($event)">
+      <i class="bi bi-cloud-arrow-up"></i>
+      <strong>{{ uploading ? 'Subiendo...' : 'Arrastrá imágenes o elegí archivos' }}</strong>
+      <span>JPEG, PNG o WEBP</span>
+    </label>
+    <div class="image-grid">
+      <article *ngFor="let image of item.images; let i = index" class="image-card">
+        <img [src]="image.publicPath" [alt]="image.altText || item.marca + ' ' + item.modelo">
+        <span *ngIf="image.primaryImage" class="primary-badge">Principal</span>
+        <input class="form-control form-control-sm" [(ngModel)]="image.altText" placeholder="Texto ALT">
+        <button type="button" class="btn btn-outline-secondary btn-sm" (click)="saveImageAlt(image.id, image.altText)">Guardar ALT</button>
+        <button type="button" class="btn btn-outline-secondary btn-sm" [disabled]="image.primaryImage" (click)="setPrimary(image.id)">Hacer principal</button>
+        <div class="image-actions">
+          <button type="button" [disabled]="i === 0" (click)="moveImage(i, -1)">←</button>
+          <button type="button" [disabled]="i === item.images.length - 1" (click)="moveImage(i, 1)">→</button>
+          <button type="button" class="danger" (click)="deleteImage(image.id)">Eliminar</button>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <footer class="editor-actions">
+    <button type="button" class="btn btn-outline-dark" [disabled]="saving" (click)="saveDraft()">Guardar borrador</button>
+    <button type="button" class="btn btn-success" [disabled]="saving" (click)="publish()">Publicar</button>
+    <button *ngIf="item.status === 'PUBLISHED'" type="button" class="btn btn-outline-danger" [disabled]="saving" (click)="unpublish()">Despublicar</button>
+  </footer>
+</ng-container>

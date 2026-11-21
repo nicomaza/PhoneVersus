@@ -1,6 +1,7 @@
 package celulares.cordobacelulares.controller;
 
 import celulares.cordobacelulares.dtos.seo.SeoProductPageView;
+import celulares.cordobacelulares.dtos.seo.PublishedProductContent;
 import celulares.cordobacelulares.exceptions.ApiNotFoundException;
 import celulares.cordobacelulares.services.SeoProductPageService;
 import org.junit.jupiter.api.Test;
@@ -46,6 +47,7 @@ class SeoProductPageControllerTest {
                 .andExpect(content().string(containsString("rel=\"canonical\" href=\"" + CANONICAL + "\"")))
                 .andExpect(content().string(containsString("\"@type\":\"Product\"")))
                 .andExpect(content().string(containsString("\"@type\":\"Offer\"")))
+                .andExpect(content().string(not(containsString("<h2 id=\"product-highlights-title\">"))))
                 .andExpect(content().string(not(containsString("Tarjeta 12 pagos"))))
                 .andExpect(content().string(not(containsString("999.999"))));
     }
@@ -115,6 +117,37 @@ class SeoProductPageControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().contentTypeCompatibleWith("text/css"))
                 .andExpect(content().string(containsString(".product-page")));
+    }
+
+    @Test
+    void publishedContentIsFullyPresentInServerRenderedHtml() throws Exception {
+        SeoProductPageView base = activePage();
+        SeoProductPageView enriched = new SeoProductPageView(
+                base.slug(), base.marca(), base.modelo(), base.available(), base.title(),
+                "Descripción editorial publicada", base.canonicalUrl(), base.intro(),
+                base.precioEfectivo(), base.precioTransferencia(), base.precioTarjeta3Pagos(),
+                base.precioTarjeta6Pagos(), base.cuotaTarjeta6(), base.colores(), base.conditionLabel(),
+                base.whatsappWarning(), base.whatsappUrl(),
+                "{\"@context\":\"https://schema.org\",\"@type\":\"Product\",\"description\":\"Descripción editorial publicada\",\"image\":[\"https://cordobacelulares.com/product-media/phone.webp\"]}",
+                base.breadcrumbJsonLd(), true, "Descripción editorial publicada",
+                List.of(new PublishedProductContent.Image("/product-media/phone.webp", "Frente del equipo", true)),
+                List.of(new PublishedProductContent.Highlight("Pantalla de alta definición")),
+                List.of(new PublishedProductContent.SpecSection(
+                        "Pantalla", List.of(new PublishedProductContent.Spec("Tamaño", "6,7 pulgadas"))
+                )),
+                "https://www.mi.com/ar", "Xiaomi Argentina",
+                "https://cordobacelulares.com/product-media/phone.webp"
+        );
+        when(productPageService.resolve(SLUG)).thenReturn(enriched);
+
+        mockMvc.perform(get("/celulares/{slug}", SLUG))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Descripción editorial publicada")))
+                .andExpect(content().string(containsString("src=\"/product-media/phone.webp\"")))
+                .andExpect(content().string(containsString("Pantalla de alta definición")))
+                .andExpect(content().string(containsString("6,7 pulgadas")))
+                .andExpect(content().string(containsString("og:image")))
+                .andExpect(content().string(containsString("$ 500.000")));
     }
 
     private SeoProductPageView activePage() {

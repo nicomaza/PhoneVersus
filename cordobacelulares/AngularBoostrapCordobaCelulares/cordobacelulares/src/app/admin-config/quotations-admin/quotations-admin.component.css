@@ -12,7 +12,8 @@
 
 .toolbar,
 .form-footer,
-.form-actions {
+.form-actions,
+.competition-status {
   display: flex;
   align-items: center;
 }
@@ -20,7 +21,7 @@
 .toolbar {
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
 }
 
 .toolbar h3,
@@ -28,7 +29,6 @@
   margin: 0;
   color: #111827;
   font-weight: 800;
-  letter-spacing: 0;
 }
 
 .toolbar p,
@@ -84,66 +84,217 @@ button:disabled {
 }
 
 .compact-alert {
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
-.summary-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-  margin-bottom: 18px;
+.competition-status {
+  min-height: 34px;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-bottom: 10px;
 }
 
-.summary-card {
-  min-height: 86px;
-  display: grid;
-  gap: 8px;
-  align-content: center;
-  padding: 14px;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  background: #f8fafc;
+.status-badge {
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: #dcfce7;
+  color: #166534;
+  font-size: .76rem;
+  font-weight: 800;
 }
 
-.summary-card span,
+.status-badge--stale {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-badge--unavailable {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.status-copy,
+.cell-status,
 .form-footer span {
   color: #64748b;
-  font-size: .86rem;
+  font-size: .84rem;
 }
 
-.summary-card strong {
-  color: #111827;
-  font-size: 1.02rem;
+.competition-notice {
+  margin: -2px 0 10px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  font-size: .82rem;
+}
+
+.competition-notice--warning {
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.competition-notice--error {
+  background: #fef2f2;
+  color: #991b1b;
 }
 
 .quotation-form {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
 }
 
-.quotation-form label {
-  display: grid;
-  gap: 6px;
-  color: #334155;
-  font-weight: 700;
+.quotation-table-wrap {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
-.quotation-form small {
+.quotation-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+.payment-column {
+  width: 29%;
+}
+
+.competition-column {
+  width: 38%;
+}
+
+.own-column {
+  width: 33%;
+}
+
+.quotation-table th,
+.quotation-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #e2e8f0;
+  vertical-align: middle;
+  overflow-wrap: anywhere;
+}
+
+.quotation-table thead th {
+  background: #f1f5f9;
+  color: #475569;
+  font-size: .78rem;
+  font-weight: 800;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+}
+
+.quotation-table tbody th {
+  color: #1e293b;
+  background: #fff;
+  font-size: .93rem;
+  font-weight: 750;
+}
+
+.quotation-table tbody tr:last-child th,
+.quotation-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.competition-cell {
+  color: #111827;
+  background: #f8fafc;
+}
+
+.markup-values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.markup-pill {
+  min-width: 84px;
+  display: inline-grid;
+  gap: 1px;
+  padding: 5px 8px;
+  border: 1px solid #dbe4ee;
+  border-radius: 7px;
+  background: #fff;
+}
+
+.markup-pill--special {
+  border-color: #fbcfe8;
+  background: #fff7fa;
+}
+
+.markup-pill small {
+  color: #64748b;
+  font-size: .66rem;
+  font-weight: 700;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.markup-pill strong {
+  color: #111827;
+  font-size: .86rem;
+}
+
+.own-value-cell {
+  background: #fff;
+}
+
+.input-with-unit {
+  width: 100%;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.input-with-unit input {
+  width: 100%;
+  min-width: 0;
+  border-radius: 7px 0 0 7px;
+}
+
+.input-with-unit > span {
+  min-width: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 9px;
+  border: 1px solid #ced4da;
+  border-left: 0;
+  border-radius: 0 7px 7px 0;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: .78rem;
+  font-weight: 800;
+}
+
+.own-value-cell small {
+  display: block;
+  margin-top: 4px;
   color: #b91c1c;
-  font-weight: 500;
+  font-size: .74rem;
 }
 
 .form-footer {
-  grid-column: 1 / -1;
   justify-content: space-between;
   gap: 14px;
-  padding-top: 4px;
 }
 
 .form-actions {
   justify-content: flex-end;
   gap: 10px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .modal-layer {
@@ -165,22 +316,87 @@ button:disabled {
   box-shadow: 0 22px 70px rgba(15, 23, 42, .28);
 }
 
-@media (max-width: 960px) {
-  .summary-grid,
-  .quotation-form {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+@media (max-width: 720px) {
+  .admin-panel {
+    padding: 13px;
+  }
+
+  .quotation-table th,
+  .quotation-table td {
+    padding: 9px 8px;
+  }
+
+  .payment-column {
+    width: 28%;
+  }
+
+  .competition-column {
+    width: 38%;
+  }
+
+  .own-column {
+    width: 34%;
+  }
+
+  .markup-pill {
+    min-width: 0;
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 520px) {
   .toolbar,
   .form-footer {
-    align-items: flex-start;
+    align-items: stretch;
     flex-direction: column;
   }
 
-  .summary-grid,
-  .quotation-form {
-    grid-template-columns: 1fr;
+  .toolbar .danger-outline,
+  .form-footer .primary-button {
+    width: 100%;
+  }
+
+  .quotation-table thead th {
+    font-size: .66rem;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  .quotation-table tbody th,
+  .competition-cell,
+  .own-value-cell {
+    font-size: .8rem;
+  }
+
+  .quotation-table th,
+  .quotation-table td {
+    padding: 8px 5px;
+  }
+
+  .markup-values {
+    display: grid;
+    gap: 4px;
+  }
+
+  .markup-pill {
+    padding: 4px 5px;
+  }
+
+  .markup-pill small {
+    font-size: .58rem;
+  }
+
+  .markup-pill strong {
+    font-size: .76rem;
+  }
+
+  .input-with-unit > span {
+    min-width: 30px;
+    padding: 0 5px;
+    font-size: .66rem;
+  }
+
+  .form-control {
+    padding: .375rem .35rem;
+    font-size: .82rem;
   }
 }

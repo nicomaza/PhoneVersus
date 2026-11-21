@@ -25,6 +25,9 @@ public class PriceConfigurationServiceImpl implements PriceConfigurationService 
             "dolarBillete",
             "usdt",
             "transferenciaBancaria",
+            "tarjeta1Pago",
+            "qr1Pago",
+            "planZ3Pagos",
             "tarjeta3Pagos",
             "tarjeta6Pagos",
             "tarjeta12Pagos"
@@ -92,6 +95,15 @@ public class PriceConfigurationServiceImpl implements PriceConfigurationService 
         if (request.hasField("transferenciaBancaria")) {
             configuration.setTransferenciaBancaria(readNullableMoney(request.getField("transferenciaBancaria"), "transferenciaBancaria"));
         }
+        if (request.hasField("tarjeta1Pago")) {
+            configuration.setTarjeta1Pago(readNullableMoney(request.getField("tarjeta1Pago"), "tarjeta1Pago"));
+        }
+        if (request.hasField("qr1Pago")) {
+            configuration.setQr1Pago(readNullableMoney(request.getField("qr1Pago"), "qr1Pago"));
+        }
+        if (request.hasField("planZ3Pagos")) {
+            configuration.setPlanZ3Pagos(readNullableMoney(request.getField("planZ3Pagos"), "planZ3Pagos"));
+        }
         if (request.hasField("tarjeta3Pagos")) {
             configuration.setTarjeta3Pagos(readNullableMoney(request.getField("tarjeta3Pagos"), "tarjeta3Pagos"));
         }
@@ -127,6 +139,9 @@ public class PriceConfigurationServiceImpl implements PriceConfigurationService 
         configuration.setDolarBillete(validateMoney(request.getDolarBillete(), "dolarBillete"));
         configuration.setUsdt(validateMoney(request.getUsdt(), "usdt"));
         configuration.setTransferenciaBancaria(validateMoney(request.getTransferenciaBancaria(), "transferenciaBancaria"));
+        configuration.setTarjeta1Pago(validateMoney(request.getTarjeta1Pago(), "tarjeta1Pago"));
+        configuration.setQr1Pago(validateMoney(request.getQr1Pago(), "qr1Pago"));
+        configuration.setPlanZ3Pagos(validateMoney(request.getPlanZ3Pagos(), "planZ3Pagos"));
         configuration.setTarjeta3Pagos(validateMoney(request.getTarjeta3Pagos(), "tarjeta3Pagos"));
         configuration.setTarjeta6Pagos(validateMoney(request.getTarjeta6Pagos(), "tarjeta6Pagos"));
         configuration.setTarjeta12Pagos(validateMoney(request.getTarjeta12Pagos(), "tarjeta12Pagos"));
@@ -136,6 +151,9 @@ public class PriceConfigurationServiceImpl implements PriceConfigurationService 
         configuration.setDolarBillete(validateMoney(request.getDolarBillete(), "dolarBillete"));
         configuration.setUsdt(validateMoney(request.getUsdt(), "usdt"));
         configuration.setTransferenciaBancaria(validateMoney(request.getTransferenciaBancaria(), "transferenciaBancaria"));
+        configuration.setTarjeta1Pago(validateMoney(request.getTarjeta1Pago(), "tarjeta1Pago"));
+        configuration.setQr1Pago(validateMoney(request.getQr1Pago(), "qr1Pago"));
+        configuration.setPlanZ3Pagos(validateMoney(request.getPlanZ3Pagos(), "planZ3Pagos"));
         configuration.setTarjeta3Pagos(validateMoney(request.getTarjeta3Pagos(), "tarjeta3Pagos"));
         configuration.setTarjeta6Pagos(validateMoney(request.getTarjeta6Pagos(), "tarjeta6Pagos"));
         configuration.setTarjeta12Pagos(validateMoney(request.getTarjeta12Pagos(), "tarjeta12Pagos"));
@@ -179,6 +197,9 @@ public class PriceConfigurationServiceImpl implements PriceConfigurationService 
                 configuration.getDolarBillete(),
                 configuration.getUsdt(),
                 configuration.getTransferenciaBancaria(),
+                configuration.getTarjeta1Pago(),
+                configuration.getQr1Pago(),
+                configuration.getPlanZ3Pagos(),
                 configuration.getTarjeta3Pagos(),
                 configuration.getTarjeta6Pagos(),
                 configuration.getTarjeta12Pagos(),

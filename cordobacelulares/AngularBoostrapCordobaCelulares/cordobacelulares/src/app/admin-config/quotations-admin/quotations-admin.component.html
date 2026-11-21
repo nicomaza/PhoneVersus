@@ -2,14 +2,9 @@
   <div class="toolbar">
     <div>
       <h3>Cotizaciones y recargos</h3>
-      <p>Valores usados por el backend para calcular precios del catalogo.</p>
+      <p>Compará los valores actuales de LiberadosYa con tus cotizaciones.</p>
     </div>
-    <button
-      *ngIf="configuration"
-      type="button"
-      class="danger-outline"
-      (click)="askDelete()"
-      [disabled]="saving">
+    <button *ngIf="configuration" type="button" class="danger-outline" (click)="askDelete()" [disabled]="saving">
       <i class="bi bi-trash" aria-hidden="true"></i>
       <span>Eliminar</span>
     </button>
@@ -18,66 +13,170 @@
   <div *ngIf="error" class="alert alert-danger compact-alert">{{ error }}</div>
   <div *ngIf="success" class="alert alert-success compact-alert">{{ success }}</div>
 
-  <div class="summary-grid">
-    <div class="summary-card">
-      <span>Dolar billete</span>
-      <strong>{{ formatMoney(configuration?.dolarBillete) }}</strong>
-    </div>
-    <div class="summary-card">
-      <span>USDT</span>
-      <strong>{{ formatMoney(configuration?.usdt) }}</strong>
-    </div>
-    <div class="summary-card">
-      <span>Transferencia</span>
-      <strong>{{ formatPercent(configuration?.transferenciaBancaria) }}</strong>
-    </div>
-    <div class="summary-card">
-      <span>Ultima actualizacion</span>
-      <strong>{{ formatDate(configuration?.updatedAt) }}</strong>
-    </div>
+  <div class="competition-status" aria-live="polite">
+    <span *ngIf="competitionLoading" class="status-copy">Consultando LiberadosYa…</span>
+    <ng-container *ngIf="!competitionLoading && competition">
+      <span class="status-badge"
+        [class.status-badge--stale]="competition.stale"
+        [class.status-badge--unavailable]="competition.updateStatus === 'UNAVAILABLE'">
+        {{ competition.updateStatus === 'CURRENT' ? 'Datos actualizados' : competition.updateStatus === 'STALE' ? 'Datos desactualizados' : 'Sin datos disponibles' }}
+      </span>
+      <span class="status-copy">Última actualización correcta: {{ formatDate(competition.obtainedAt) }}</span>
+    </ng-container>
+  </div>
+
+  <div *ngIf="competitionError" class="competition-notice competition-notice--error">{{ competitionError }}</div>
+  <div *ngIf="competition?.updateStatus === 'STALE' && competition?.errorMessage" class="competition-notice competition-notice--warning">
+    No se pudo actualizar LiberadosYa. Se muestran los últimos datos válidos.
   </div>
 
   <form [formGroup]="form" (ngSubmit)="save()" class="quotation-form">
-    <label>
-      <span>Dolar billete</span>
-      <input type="number" class="form-control" formControlName="dolarBillete" min="0.01" step="0.01">
-      <small *ngIf="controlInvalid('dolarBillete')">Debe ser mayor a cero.</small>
-    </label>
+    <div class="quotation-table-wrap">
+      <table class="quotation-table">
+        <colgroup>
+          <col class="payment-column">
+          <col class="competition-column">
+          <col class="own-column">
+        </colgroup>
+        <thead>
+          <tr>
+            <th scope="col">Medio de pago</th>
+            <th scope="col">Competencia</th>
+            <th scope="col">Tus cotizaciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row">Dólar billete</th>
+            <td class="competition-cell">
+              <span *ngIf="competitionLoading" class="cell-status">Cargando…</span>
+              <strong *ngIf="!competitionLoading">{{ formatMoney(competition?.dolarBillete) }}</strong>
+            </td>
+            <td class="own-value-cell">
+              <label class="sr-only" for="dolarBillete">Tu cotización de dólar billete</label>
+              <div class="input-with-unit">
+                <input id="dolarBillete" type="number" class="form-control" formControlName="dolarBillete" min="0.01" step="0.01" inputmode="decimal">
+                <span>ARS</span>
+              </div>
+              <small *ngIf="controlInvalid('dolarBillete')">Debe ser mayor a cero.</small>
+            </td>
+          </tr>
 
-    <label>
-      <span>USDT</span>
-      <input type="number" class="form-control" formControlName="usdt" min="0.01" step="0.01">
-      <small *ngIf="controlInvalid('usdt')">Debe ser mayor a cero.</small>
-    </label>
+          <tr>
+            <th scope="row">USDT</th>
+            <td class="competition-cell">
+              <span *ngIf="competitionLoading" class="cell-status">Cargando…</span>
+              <strong *ngIf="!competitionLoading">{{ formatMoney(competition?.usdt) }}</strong>
+            </td>
+            <td class="own-value-cell">
+              <label class="sr-only" for="usdt">Tu cotización de USDT</label>
+              <div class="input-with-unit">
+                <input id="usdt" type="number" class="form-control" formControlName="usdt" min="0.01" step="0.01" inputmode="decimal">
+                <span>ARS</span>
+              </div>
+              <small *ngIf="controlInvalid('usdt')">Debe ser mayor a cero.</small>
+            </td>
+          </tr>
 
-    <label>
-      <span>Transferencia bancaria (%)</span>
-      <input type="number" class="form-control" formControlName="transferenciaBancaria" min="0" step="0.01">
-      <small *ngIf="controlInvalid('transferenciaBancaria')">Debe ser cero o mayor.</small>
-    </label>
+          <tr>
+            <th scope="row">Transferencia</th>
+            <td class="competition-cell"><ng-container *ngTemplateOutlet="competitionMarkup; context: { $implicit: competition?.transferencia }"></ng-container></td>
+            <td class="own-value-cell">
+              <label class="sr-only" for="transferenciaBancaria">Tu recargo de transferencia</label>
+              <div class="input-with-unit">
+                <input id="transferenciaBancaria" type="number" class="form-control" formControlName="transferenciaBancaria" min="0" step="0.01" inputmode="decimal">
+                <span>%</span>
+              </div>
+              <small *ngIf="controlInvalid('transferenciaBancaria')">Debe ser cero o mayor.</small>
+            </td>
+          </tr>
 
-    <label>
-      <span>Tarjeta 3 pagos (%)</span>
-      <input type="number" class="form-control" formControlName="tarjeta3Pagos" min="0" step="0.01">
-      <small *ngIf="controlInvalid('tarjeta3Pagos')">Debe ser cero o mayor.</small>
-    </label>
+          <tr>
+            <th scope="row">Tarjeta 1 pago</th>
+            <td class="competition-cell"><ng-container *ngTemplateOutlet="competitionMarkup; context: { $implicit: competition?.tarjeta1Pago }"></ng-container></td>
+            <td class="own-value-cell">
+              <label class="sr-only" for="tarjeta1Pago">Tu recargo de tarjeta en 1 pago</label>
+              <div class="input-with-unit">
+                <input id="tarjeta1Pago" type="number" class="form-control" formControlName="tarjeta1Pago" min="0" step="0.01" inputmode="decimal">
+                <span>%</span>
+              </div>
+              <small *ngIf="controlInvalid('tarjeta1Pago')">Debe ser cero o mayor.</small>
+            </td>
+          </tr>
 
-    <label>
-      <span>Tarjeta 6 pagos (%)</span>
-      <input type="number" class="form-control" formControlName="tarjeta6Pagos" min="0" step="0.01">
-      <small *ngIf="controlInvalid('tarjeta6Pagos')">Debe ser cero o mayor.</small>
-    </label>
+          <tr>
+            <th scope="row">QR 1 pago</th>
+            <td class="competition-cell"><ng-container *ngTemplateOutlet="competitionMarkup; context: { $implicit: competition?.qr1Pago }"></ng-container></td>
+            <td class="own-value-cell">
+              <label class="sr-only" for="qr1Pago">Tu recargo de QR en 1 pago</label>
+              <div class="input-with-unit">
+                <input id="qr1Pago" type="number" class="form-control" formControlName="qr1Pago" min="0" step="0.01" inputmode="decimal">
+                <span>%</span>
+              </div>
+              <small *ngIf="controlInvalid('qr1Pago')">Debe ser cero o mayor.</small>
+            </td>
+          </tr>
 
-    <label>
-      <span>Tarjeta 12 pagos (%)</span>
-      <input type="number" class="form-control" formControlName="tarjeta12Pagos" min="0" step="0.01">
-      <small *ngIf="controlInvalid('tarjeta12Pagos')">Debe ser cero o mayor.</small>
-    </label>
+          <tr>
+            <th scope="row">Plan Z · 3 pagos</th>
+            <td class="competition-cell"><ng-container *ngTemplateOutlet="competitionMarkup; context: { $implicit: competition?.planZ3Pagos }"></ng-container></td>
+            <td class="own-value-cell">
+              <label class="sr-only" for="planZ3Pagos">Tu recargo de Plan Z en 3 pagos</label>
+              <div class="input-with-unit">
+                <input id="planZ3Pagos" type="number" class="form-control" formControlName="planZ3Pagos" min="0" step="0.01" inputmode="decimal">
+                <span>%</span>
+              </div>
+              <small *ngIf="controlInvalid('planZ3Pagos')">Debe ser cero o mayor.</small>
+            </td>
+          </tr>
+
+          <tr>
+            <th scope="row">Tarjeta 3 cuotas</th>
+            <td class="competition-cell"><ng-container *ngTemplateOutlet="competitionMarkup; context: { $implicit: competition?.tarjeta3Pagos }"></ng-container></td>
+            <td class="own-value-cell">
+              <label class="sr-only" for="tarjeta3Pagos">Tu recargo de tarjeta en 3 cuotas</label>
+              <div class="input-with-unit">
+                <input id="tarjeta3Pagos" type="number" class="form-control" formControlName="tarjeta3Pagos" min="0" step="0.01" inputmode="decimal">
+                <span>%</span>
+              </div>
+              <small *ngIf="controlInvalid('tarjeta3Pagos')">Debe ser cero o mayor.</small>
+            </td>
+          </tr>
+
+          <tr>
+            <th scope="row">Tarjeta 6 cuotas</th>
+            <td class="competition-cell"><ng-container *ngTemplateOutlet="competitionMarkup; context: { $implicit: competition?.tarjeta6Pagos }"></ng-container></td>
+            <td class="own-value-cell">
+              <label class="sr-only" for="tarjeta6Pagos">Tu recargo de tarjeta en 6 cuotas</label>
+              <div class="input-with-unit">
+                <input id="tarjeta6Pagos" type="number" class="form-control" formControlName="tarjeta6Pagos" min="0" step="0.01" inputmode="decimal">
+                <span>%</span>
+              </div>
+              <small *ngIf="controlInvalid('tarjeta6Pagos')">Debe ser cero o mayor.</small>
+            </td>
+          </tr>
+
+          <tr>
+            <th scope="row">Tarjeta 12 cuotas</th>
+            <td class="competition-cell"><strong>—</strong></td>
+            <td class="own-value-cell">
+              <label class="sr-only" for="tarjeta12Pagos">Tu recargo de tarjeta en 12 cuotas</label>
+              <div class="input-with-unit">
+                <input id="tarjeta12Pagos" type="number" class="form-control" formControlName="tarjeta12Pagos" min="0" step="0.01" inputmode="decimal">
+                <span>%</span>
+              </div>
+              <small *ngIf="controlInvalid('tarjeta12Pagos')">Debe ser cero o mayor.</small>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
     <div class="form-footer">
-      <span *ngIf="loading">Cargando configuracion...</span>
-      <span *ngIf="!loading && !configuration">Todavia no existe una configuracion guardada.</span>
-      <button type="submit" class="primary-button" [disabled]="saving || form.invalid">
+      <span *ngIf="loading">Cargando tus cotizaciones…</span>
+      <span *ngIf="!loading && !configuration">Todavía no existe una configuración guardada.</span>
+      <span *ngIf="!loading && configuration">Tus datos se guardan por separado de LiberadosYa.</span>
+      <button type="submit" class="primary-button" [disabled]="saving || loading || form.invalid">
         <i class="bi bi-save" aria-hidden="true"></i>
         <span>{{ saving ? 'Guardando' : 'Guardar cotizaciones' }}</span>
       </button>
@@ -85,10 +184,28 @@
   </form>
 </section>
 
+<ng-template #competitionMarkup let-markup>
+  <span *ngIf="competitionLoading" class="cell-status">Cargando…</span>
+  <ng-container *ngIf="!competitionLoading">
+    <div *ngIf="hasMarkup(markup); else unavailable" class="markup-values">
+      <span *ngIf="markup?.general !== null && markup?.general !== undefined" class="markup-pill">
+        <small>General</small>
+        <strong>{{ formatPercent(markup.general) }}</strong>
+      </span>
+      <span *ngIf="markup?.net7Net10 !== null && markup?.net7Net10 !== undefined" class="markup-pill markup-pill--special">
+        <small>Net 7/10</small>
+        <strong>{{ formatPercent(markup.net7Net10) }}</strong>
+      </span>
+    </div>
+  </ng-container>
+</ng-template>
+
+<ng-template #unavailable><strong>—</strong></ng-template>
+
 <div *ngIf="confirmDelete" class="modal-layer" role="dialog" aria-modal="true">
   <div class="modal-box">
-    <h4>Eliminar configuracion</h4>
-    <p>El catalogo no podra calcular precios hasta que vuelvas a cargar cotizaciones.</p>
+    <h4>Eliminar configuración</h4>
+    <p>El catálogo no podrá calcular precios hasta que vuelvas a cargar cotizaciones.</p>
     <div class="form-actions">
       <button type="button" class="secondary-button" (click)="cancelDelete()">Cancelar</button>
       <button type="button" class="danger-button" (click)="deleteConfiguration()" [disabled]="saving">

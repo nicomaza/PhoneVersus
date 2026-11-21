@@ -51,6 +51,10 @@ export interface TiendaPorteCategoryPageState {
   loading: boolean;
 }
 
+export interface PublishedProductSlugsResponse {
+  slugs: string[];
+}
+
 export type LiberadosYaDynamicValue =
   | string
   | number
@@ -80,6 +84,7 @@ export interface LiberadosYaProductMatchResponse {
 export class NuevosPreciosService {
   private readonly API_URL = '/api/tiendaporte/equipos';
   private readonly LIBERADOS_YA_PUBLIC_URL = '/api/public/products/liberadosya';
+  private readonly PRODUCT_CONTENT_PUBLIC_URL = '/api/public/product-content';
 
   private allCatalogCache: TiendaPorteBrandResponse[] | null = null;
   private allCatalogLoading$?: Observable<TiendaPorteBrandResponse[]>;
@@ -194,6 +199,11 @@ export class NuevosPreciosService {
       `${this.LIBERADOS_YA_PUBLIC_URL}/match`,
       { params }
     );
+  }
+
+  getPublishedProductSlugs(): Observable<string[]> {
+    return this.http.get<PublishedProductSlugsResponse>(`${this.PRODUCT_CONTENT_PUBLIC_URL}/published-slugs`)
+      .pipe(map(response => Array.isArray(response?.slugs) ? response.slugs : []));
   }
 
   private storeCategoryPage(

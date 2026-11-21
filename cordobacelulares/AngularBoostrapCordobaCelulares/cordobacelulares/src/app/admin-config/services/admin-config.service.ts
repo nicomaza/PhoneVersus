@@ -11,8 +11,12 @@ import {
   CredentialCreateRequest,
   CredentialPatchRequest,
   CredentialResponse,
+  LiberadosYaQuotationResponse,
   PriceConfigurationRequest,
   PriceConfigurationResponse
+  , ProductContentDetail
+  , ProductContentPageResponse
+  , ProductContentSaveRequest
 } from '../models/admin-config.models';
 
 export class AdminConfigHttpError extends Error {
@@ -79,6 +83,11 @@ export class AdminConfigService {
       .pipe(catchError(error => this.handleError(error)));
   }
 
+  getLiberadosYaQuotations(): Observable<LiberadosYaQuotationResponse> {
+    return this.http.get<LiberadosYaQuotationResponse>(`${this.apiUrl}/config/bombai/liberadosya/cotizaciones`)
+      .pipe(catchError(error => this.handleError(error)));
+  }
+
   getAdminCatalogProducts(query: AdminCatalogQuery): Observable<AdminCatalogPageResponse> {
     let params = new HttpParams()
       .set('page', query.page)
@@ -133,6 +142,81 @@ export class AdminConfigService {
   getComparativa(): Observable<ComparativaResponse> {
     return this.http.get<ComparativaResponse>(`${this.apiUrl}/config/bombai/comparativa`)
       .pipe(catchError(error => this.handleError(error)));
+  }
+
+  getProductContents(query: {
+    text: string;
+    brand: string;
+    state: string;
+    page: number;
+    limit: number;
+  }): Observable<ProductContentPageResponse> {
+    const params = new HttpParams()
+      .set('text', query.text)
+      .set('brand', query.brand)
+      .set('state', query.state)
+      .set('page', query.page)
+      .set('limit', query.limit);
+    return this.http.get<ProductContentPageResponse>(`${this.apiUrl}/admin/product-content/products`, { params })
+      .pipe(catchError(error => this.handleError(error)));
+  }
+
+  getProductContent(slug: string): Observable<ProductContentDetail> {
+    return this.http.get<ProductContentDetail>(`${this.apiUrl}/admin/product-content/products/${encodeURIComponent(slug)}`)
+      .pipe(catchError(error => this.handleError(error)));
+  }
+
+  saveProductContentDraft(slug: string, request: ProductContentSaveRequest): Observable<ProductContentDetail> {
+    return this.http.put<ProductContentDetail>(
+      `${this.apiUrl}/admin/product-content/products/${encodeURIComponent(slug)}/draft`, request
+    ).pipe(catchError(error => this.handleError(error)));
+  }
+
+  publishProductContent(slug: string): Observable<ProductContentDetail> {
+    return this.http.post<ProductContentDetail>(
+      `${this.apiUrl}/admin/product-content/products/${encodeURIComponent(slug)}/publish`, {}
+    ).pipe(catchError(error => this.handleError(error)));
+  }
+
+  unpublishProductContent(slug: string): Observable<ProductContentDetail> {
+    return this.http.post<ProductContentDetail>(
+      `${this.apiUrl}/admin/product-content/products/${encodeURIComponent(slug)}/unpublish`, {}
+    ).pipe(catchError(error => this.handleError(error)));
+  }
+
+  uploadProductImage(slug: string, file: File, altText: string): Observable<ProductContentDetail> {
+    const form = new FormData();
+    form.append('file', file);
+    form.append('altText', altText);
+    return this.http.post<ProductContentDetail>(
+      `${this.apiUrl}/admin/product-content/products/${encodeURIComponent(slug)}/images`, form
+    ).pipe(catchError(error => this.handleError(error)));
+  }
+
+  updateProductImageAlt(slug: string, imageId: number, altText: string): Observable<ProductContentDetail> {
+    return this.http.put<ProductContentDetail>(
+      `${this.apiUrl}/admin/product-content/products/${encodeURIComponent(slug)}/images/${imageId}`,
+      { altText }
+    ).pipe(catchError(error => this.handleError(error)));
+  }
+
+  reorderProductImages(slug: string, imageIds: number[]): Observable<ProductContentDetail> {
+    return this.http.put<ProductContentDetail>(
+      `${this.apiUrl}/admin/product-content/products/${encodeURIComponent(slug)}/images/order`,
+      { imageIds }
+    ).pipe(catchError(error => this.handleError(error)));
+  }
+
+  setPrimaryProductImage(slug: string, imageId: number): Observable<ProductContentDetail> {
+    return this.http.put<ProductContentDetail>(
+      `${this.apiUrl}/admin/product-content/products/${encodeURIComponent(slug)}/images/${imageId}/primary`, {}
+    ).pipe(catchError(error => this.handleError(error)));
+  }
+
+  deleteProductImage(slug: string, imageId: number): Observable<ProductContentDetail> {
+    return this.http.delete<ProductContentDetail>(
+      `${this.apiUrl}/admin/product-content/products/${encodeURIComponent(slug)}/images/${imageId}`
+    ).pipe(catchError(error => this.handleError(error)));
   }
 
   private handleError(error: HttpErrorResponse): Observable<never> {

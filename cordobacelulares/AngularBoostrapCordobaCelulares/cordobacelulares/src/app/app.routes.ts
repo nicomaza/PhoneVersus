@@ -18,6 +18,8 @@ import { TiendaPorteProductsAdminComponent } from './admin-config/tienda-porte-p
 import { CatalogCacheAdminComponent } from './admin-config/catalog-cache-admin/catalog-cache-admin.component';
 import { ComparativaComponent } from './admin-config/comparativa/comparativa.component';
 import { ProductoPublicoComponent } from './producto-publico/producto-publico.component';
+import { ProductContentAdminComponent } from './admin-config/product-content-admin/product-content-admin.component';
+import { ProductContentEditorComponent } from './admin-config/product-content-editor/product-content-editor.component';
 
 
 export const routes: Routes = [{
@@ -122,6 +124,22 @@ export const routes: Routes = [{
             data: {
                 title: 'Comparativa',
                 description: 'Comparacion de precios propios contra LiberadosYa por forma de pago.'
+            }
+        },
+        {
+            path: 'contenido-productos',
+            component: ProductContentAdminComponent,
+            data: {
+                title: 'Contenido productos',
+                description: 'Descripcion, especificaciones e imagenes de las fichas publicas de productos.'
+            }
+        },
+        {
+            path: 'contenido-productos/:slug',
+            component: ProductContentEditorComponent,
+            data: {
+                title: 'Editar contenido',
+                description: 'Borrador y publicacion de la ficha completa del producto.'
             }
         },
         {

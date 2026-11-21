@@ -23,6 +23,9 @@ export interface PriceConfigurationResponse {
   dolarBillete: number | null;
   usdt: number | null;
   transferenciaBancaria: number | null;
+  tarjeta1Pago: number | null;
+  qr1Pago: number | null;
+  planZ3Pagos: number | null;
   tarjeta3Pagos: number | null;
   tarjeta6Pagos: number | null;
   tarjeta12Pagos: number | null;
@@ -34,9 +37,36 @@ export interface PriceConfigurationRequest {
   dolarBillete: number;
   usdt: number;
   transferenciaBancaria: number;
+  tarjeta1Pago: number | null;
+  qr1Pago: number | null;
+  planZ3Pagos: number | null;
   tarjeta3Pagos: number;
   tarjeta6Pagos: number;
   tarjeta12Pagos: number;
+}
+
+export interface LiberadosYaMarkupByTransferScheme {
+  general: number | null;
+  net7Net10: number | null;
+}
+
+export type LiberadosYaQuotationStatus = 'CURRENT' | 'STALE' | 'UNAVAILABLE';
+
+export interface LiberadosYaQuotationResponse {
+  obtainedAt: ApiDateValue;
+  lastAttemptAt: ApiDateValue;
+  updateStatus: LiberadosYaQuotationStatus;
+  stale: boolean;
+  sourceAppJsUrl: string | null;
+  dolarBillete: number | null;
+  usdt: number | null;
+  transferencia: LiberadosYaMarkupByTransferScheme | null;
+  tarjeta1Pago: LiberadosYaMarkupByTransferScheme | null;
+  qr1Pago: LiberadosYaMarkupByTransferScheme | null;
+  planZ3Pagos: LiberadosYaMarkupByTransferScheme | null;
+  tarjeta3Pagos: LiberadosYaMarkupByTransferScheme | null;
+  tarjeta6Pagos: LiberadosYaMarkupByTransferScheme | null;
+  errorMessage: string | null;
 }
 
 export interface AdminCatalogProductRow {
@@ -197,4 +227,88 @@ export interface ComparativaProduct {
 export interface ComparativaResponse {
   summary: ComparativaSummary;
   products: ComparativaProduct[];
+}
+
+export type ProductContentStatus = 'DRAFT' | 'PUBLISHED' | null;
+
+export interface ProductContentListItem {
+  seoCatalogProductId: number;
+  marca: string;
+  modelo: string;
+  slug: string;
+  active: boolean;
+  status: ProductContentStatus;
+  imageCount: number;
+  updatedAt: string | null;
+  hasUnpublishedChanges: boolean;
+}
+
+export interface ProductContentPageResponse {
+  data: ProductContentListItem[];
+  brands: string[];
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+  hasNext: boolean;
+}
+
+export interface ProductContentHighlight {
+  id?: number | null;
+  text: string;
+  sortOrder?: number;
+}
+
+export interface ProductContentSpec {
+  id?: number | null;
+  label: string;
+  value: string;
+  sortOrder?: number;
+}
+
+export interface ProductContentSpecSection {
+  id?: number | null;
+  title: string;
+  sortOrder?: number;
+  specs: ProductContentSpec[];
+}
+
+export interface ProductContentImage {
+  id: number;
+  publicPath: string;
+  originalFilename: string;
+  altText: string;
+  sortOrder: number;
+  primaryImage: boolean;
+  createdAt: string | null;
+}
+
+export interface ProductContentDetail {
+  seoCatalogProductId: number;
+  marca: string;
+  modelo: string;
+  slug: string;
+  active: boolean;
+  status: ProductContentStatus;
+  description: string;
+  sourceUrl: string;
+  sourceName: string;
+  highlights: ProductContentHighlight[];
+  specSections: ProductContentSpecSection[];
+  images: ProductContentImage[];
+  createdAt: string | null;
+  updatedAt: string | null;
+  publishedAt: string | null;
+  hasUnpublishedChanges: boolean;
+}
+
+export interface ProductContentSaveRequest {
+  description: string;
+  sourceUrl: string;
+  sourceName: string;
+  highlights: Array<{ text: string }>;
+  specSections: Array<{
+    title: string;
+    specs: Array<{ label: string; value: string }>;
+  }>;
 }

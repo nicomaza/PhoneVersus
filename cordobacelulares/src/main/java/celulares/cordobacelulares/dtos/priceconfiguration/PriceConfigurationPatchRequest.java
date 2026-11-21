@@ -9,7 +9,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
-@Schema(description = "Actualizacion parcial de configuracion. transferenciaBancaria, tarjeta3Pagos, tarjeta6Pagos y tarjeta12Pagos son porcentajes de recargo, no importes fijos.")
+@Schema(description = "Actualizacion parcial de configuracion. Los campos de medios de pago son porcentajes de recargo, no importes fijos.")
 public class PriceConfigurationPatchRequest {
 
     private final Map<String, JsonNode> fields = new LinkedHashMap<>();

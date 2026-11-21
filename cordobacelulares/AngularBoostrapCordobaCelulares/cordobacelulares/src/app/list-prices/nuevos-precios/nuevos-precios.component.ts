@@ -126,6 +126,7 @@ export class NuevosPreciosComponent implements OnDestroy {
   private readonly subscriptions = new Subscription();
   private readonly scrollHandler = (): void => this.handleWindowScroll();
   private readonly failedFeatureImages = new Set<string>();
+  private publishedContentSlugs = new Set<string>();
   private featuresRequestId = 0;
   private characteristicsRequestId = 0;
   private matchedCharacteristicsImages: string[] = [];
@@ -177,6 +178,7 @@ export class NuevosPreciosComponent implements OnDestroy {
     window.addEventListener('scroll', this.scrollHandler, { passive: true });
     this.applyFilter('');
     this.loadCatalogInBackground();
+    this.loadPublishedContentSlugs();
 
     this.subscriptions.add(
       this.searchCtrl.valueChanges
@@ -302,6 +304,10 @@ export class NuevosPreciosComponent implements OnDestroy {
 
   productHref(p: NuevoProductoLista): string {
     return `/celulares/${this.productSlug(p)}`;
+  }
+
+  hasPublishedContent(p: NuevoProductoLista): boolean {
+    return this.publishedContentSlugs.has(this.productSlug(p));
   }
 
   onProductCardClick(event: MouseEvent, p: NuevoProductoLista): void {
@@ -1225,6 +1231,13 @@ export class NuevosPreciosComponent implements OnDestroy {
         }
       })
     );
+  }
+
+  private loadPublishedContentSlugs(): void {
+    this.subscriptions.add(this.service.getPublishedProductSlugs().subscribe({
+      next: slugs => this.publishedContentSlugs = new Set(slugs),
+      error: () => this.publishedContentSlugs.clear()
+    }));
   }
 
   private loadCategoryFromCatalog(categoria: string): void {

@@ -273,6 +273,7 @@
       </div>
 
       <div class="modal-footer" *ngIf="selected as p">
+        <a *ngIf="hasPublishedContent(p)" class="lp-full-product-link" [href]="productHref(p)">Ver ficha completa</a>
         <button type="button" class="btn btn-outline-secondary" (click)="closeModal()">Cerrar</button>
         <button type="button" class="btn btn-success" (click)="abrirWhatsApp(p)">Consultar por WhatsApp</button>
       </div>

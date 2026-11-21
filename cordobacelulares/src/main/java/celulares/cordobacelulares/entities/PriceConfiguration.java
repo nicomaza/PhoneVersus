@@ -37,6 +37,15 @@ public class PriceConfiguration {
     @Column(name = "transferencia_bancaria", precision = 19, scale = 4)
     private BigDecimal transferenciaBancaria;
 
+    @Column(name = "tarjeta_1_pago", precision = 19, scale = 4)
+    private BigDecimal tarjeta1Pago;
+
+    @Column(name = "qr_1_pago", precision = 19, scale = 4)
+    private BigDecimal qr1Pago;
+
+    @Column(name = "plan_z_3_pagos", precision = 19, scale = 4)
+    private BigDecimal planZ3Pagos;
+
     @Column(name = "tarjeta_3_pagos", precision = 19, scale = 4)
     private BigDecimal tarjeta3Pagos;
 

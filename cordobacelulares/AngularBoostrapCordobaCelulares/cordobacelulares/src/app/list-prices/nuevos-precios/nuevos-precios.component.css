@@ -67,6 +67,20 @@
   font-weight: 650;
 }
 
+.lp-full-product-link {
+  margin-right: auto;
+  color: #4b5563;
+  font-size: .86rem;
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.lp-full-product-link:hover,
+.lp-full-product-link:focus-visible {
+  color: #198754;
+}
+
 .lp-features-backdrop {
   z-index: 1080;
   background: rgba(15, 23, 42, .46);

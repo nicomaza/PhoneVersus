@@ -14,5 +14,7 @@ public interface SeoCatalogProductRepository extends JpaRepository<SeoCatalogPro
 
     List<SeoCatalogProduct> findAllByActiveTrueOrderBySlugAsc();
 
+    List<SeoCatalogProduct> findAllByOrderByMarcaAscModeloAsc();
+
     long countByActiveTrue();
 }

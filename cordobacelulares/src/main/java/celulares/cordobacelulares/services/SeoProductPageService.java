@@ -2,11 +2,14 @@ package celulares.cordobacelulares.services;
 
 import celulares.cordobacelulares.dtos.seo.SeoCatalogProductResponse;
 import celulares.cordobacelulares.dtos.seo.SeoProductPageView;
+import celulares.cordobacelulares.dtos.seo.PublishedProductContent;
 import celulares.cordobacelulares.dtos.tiendaporte.response.CatalogProductOrigin;
 import celulares.cordobacelulares.dtos.tiendaporte.response.TiendaPorteBrandResponse;
 import celulares.cordobacelulares.dtos.tiendaporte.response.TiendaPorteColorStockResponse;
 import celulares.cordobacelulares.dtos.tiendaporte.response.TiendaPorteModelResponse;
 import celulares.cordobacelulares.exceptions.ApiInternalException;
+import celulares.cordobacelulares.services.implement.CatalogProductPolicy;
+import celulares.cordobacelulares.services.implement.ProductType;
 import celulares.cordobacelulares.utils.SeoProductSlug;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -33,15 +36,21 @@ public class SeoProductPageService {
 
     private final SeoCatalogService seoCatalogService;
     private final TiendaPorteService tiendaPorteService;
+    private final SeoProductContentService productContentService;
+    private final CatalogProductPolicy catalogProductPolicy;
     private final ObjectMapper objectMapper;
 
     public SeoProductPageService(
             SeoCatalogService seoCatalogService,
             TiendaPorteService tiendaPorteService,
+            SeoProductContentService productContentService,
+            CatalogProductPolicy catalogProductPolicy,
             ObjectMapper objectMapper
     ) {
         this.seoCatalogService = seoCatalogService;
         this.tiendaPorteService = tiendaPorteService;
+        this.productContentService = productContentService;
+        this.catalogProductPolicy = catalogProductPolicy;
         this.objectMapper = objectMapper;
     }
 
@@ -68,14 +77,17 @@ public class SeoProductPageService {
         boolean available = current != null;
         String brand = available ? cleanBrand(current.brand()) : cleanBrand(historical.marca());
         String model = available ? clean(current.model().getModeloNombre()) : clean(historical.modelo());
-        ProductKind kind = ProductKind.fromBrand(brand);
+        ProductKind kind = productKind(brand, model);
+        PublishedProductContent enriched = productContentService.published(canonicalSlug).orElse(null);
         String canonical = SITE_URL + "/celulares/" + canonicalSlug;
         String title = available
                 ? model + ": precio en Córdoba | Córdoba Celulares"
                 : model + " | Córdoba Celulares";
-        String description = available
+        String defaultDescription = available
                 ? activeDescription(model, kind)
                 : model + " de " + brand + ": producto no disponible actualmente en Córdoba Celulares.";
+        String enrichedDescription = enriched == null ? "" : clean(enriched.description());
+        String description = enrichedDescription.isBlank() ? defaultDescription : enrichedDescription;
         List<String> colors = available ? colorNames(current.model().getColores()) : List.of();
 
         BigDecimal cash = available ? current.model().getPrecioPesos() : null;
@@ -83,7 +95,20 @@ public class SeoProductPageService {
         BigDecimal card3 = available ? current.model().getPrecioTarjeta3Pagos() : null;
         BigDecimal card6 = available ? current.model().getPrecioTarjeta6Pagos() : null;
 
-        String productJsonLd = productJsonLd(model, brand, canonical, available, cash);
+        List<PublishedProductContent.Image> images = enriched == null ? List.of() : enriched.images();
+        List<String> absoluteImages = images.stream()
+                .map(PublishedProductContent.Image::publicPath)
+                .map(path -> path.startsWith("http://") || path.startsWith("https://") ? path : SITE_URL + path)
+                .toList();
+        String productJsonLd = productJsonLd(
+                model,
+                brand,
+                canonical,
+                available,
+                cash,
+                enrichedDescription.isBlank() ? null : enrichedDescription,
+                absoluteImages
+        );
         String breadcrumbJsonLd = breadcrumbJsonLd(model, brand, canonical);
         String whatsappUrl = buildWhatsappUrl(brand, model, current, colors);
 
@@ -106,7 +131,15 @@ public class SeoProductPageService {
                 available ? kind.whatsappWarning : null,
                 whatsappUrl,
                 productJsonLd,
-                breadcrumbJsonLd
+                breadcrumbJsonLd,
+                enriched != null,
+                enrichedDescription.isBlank() ? (available ? kind.intro : null) : enrichedDescription,
+                images,
+                enriched == null ? List.of() : enriched.highlights(),
+                enriched == null ? List.of() : enriched.specSections(),
+                enriched == null ? null : enriched.sourceUrl(),
+                enriched == null ? null : enriched.sourceName(),
+                absoluteImages.isEmpty() ? null : absoluteImages.get(0)
         );
     }
 
@@ -154,6 +187,8 @@ public class SeoProductPageService {
                     + " en Córdoba Celulares. Dispositivo nuevo, sellado de fábrica y con garantía.";
             case PERFUME -> "Consultá el precio actualizado del " + model
                     + " en Córdoba Celulares. En caja sellada de fábrica, sin abrir.";
+            case OTHER -> "Consultá el precio actualizado del " + model
+                    + " en Córdoba Celulares. Producto nuevo, original y con garantía.";
         };
     }
 
@@ -191,7 +226,7 @@ public class SeoProductPageService {
             if (installment != null) {
                 lines.add("- 6 cuotas sin interes de: " + installment);
             }
-            if (ProductKind.fromBrand(brand) != ProductKind.PERFUME && !colors.isEmpty()) {
+            if (productKind(brand, model) != ProductKind.PERFUME && !colors.isEmpty()) {
                 lines.add("Colores: " + String.join(", ", colors));
             }
         }
@@ -213,13 +248,21 @@ public class SeoProductPageService {
             String brand,
             String canonical,
             boolean available,
-            BigDecimal cashPrice
+            BigDecimal cashPrice,
+            String enrichedDescription,
+            List<String> images
     ) {
         Map<String, Object> product = new LinkedHashMap<>();
         product.put("@context", "https://schema.org");
         product.put("@type", "Product");
         product.put("name", model);
         product.put("brand", Map.of("@type", "Brand", "name", brand));
+        if (enrichedDescription != null && !enrichedDescription.isBlank()) {
+            product.put("description", enrichedDescription);
+        }
+        if (images != null && !images.isEmpty()) {
+            product.put("image", images);
+        }
 
         if (available && isRealPrice(cashPrice)) {
             Map<String, Object> offer = new LinkedHashMap<>();
@@ -319,6 +362,16 @@ public class SeoProductPageService {
         return clean(value).replaceAll("\\s+", " ").toLowerCase(Locale.ROOT);
     }
 
+    private ProductKind productKind(String brand, String model) {
+        return switch (SeoProductSlug.fromModel(brand)) {
+            case "perfumes" -> ProductKind.PERFUME;
+            case "articulos-varios" -> ProductKind.MISCELLANEOUS;
+            default -> catalogProductPolicy.resolveProductType(model, brand) == ProductType.PHONE
+                    ? ProductKind.PHONE
+                    : ProductKind.OTHER;
+        };
+    }
+
     private record CurrentProduct(String brand, TiendaPorteModelResponse model) {
     }
 
@@ -337,6 +390,11 @@ public class SeoProductPageService {
                 "Precio actualizado en Córdoba Celulares.",
                 "En caja sellada de fábrica, sin abrir.",
                 "Los perfumes requieren pago completo anticipado. ¿Desea continuar?"
+        ),
+        OTHER(
+                "Producto nuevo, original y con garantía. Precio actualizado en Córdoba Celulares.",
+                "Producto nuevo, original y con garantía.",
+                null
         );
 
         private final String intro;
@@ -347,14 +405,6 @@ public class SeoProductPageService {
             this.intro = intro;
             this.conditionLabel = conditionLabel;
             this.whatsappWarning = whatsappWarning;
-        }
-
-        private static ProductKind fromBrand(String brand) {
-            return switch (SeoProductSlug.fromModel(brand)) {
-                case "perfumes" -> PERFUME;
-                case "articulos-varios" -> MISCELLANEOUS;
-                default -> PHONE;
-            };
         }
     }
 }
