@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 
@@ -229,7 +229,7 @@ describe('NuevosPreciosComponent catalog variants', () => {
     fixture.detectChanges();
     const modal = fixture.nativeElement.querySelector('.lp-modal-content') as HTMLElement;
     const labels = Array.from(modal.querySelectorAll('.lp-k'))
-      .map(label => label.textContent?.trim());
+      .map(label => label.firstElementChild?.textContent?.trim() ?? label.textContent?.trim());
 
     expect(labels).toEqual(['Efectivo', 'Transferencia', 'Financiación']);
     expect(modal.textContent).toContain('111.111');
@@ -282,6 +282,86 @@ describe('NuevosPreciosComponent catalog variants', () => {
       'Tarjeta 6 cuotas$ 666.666 (6 cuotas de $ 111.111)'
     ]);
   });
+
+  it('shows compact commercial notes without the previous conditions list', () => {
+    const phone = renderSingleProduct('SAMSUNG', priceModel('Galaxy compacto'));
+    component.openDetails(phone);
+    fixture.detectChanges();
+
+    const modal = fixture.nativeElement.querySelector('.lp-modal-content') as HTMLElement;
+    expect(modal.textContent).toContain('Todos los precios expresados en pesos argentinos (ARS)');
+    expect(modal.textContent).toContain('Aceptamos TODAS las tarjetas');
+    expect(modal.textContent).toContain('Equipo nuevo, liberado, original, sellado de f\u00e1brica y con garant\u00eda.');
+    expect(modal.textContent).toContain('Atenci\u00f3n con turno previo \u00b7 Aceptamos d\u00f3lares y criptomonedas.');
+    expect(modal.querySelector('.lp-legend-title')).toBeNull();
+    expect(modal.querySelector('.lp-legend-list')).toBeNull();
+  });
+
+  it('shows the centralized warning only for the exact normalized Xiaomi brand', () => {
+    const xiaomi = renderSingleProduct('  XIAOMI  ', priceModel('Xiaomi global'), 'XIAOMI');
+    component.openDetails(xiaomi);
+    component.abrirWhatsApp(xiaomi);
+    fixture.detectChanges();
+
+    expect(component.warningModalOpen).toBeTrue();
+    expect(component.warningTitle).toBe('Informaci\u00f3n importante');
+    expect(component.warningMessage).toContain('ESTE EQUIPO ES VERSI\u00d3N GLOBAL');
+    expect(component.warningMessage).toContain('SOLO VENDEMOS EQUIPOS SELLADOS DE F\u00c1BRICA');
+    expect(component.warningConfirmLabel).toBe('Entendido, consultar por WhatsApp');
+
+    component.confirmWarningWhatsapp();
+    expect(whatsappService.openProductConsultation).toHaveBeenCalledTimes(1);
+    expect(whatsappService.openProductConsultation).toHaveBeenCalledWith(
+      xiaomi,
+      jasmine.objectContaining({ label: 'Tarjeta 6 cuotas' })
+    );
+    whatsappService.openProductConsultation.calls.reset();
+
+    for (const brand of ['REDMI', 'POCO', 'SAMSUNG']) {
+      const product = (component as any).mapResponse([{
+        marca: brand,
+        modelos: [priceModel(`${brand} prueba`)]
+      }])[0] as NuevoProductoLista;
+      component.abrirWhatsApp(product);
+      expect(component.warningModalOpen).toBeFalse();
+    }
+    expect(whatsappService.openProductConsultation).toHaveBeenCalledTimes(3);
+  });
+
+  it('keeps the existing perfume warning unchanged', () => {
+    const perfume = renderSingleProduct('PERFUMES', priceModel('Fragancia floral'));
+    component.abrirWhatsApp(perfume);
+
+    expect(component.warningModalOpen).toBeTrue();
+    expect(component.warningTitle).toBe('Confirmar consulta');
+    expect(component.warningMessage).toContain('pago completo anticipado');
+    expect(component.warningConfirmLabel).toBe('Continuar');
+    expect(whatsappService.openProductConsultation).not.toHaveBeenCalled();
+  });
+
+  it('runs the financing attention once after the delay and cancels it on interaction', fakeAsync(() => {
+    const phone = renderSingleProduct('SAMSUNG', priceModel('Galaxy animado'));
+    (component as any).reducedMotion = false;
+
+    component.openDetails(phone);
+    expect(component.financingAttention).toBeFalse();
+    tick(500);
+    expect(component.financingAttention).toBeTrue();
+    tick(1200);
+    expect(component.financingAttention).toBeFalse();
+
+    component.closeModal();
+    component.openDetails(phone);
+    component.toggleFinancingDropdown(new MouseEvent('click'), true);
+    tick(500);
+    expect(component.financingAttention).toBeFalse();
+
+    component.closeModal();
+    (component as any).reducedMotion = true;
+    component.openDetails(phone);
+    tick(500);
+    expect(component.financingAttention).toBeFalse();
+  }));
 
   it('omits invalid financing amounts and resets the next product to Tarjeta 6 cuotas', () => {
     const first = renderSingleProduct('SAMSUNG', {

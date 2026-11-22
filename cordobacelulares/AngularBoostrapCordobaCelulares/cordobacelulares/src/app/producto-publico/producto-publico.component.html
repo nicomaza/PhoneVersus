@@ -125,11 +125,11 @@
 >
   <div class="product-warning-content" (click)="$event.stopPropagation()">
     <div id="product-warning-title" class="product-warning-title">{{ warningTitle }}</div>
-    <div class="product-warning-message">{{ warningMessage }}</div>
+    <div class="product-warning-message" [class.product-warning-message-emphasized]="warningEmphasized">{{ warningMessage }}</div>
 
     <div class="product-warning-actions">
       <button type="button" class="btn btn-outline-secondary" (click)="cancelWarningModal()">Cancelar</button>
-      <button type="button" class="btn btn-success" (click)="confirmWarningWhatsapp()">Continuar</button>
+      <button type="button" class="btn btn-success" (click)="confirmWarningWhatsapp()">{{ warningConfirmLabel }}</button>
     </div>
   </div>
 </div>

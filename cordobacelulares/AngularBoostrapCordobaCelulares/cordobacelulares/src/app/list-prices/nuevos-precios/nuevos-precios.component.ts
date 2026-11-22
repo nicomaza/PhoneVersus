@@ -1,5 +1,5 @@
 import { CommonModule, DOCUMENT } from '@angular/common';
-import { Component, ElementRef, HostListener, Inject, OnDestroy, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, HostListener, Inject, OnDestroy, ViewChild } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { Meta, Title } from '@angular/platform-browser';
 import { RouterLink } from '@angular/router';
@@ -20,6 +20,7 @@ import {
 } from '../../services/catalog-financing.service';
 import { HomeBannerService, PublicHomeBanner } from '../../services/home-banner.service';
 import {
+  CatalogProductWarning,
   catalogProductConditionLabel,
   catalogProductWhatsappWarning,
   formatCatalogMoney,
@@ -76,7 +77,7 @@ export interface NuevoProductoLista {
   templateUrl: './nuevos-precios.component.html',
   styleUrl: './nuevos-precios.component.css'
 })
-export class NuevosPreciosComponent implements OnDestroy {
+export class NuevosPreciosComponent implements AfterViewInit, OnDestroy {
   readonly homeBanners: PublicHomeBanner[] = [];
   currentBannerIndex = 0;
   carouselPointerInside = false;
@@ -102,6 +103,11 @@ export class NuevosPreciosComponent implements OnDestroy {
 
   searchCtrl = new FormControl<string>('', { nonNullable: true });
   hasSearch = false;
+
+  get searchResultCount(): number {
+    return this.grupos.reduce((total, grupo) => total + grupo.items.length, 0);
+  }
+
   @ViewChild('searchInput') private searchInput?: ElementRef<HTMLInputElement>;
   @ViewChild('featuresCloseButton') private featuresCloseButton?: ElementRef<HTMLButtonElement>;
 
@@ -129,6 +135,9 @@ export class NuevosPreciosComponent implements OnDestroy {
   pendingWhatsappProduct: NuevoProductoLista | null = null;
   warningTitle = '';
   warningMessage = '';
+  warningConfirmLabel = 'Continuar';
+  warningEmphasized = false;
+  financingAttention = false;
 
   private readonly CATEGORY_LIMIT = 50;
 
@@ -160,6 +169,11 @@ export class NuevosPreciosComponent implements OnDestroy {
   private featuresImageAlts = new Map<string, string>();
   private matchedCharacteristicsImageAlts = new Map<string, string>();
   private featuresTriggerElement: HTMLElement | null = null;
+  private footerObserver?: IntersectionObserver;
+  private footerObserverFrame: number | null = null;
+  private financingAttentionTimer?: ReturnType<typeof setTimeout>;
+  private financingAttentionEndTimer?: ReturnType<typeof setTimeout>;
+  footerVisible = false;
 
   constructor(
     private service: NuevosPreciosService,
@@ -183,7 +197,7 @@ export class NuevosPreciosComponent implements OnDestroy {
     this.subscriptions.add(
       this.searchCtrl.valueChanges
         .pipe(debounceTime(120), distinctUntilChanged())
-        .subscribe(q => this.applyFilter(q))
+        .subscribe(q => this.applyFilter(q, false))
     );
   }
 
@@ -222,9 +236,28 @@ export class NuevosPreciosComponent implements OnDestroy {
     this.financingDropdownOpen = false;
   }
 
+  ngAfterViewInit(): void {
+    this.footerObserverFrame = window.requestAnimationFrame(() => {
+      const footer = this.document.getElementById('site-footer');
+      if (!footer || !('IntersectionObserver' in window)) {
+        return;
+      }
+
+      this.footerObserver = new IntersectionObserver(([entry]) => {
+        this.footerVisible = entry.isIntersecting;
+      }, { threshold: 0.01 });
+      this.footerObserver.observe(footer);
+    });
+  }
+
   ngOnDestroy(): void {
     this.subscriptions.unsubscribe();
     this.stopCarousel();
+    this.cancelFinancingAttention();
+    this.footerObserver?.disconnect();
+    if (this.footerObserverFrame !== null) {
+      window.cancelAnimationFrame(this.footerObserverFrame);
+    }
     window.removeEventListener('scroll', this.scrollHandler);
     document.body.classList.remove('modal-open');
     this.restoreMetadata();
@@ -355,6 +388,7 @@ export class NuevosPreciosComponent implements OnDestroy {
 
   toggleFinancingDropdown(event: MouseEvent, hasOptions: boolean): void {
     event.stopPropagation();
+    this.cancelFinancingAttention();
     if (hasOptions) {
       this.financingDropdownOpen = !this.financingDropdownOpen;
     }
@@ -362,6 +396,7 @@ export class NuevosPreciosComponent implements OnDestroy {
 
   selectFinancing(option: CatalogFinancingOption, event: MouseEvent): void {
     event.stopPropagation();
+    this.cancelFinancingAttention();
     this.selectedFinancingKey = option.key;
     this.financingDropdownOpen = false;
   }
@@ -379,7 +414,7 @@ export class NuevosPreciosComponent implements OnDestroy {
   }
 
   modalSubtitle(p: NuevoProductoLista | null | undefined): string {
-    return this.shouldShowColors(p) ? 'Precios y colores' : 'Precios';
+    return this.shouldShowColors(p) ? '' : '';
   }
 
   cardHint(p: NuevoProductoLista | null | undefined): string {
@@ -432,6 +467,7 @@ export class NuevosPreciosComponent implements OnDestroy {
     }
     this.modalOpen = true;
     document.body.classList.add('modal-open');
+    this.scheduleFinancingAttention(p);
     this.preloadCharacteristics(p);
   }
 
@@ -440,6 +476,7 @@ export class NuevosPreciosComponent implements OnDestroy {
     this.resetCharacteristicsState();
     this.modalOpen = false;
     this.financingDropdownOpen = false;
+    this.cancelFinancingAttention();
     this.selected = null;
     if (!this.warningModalOpen) {
       document.body.classList.remove('modal-open');
@@ -765,17 +802,19 @@ export class NuevosPreciosComponent implements OnDestroy {
     this.whatsappService.openProductConsultation(p, this.selectedFinancing(p));
   }
 
-  private warningForProduct(p: NuevoProductoLista): { title: string; message: string } | null {
+  private warningForProduct(p: NuevoProductoLista): CatalogProductWarning | null {
     return catalogProductWhatsappWarning(p);
   }
 
   private openWarningModal(
     product: NuevoProductoLista,
-    warning: { title: string; message: string }
+    warning: CatalogProductWarning
   ): void {
     this.pendingWhatsappProduct = product;
     this.warningTitle = warning.title;
     this.warningMessage = warning.message;
+    this.warningConfirmLabel = warning.confirmLabel ?? 'Continuar';
+    this.warningEmphasized = warning.emphasized === true;
     this.warningModalOpen = true;
     document.body.classList.add('modal-open');
   }
@@ -785,10 +824,41 @@ export class NuevosPreciosComponent implements OnDestroy {
     this.pendingWhatsappProduct = null;
     this.warningTitle = '';
     this.warningMessage = '';
+    this.warningConfirmLabel = 'Continuar';
+    this.warningEmphasized = false;
 
     if (!this.modalOpen) {
       document.body.classList.remove('modal-open');
     }
+  }
+
+  private scheduleFinancingAttention(product: NuevoProductoLista): void {
+    this.cancelFinancingAttention();
+    if (this.reducedMotion || this.financingOptions(product).length <= 1) {
+      return;
+    }
+
+    this.financingAttentionTimer = setTimeout(() => {
+      if (!this.modalOpen || this.financingDropdownOpen || this.selected !== product) {
+        return;
+      }
+      this.financingAttention = true;
+      this.financingAttentionEndTimer = setTimeout(() => {
+        this.financingAttention = false;
+      }, 1200);
+    }, 500);
+  }
+
+  private cancelFinancingAttention(): void {
+    if (this.financingAttentionTimer) {
+      clearTimeout(this.financingAttentionTimer);
+      this.financingAttentionTimer = undefined;
+    }
+    if (this.financingAttentionEndTimer) {
+      clearTimeout(this.financingAttentionEndTimer);
+      this.financingAttentionEndTimer = undefined;
+    }
+    this.financingAttention = false;
   }
 
   toggleCategory(categoria: string): void {

@@ -34,6 +34,8 @@ export interface CatalogProductTypeRef {
 export interface CatalogProductWarning {
   title: string;
   message: string;
+  confirmLabel?: string;
+  emphasized?: boolean;
 }
 
 export function isCatalogPerfume(product: CatalogProductTypeRef | null | undefined): boolean {
@@ -108,6 +110,15 @@ export function catalogProductWhatsappWarning(
     return {
       title: 'Confirmar consulta',
       message: 'Los perfumes requieren pago completo anticipado. ¿Desea continuar?'
+    };
+  }
+
+  if (normalizeCatalogCategory(product?.marca) === 'xiaomi') {
+    return {
+      title: 'Informaci\u00f3n importante',
+      message: 'ESTE EQUIPO ES VERSI\u00d3N GLOBAL\nSOLO VENDEMOS EQUIPOS SELLADOS DE F\u00c1BRICA',
+      confirmLabel: 'Entendido, consultar por WhatsApp',
+      emphasized: true
     };
   }
 

@@ -54,6 +54,8 @@ export class ProductoPublicoComponent implements OnInit, OnDestroy {
   pendingWhatsappProduct: PublicCatalogProduct | null = null;
   warningTitle = '';
   warningMessage = '';
+  warningConfirmLabel = 'Continuar';
+  warningEmphasized = false;
 
   private readonly subscriptions = new Subscription();
   private readonly metaSnapshot: MetaSnapshot;
@@ -163,6 +165,8 @@ export class ProductoPublicoComponent implements OnInit, OnDestroy {
       this.pendingWhatsappProduct = product;
       this.warningTitle = warning.title;
       this.warningMessage = warning.message;
+      this.warningConfirmLabel = warning.confirmLabel ?? 'Continuar';
+      this.warningEmphasized = warning.emphasized === true;
       this.warningModalOpen = true;
       this.document.body.classList.add('modal-open');
       return;
@@ -211,6 +215,8 @@ export class ProductoPublicoComponent implements OnInit, OnDestroy {
     this.pendingWhatsappProduct = null;
     this.warningTitle = '';
     this.warningMessage = '';
+    this.warningConfirmLabel = 'Continuar';
+    this.warningEmphasized = false;
     this.document.body.classList.remove('modal-open');
   }
 

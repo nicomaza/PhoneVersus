@@ -2,7 +2,7 @@
 <div class="lp-container" style="--lp-top-offset: 60px;">
 
   <section
-    *ngIf="homeBanners.length > 0"
+    *ngIf="!hasSearch && homeBanners.length > 0"
     class="home-carousel"
     aria-roledescription="carrusel"
     aria-label="Promociones"
@@ -95,12 +95,16 @@
     </div>
   </div>
 
-  <section class="lp-home-heading" aria-labelledby="lp-home-title">
+  <div *ngIf="hasSearch" class="lp-search-summary" role="status" aria-live="polite">
+    Resultados para <strong>&quot;{{ searchCtrl.value.trim() }}&quot;</strong> &middot; {{ searchResultCount }} modelos
+  </div>
+
+  <section *ngIf="!hasSearch" class="lp-home-heading" aria-labelledby="lp-home-title">
     <h1 id="lp-home-title">Celulares nuevos y liberados en C&oacute;rdoba</h1>
     <p>Solo vendemos equipos nuevos, sellados de f&aacute;brica y con garant&iacute;a.</p>
   </section>
 
-  <nav class="lp-info-links" aria-label="Informaci&oacute;n de compra">
+  <nav *ngIf="!hasSearch" class="lp-info-links" aria-label="Informaci&oacute;n de compra">
     <a routerLink="/warranty"><i class="bi bi-shield-check" aria-hidden="true"></i><span>Garant&iacute;a</span></a>
     <a routerLink="/como-comprar"><i class="bi bi-bag-check" aria-hidden="true"></i><span>C&oacute;mo comprar</span></a>
     <a routerLink="/faqs"><i class="bi bi-question-circle" aria-hidden="true"></i><span>Preguntas frecuentes</span></a>
@@ -254,14 +258,21 @@
     </div>
   </ng-template>
 
-  <section class="lp-seo-description" aria-label="Sobre nuestro cat&aacute;logo">
-    <h2>Cat&aacute;logo de celulares en C&oacute;rdoba</h2>
-    <p>
-      Consult&aacute; precios actualizados de celulares originales Samsung, Xiaomi, Redmi, POCO, Motorola, iPhone y m&aacute;s.
-      Encontr&aacute; equipos nuevos y liberados, revis&aacute; las opciones disponibles y comunicate con nosotros para confirmar stock.
-    </p>
-  </section>
 </div>
+
+<a
+  *ngIf="!isCatalogModalOpen"
+  class="home-instagram"
+  [class.home-instagram-visible]="footerVisible"
+  href="https://www.instagram.com/cordobacelularesoficial/"
+  target="_blank"
+  rel="noopener noreferrer"
+  aria-label="Visitar Instagram"
+  [attr.aria-hidden]="footerVisible ? null : 'true'"
+  [attr.tabindex]="footerVisible ? 0 : -1"
+>
+  <i class="bi bi-instagram" aria-hidden="true"></i>
+</a>
 
 <button
   *ngIf="!isCatalogModalOpen"
@@ -291,6 +302,7 @@
             </span>
           </div>
           <div class="lp-modal-sub" *ngIf="selected as p">{{ modalSubtitle(p) }}</div>
+          <div class="lp-modal-currency-note">Todos los precios expresados en pesos argentinos (ARS)</div>
         </div>
         <button type="button" class="btn-close" aria-label="Close" (click)="closeModal()"></button>
       </div>
@@ -306,11 +318,16 @@
             <div class="lp-v">{{ fmtPriceNoCents(p.precioTransferenciaBancaria) }}</div>
           </div>
           <div class="lp-price-row lp-financing-row">
-            <div class="lp-k">Financiaci&oacute;n</div>
+            <div class="lp-k lp-financing-heading">
+              <span>Financiaci&oacute;n</span>
+              <small>Aceptamos TODAS las tarjetas</small>
+            </div>
             <div class="lp-financing-picker" (click)="$event.stopPropagation()">
               <button
                 type="button"
                 class="lp-financing-trigger"
+                [class.is-open]="financingDropdownOpen"
+                [class.lp-financing-attention]="financingAttention"
                 [disabled]="financingOptions(p).length === 0"
                 aria-haspopup="listbox"
                 [attr.aria-expanded]="financingDropdownOpen"
@@ -325,6 +342,10 @@
                       <small *ngIf="financing.installments && financing.installmentAmount">
                         ({{ financing.installments }} cuotas de {{ fmtPrice(financing.installmentAmount) }})
                       </small>
+                    </span>
+                    <span *ngIf="financingOptions(p).length > 1 && !financingDropdownOpen" class="lp-financing-hint">
+                      <i class="bi bi-hand-index-thumb" aria-hidden="true"></i>
+                      Toc&aacute; para ver otras opciones
                     </span>
                   </span>
                 </ng-container>
@@ -366,7 +387,7 @@
         </div>
 
         <div *ngIf="shouldShowColors(p)" class="mt-3">
-          <div class="text-muted small mb-1">Colores</div>
+          <div class="text-muted small mb-1">Colores (Puede haber otros disponibles)</div>
           <span *ngFor="let color of colorNames(p)" class="badge text-bg-secondary me-1 mb-1">{{ color }}</span>
         </div>
         <button
@@ -383,20 +404,12 @@
 
         <div class="lp-legend mt-3">
           <div *ngIf="shouldShowColors(p)" class="lp-legend-note">
-            Pueden haber otros colores disponibles.
+          
           </div>
-
-          <div class="lp-legend-title mt-2">
-            Condiciones
+          <div class="lp-commercial-notes">
+            <div>{{ productConditionLabel(p) }}</div>
+            <div>Atenci&oacute;n con turno previo &middot; Aceptamos d&oacute;lares y criptomonedas.</div>
           </div>
-
-          <ul class="lp-legend-list">
-            <li>Atenci&oacute;n &uacute;nicamente con turno asignado.</li>
-            <li>{{ productConditionLabel(p) }}</li>
-            <li>Precios en pesos argentinos (ARS).</li>
-            <li>Aceptamos d&oacute;lares y criptomonedas.</li>
-            <li>Tarjetas: Se reciben TODAS las tarjetas.</li>
-          </ul>
         </div>
       </div>
 
@@ -585,11 +598,11 @@
 >
   <div class="lp-warning-content" (click)="$event.stopPropagation()">
     <div id="lp-warning-title" class="lp-warning-title">{{ warningTitle }}</div>
-    <div class="lp-warning-message">{{ warningMessage }}</div>
+    <div class="lp-warning-message" [class.lp-warning-message-emphasized]="warningEmphasized">{{ warningMessage }}</div>
 
     <div class="lp-warning-actions">
       <button type="button" class="btn btn-outline-secondary" (click)="cancelWarningModal()">Cancelar</button>
-      <button type="button" class="btn btn-success" (click)="confirmWarningWhatsapp()">Continuar</button>
+      <button type="button" class="btn btn-success" (click)="confirmWarningWhatsapp()">{{ warningConfirmLabel }}</button>
     </div>
   </div>
 </div>
