@@ -1,6 +1,12 @@
 {
   "/api": {
-    "target": "http://localhost:8080",
+    "target": "http://vps-4306850-x.dattaweb.com:8080",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug"
+  },
+  "/product-media": {
+    "target": "http://vps-4306850-x.dattaweb.com:8080",
     "secure": false,
     "changeOrigin": true,
     "logLevel": "debug"
