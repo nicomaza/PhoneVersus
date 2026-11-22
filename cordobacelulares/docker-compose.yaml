@@ -5,6 +5,7 @@ services:
   angular_app:
     container_name: angular_app
     image: angular_app_1.0
+    restart: unless-stopped
     build: ./AngularBoostrapCordobaCelulares/cordobacelulares
     ports:
       - "127.0.0.1:8081:80"
@@ -15,6 +16,7 @@ services:
   practicapp:
     build: .
     image: practicapp
+    restart: unless-stopped
     ports:
       - "127.0.0.1:8080:8080"
     depends_on:
@@ -36,6 +38,7 @@ services:
 
   db_cel:
     image: postgres
+    restart: unless-stopped
     environment:
       - POSTGRES_USER=nicolas
       - POSTGRES_PASSWORD=nicolas12

@@ -3,6 +3,7 @@ package celulares.cordobacelulares.services.implement;
 import celulares.cordobacelulares.config.TiendaPorteProperties;
 import celulares.cordobacelulares.dtos.tiendaporte.external.TiendaPorteExternalProduct;
 import celulares.cordobacelulares.dtos.tiendaporte.external.TiendaPorteProductsResponse;
+import celulares.cordobacelulares.dtos.tiendaporte.external.TiendaPorteProductSpecsResponse;
 import celulares.cordobacelulares.exceptions.TiendaPorteIntegrationException;
 import celulares.cordobacelulares.exceptions.TiendaPorteRateLimitException;
 import celulares.cordobacelulares.exceptions.TiendaPorteTimeoutException;
@@ -28,6 +29,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 
 @Service
@@ -65,6 +67,46 @@ public class TiendaPorteClient {
 
     public List<TiendaPorteExternalProduct> getProductsByCategory(String category, int limit) {
         return executeWithSingleRetry(token -> fetchAllPagesByCategory(token, category, limit));
+    }
+
+    public Optional<TiendaPorteProductSpecsResponse> getProductSpecs(long productReferenceId) {
+        if (productReferenceId <= 0) {
+            throw new TiendaPorteIntegrationException("La referencia de producto de Tienda Porte no es valida");
+        }
+        return executeWithSingleRetry(token -> fetchProductSpecs(productReferenceId, token));
+    }
+
+    private Optional<TiendaPorteProductSpecsResponse> fetchProductSpecs(long productReferenceId, String token) {
+        URI uri = buildProductSpecsUri(productReferenceId);
+        HttpRequest request = HttpRequest.newBuilder(uri)
+                .timeout(requestTimeout())
+                .header("Accept", "application/json")
+                .header("Authorization", "Bearer " + token)
+                .GET()
+                .build();
+        HttpResponse<String> response = send(request);
+        if (response.statusCode() == 401) {
+            throw new UnauthorizedExternalResponseException("specs:" + productReferenceId, 0, 1);
+        }
+        if (response.statusCode() == 404) {
+            return Optional.empty();
+        }
+        if (response.statusCode() == 429) {
+            throw rateLimitException(response);
+        }
+        if (response.statusCode() < 200 || response.statusCode() >= 300) {
+            throw new TiendaPorteIntegrationException(
+                    "No se pudo obtener la ficha tecnica de Tienda Porte (status " + response.statusCode() + ")"
+            );
+        }
+        try {
+            TiendaPorteProductSpecsResponse parsed = objectMapper.readValue(
+                    response.body(), TiendaPorteProductSpecsResponse.class
+            );
+            return Optional.ofNullable(parsed);
+        } catch (JsonProcessingException ex) {
+            throw new TiendaPorteIntegrationException("La ficha tecnica de Tienda Porte no es valida", ex);
+        }
     }
 
     private List<TiendaPorteExternalProduct> fetchAllPages(String token) {
@@ -298,6 +340,15 @@ public class TiendaPorteClient {
             return URI.create(uri.toString());
         } catch (IllegalArgumentException ex) {
             throw new TiendaPorteIntegrationException(PRODUCTS_ERROR_MESSAGE, ex);
+        }
+    }
+
+    private URI buildProductSpecsUri(long productReferenceId) {
+        try {
+            return URI.create(normalizedBaseUrl(properties.getApiBaseUrl())
+                    + "/user/products/specs/" + productReferenceId);
+        } catch (IllegalArgumentException ex) {
+            throw new TiendaPorteIntegrationException("No se pudo construir la URL de ficha tecnica", ex);
         }
     }
 

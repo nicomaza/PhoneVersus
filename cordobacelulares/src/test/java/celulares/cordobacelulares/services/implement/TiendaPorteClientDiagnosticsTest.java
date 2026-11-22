@@ -83,6 +83,41 @@ class TiendaPorteClientDiagnosticsTest {
     }
 
     @Test
+    void retrievesProductSpecsAndUsesProductReferenceId() {
+        when(authService.getAccessToken()).thenReturn("token");
+        httpClient.enqueueJson(200, """
+                {"hash":"abc","sheet":{"title":"Ficha","source":{
+                  "url":"https://www.gsmarena.com/test_phone-1.php",
+                  "title":"Test phone","domain":"www.gsmarena.com","fetchedAt":"2026-11-22T10:00:00Z"
+                },"highlights":[],"sections":[]}}
+                """);
+
+        var result = client.getProductSpecs(65054);
+
+        assertThat(result).isPresent();
+        assertThat(result.orElseThrow().getHash()).isEqualTo("abc");
+        assertThat(result.orElseThrow().getSheet().getSource().getDomain()).isEqualTo("www.gsmarena.com");
+        assertThat(result.orElseThrow().getSheet().getSource().getUrl())
+                .isEqualTo("https://www.gsmarena.com/test_phone-1.php");
+        assertThat(httpClient.requests().get(0).uri().getPath())
+                .isEqualTo("/user/products/specs/65054");
+    }
+
+    @Test
+    void productSpecsRetriesOneUnauthorizedResponseAndPropagatesRateLimit() {
+        when(authService.getAccessToken()).thenReturn("old-token", "new-token", "new-token");
+        httpClient.enqueueJson(401, "{}");
+        httpClient.enqueueJson(200, "{\"hash\":\"ok\",\"sheet\":{}}");
+
+        assertThat(client.getProductSpecs(99)).isPresent();
+        verify(authService).invalidateAuthentication();
+
+        httpClient.enqueueJson(429, "{}", Map.of("Retry-After", List.of("1")));
+        assertThatThrownBy(() -> client.getProductSpecs(99))
+                .isInstanceOf(TiendaPorteRateLimitException.class);
+    }
+
+    @Test
     void failsWhenProviderRespondsUnauthorizedTwice() {
         when(authService.getAccessToken()).thenReturn("old-token", "new-token");
         httpClient.enqueueJson(401, "{\"message\":\"unauthorized\"}");

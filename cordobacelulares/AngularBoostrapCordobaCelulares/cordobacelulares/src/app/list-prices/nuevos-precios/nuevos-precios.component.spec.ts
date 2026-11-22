@@ -11,24 +11,25 @@ describe('NuevosPreciosComponent catalog variants', () => {
   let fixture: ComponentFixture<NuevosPreciosComponent>;
   let component: NuevosPreciosComponent;
   let whatsappService: jasmine.SpyObj<CatalogWhatsappService>;
+  let nuevosPreciosService: jasmine.SpyObj<NuevosPreciosService>;
 
   beforeEach(async () => {
-    const service = jasmine.createSpyObj<NuevosPreciosService>('NuevosPreciosService', [
+    nuevosPreciosService = jasmine.createSpyObj<NuevosPreciosService>('NuevosPreciosService', [
       'getCatalogoPrincipal',
-      'getLiberadosYaProductMatch',
+      'getPublishedProductFeatures',
       'getPublishedProductSlugs',
       'hasCatalogCache',
       'getCategoryFromCatalog',
       'getCachedCategory'
     ]);
-    service.getCatalogoPrincipal.and.returnValue(of(catalogResponse()));
-    service.getLiberadosYaProductMatch.and.returnValue(of({}));
-    service.getPublishedProductSlugs.and.returnValue(of([]));
-    service.hasCatalogCache.and.returnValue(true);
-    service.getCategoryFromCatalog.and.callFake(category =>
+    nuevosPreciosService.getCatalogoPrincipal.and.returnValue(of(catalogResponse()));
+    nuevosPreciosService.getPublishedProductFeatures.and.returnValue(of({ highlights: [], specSections: [], images: [] }));
+    nuevosPreciosService.getPublishedProductSlugs.and.returnValue(of([]));
+    nuevosPreciosService.hasCatalogCache.and.returnValue(true);
+    nuevosPreciosService.getCategoryFromCatalog.and.callFake(category =>
       catalogResponse().filter(group => group.marca === category)
     );
-    service.getCachedCategory.and.returnValue(null);
+    nuevosPreciosService.getCachedCategory.and.returnValue(null);
 
     const homeBannerService = jasmine.createSpyObj<HomeBannerService>('HomeBannerService', ['listPublic']);
     homeBannerService.listPublic.and.returnValue(of([]));
@@ -43,7 +44,7 @@ describe('NuevosPreciosComponent catalog variants', () => {
     await TestBed.configureTestingModule({
       imports: [NuevosPreciosComponent],
       providers: [
-        { provide: NuevosPreciosService, useValue: service },
+        { provide: NuevosPreciosService, useValue: nuevosPreciosService },
         { provide: HomeBannerService, useValue: homeBannerService },
         { provide: CatalogWhatsappService, useValue: whatsappService },
         provideRouter([])
@@ -68,6 +69,33 @@ describe('NuevosPreciosComponent catalog variants', () => {
     expect(cardText(cards, 'Cosmic Orange')).toContain('1.240.000');
     expect(cardText(cards, 'Deep Blue')).toContain('1.245.000');
     expect(cardText(cards, 'Silver')).toContain('1.250.000');
+  });
+
+  it('loads the published local ficha without consulting an external catalog', () => {
+    const product = (component as any).all[0] as NuevoProductoLista;
+    const slug = component.productSlug(product);
+    (component as any).publishedContentSlugs = new Set([slug]);
+    nuevosPreciosService.getPublishedProductFeatures.and.returnValue(of({
+      sourceName: 'GSMArena',
+      sourceUrl: 'https://www.gsmarena.com/test_phone-1.php',
+      highlights: [{ text: 'Pantalla AMOLED' }],
+      specSections: [{ title: 'Pantalla', specs: [{ label: 'Tamaño', value: '6.7 pulgadas' }] }],
+      images: [{ publicPath: '/product-media/modelo.webp', altText: 'Vista frontal', primaryImage: true }]
+    }));
+
+    component.openDetails(product);
+    component.openFeaturesModal(product);
+    fixture.detectChanges();
+
+    expect(nuevosPreciosService.getPublishedProductFeatures).toHaveBeenCalledOnceWith(slug);
+    const modalText = fixture.nativeElement.querySelector('.lp-features-content')?.textContent ?? '';
+    expect(modalText).toContain('Pantalla AMOLED');
+    expect(modalText).toContain('6.7 pulgadas');
+    expect(fixture.nativeElement.querySelector('.lp-feature-image')?.getAttribute('src'))
+      .toContain('/product-media/modelo.webp');
+    const sourceLink = fixture.nativeElement.querySelector('.lp-feature-info-note a') as HTMLAnchorElement;
+    expect(sourceLink?.textContent?.trim()).toBe('GSMArena');
+    expect(sourceLink?.getAttribute('href')).toBe('https://www.gsmarena.com/test_phone-1.php');
   });
 
   it('uses different render keys for colors and keeps the cheapest same-color duplicate', () => {

@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 import java.util.Map;
+import java.util.List;
 
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -15,6 +16,7 @@ public class TiendaPorteProductReference {
     private String name;
     private String priceUsd;
     private Map<String, Object> colorPrices;
+    private List<String> images;
 
     @JsonAlias({"precioPesos", "pricePesos", "precioArs", "precioARS", "priceArs", "priceARS"})
     private String pricePesos;

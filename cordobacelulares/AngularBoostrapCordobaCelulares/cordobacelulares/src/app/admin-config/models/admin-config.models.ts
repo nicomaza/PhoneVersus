@@ -306,9 +306,41 @@ export interface ProductContentSaveRequest {
   description: string;
   sourceUrl: string;
   sourceName: string;
-  highlights: Array<{ text: string }>;
+  highlights: Array<{ id?: number | null; text: string }>;
   specSections: Array<{
+    id?: number | null;
     title: string;
-    specs: Array<{ label: string; value: string }>;
+    specs: Array<{ id?: number | null; label: string; value: string }>;
   }>;
+}
+
+export interface PorteProductSyncStatus {
+  running: boolean;
+  state: string;
+  trigger: string | null;
+  startedAt: ApiDateValue;
+  finishedAt: ApiDateValue;
+  totalReferences: number;
+  totalProducts: number;
+  processedProducts: number;
+  imported: number;
+  updated: number;
+  unchanged: number;
+  withoutSheet: number;
+  errors: number;
+  currentReferenceId: number | null;
+  currentSlug: string | null;
+  lastError: string | null;
+  automaticEnabled: boolean;
+  automaticIntervalMs: number;
+  automaticInitialDelayMs: number;
+  batchSize: number;
+  maxConcurrency: number;
+  maxRetries: number;
+}
+
+export interface PorteProductSyncStartResponse {
+  started: boolean;
+  message: string;
+  status: PorteProductSyncStatus;
 }

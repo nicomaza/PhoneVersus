@@ -52,6 +52,15 @@ public class SeoProductImage {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    @Column(name = "source_key", length = 512)
+    private String sourceKey;
+
+    @Column(name = "source_url", length = 2048)
+    private String sourceUrl;
+
+    @Column(name = "imported_from_porte", nullable = false)
+    private boolean importedFromPorte;
+
     @PrePersist
     void prePersist() {
         if (createdAt == null) {

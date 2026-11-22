@@ -9,6 +9,8 @@ import org.springframework.stereotype.Component;
 
 import java.net.URI;
 import java.util.Locale;
+import java.util.ArrayList;
+import java.util.List;
 
 @Component
 @ConfigurationProperties(prefix = "tiendaporte")
@@ -22,6 +24,7 @@ public class TiendaPorteProperties {
     private int connectTimeoutSeconds = 10;
     private int requestTimeoutSeconds = 30;
     private CatalogCache catalogCache = new CatalogCache();
+    private ProductSync productSync = new ProductSync();
 
     public String getAuthBaseUrl() {
         return authBaseUrl;
@@ -71,6 +74,14 @@ public class TiendaPorteProperties {
         this.catalogCache = catalogCache == null ? new CatalogCache() : catalogCache;
     }
 
+    public ProductSync getProductSync() {
+        return productSync;
+    }
+
+    public void setProductSync(ProductSync productSync) {
+        this.productSync = productSync == null ? new ProductSync() : productSync;
+    }
+
     @PostConstruct
     public void validateAndLog() {
         validateBaseUrl("tiendaporte.auth-base-url", authBaseUrl);
@@ -87,6 +98,16 @@ public class TiendaPorteProperties {
         validatePositive("tiendaporte.catalog-cache.ttl-ms", catalogCache.getTtlMs());
         validatePositive("tiendaporte.catalog-cache.refresh-ms", catalogCache.getRefreshMs());
         validatePositive("tiendaporte.catalog-cache.initial-delay-ms", catalogCache.getInitialDelayMs());
+        validatePositive("tiendaporte.product-sync.interval-ms", productSync.getIntervalMs());
+        validatePositive("tiendaporte.product-sync.initial-delay-ms", productSync.getInitialDelayMs());
+        validatePositive("tiendaporte.product-sync.batch-size", productSync.getBatchSize());
+        validatePositive("tiendaporte.product-sync.max-concurrency", productSync.getMaxConcurrency());
+        if (productSync.getMaxRetries() < 0) {
+            throw new IllegalStateException("tiendaporte.product-sync.max-retries no puede ser negativo");
+        }
+        if (productSync.getAllowedImageHosts() == null || productSync.getAllowedImageHosts().isEmpty()) {
+            throw new IllegalStateException("tiendaporte.product-sync.allowed-image-hosts no puede estar vacio");
+        }
 
         LOGGER.info(
                 "Tienda Porte configurado. cid={} authBase={} apiBase={} productsLimit={} connectTimeoutSeconds={} requestTimeoutSeconds={} catalogCacheTtlMs={} catalogCacheRefreshMs={}",
@@ -151,6 +172,37 @@ public class TiendaPorteProperties {
 
         public void setInitialDelayMs(long initialDelayMs) {
             this.initialDelayMs = initialDelayMs;
+        }
+    }
+
+    public static class ProductSync {
+        private boolean enabled = true;
+        private long intervalMs = 86_400_000L;
+        private long initialDelayMs = 300_000L;
+        private int batchSize = 25;
+        private int maxConcurrency = 3;
+        private int maxRetries = 2;
+        private List<String> allowedImageHosts = new ArrayList<>(List.of(
+                "api.tiendaporte.com",
+                "tiendaporte.com",
+                "www.tiendaporte.com"
+        ));
+
+        public boolean isEnabled() { return enabled; }
+        public void setEnabled(boolean enabled) { this.enabled = enabled; }
+        public long getIntervalMs() { return intervalMs; }
+        public void setIntervalMs(long intervalMs) { this.intervalMs = intervalMs; }
+        public long getInitialDelayMs() { return initialDelayMs; }
+        public void setInitialDelayMs(long initialDelayMs) { this.initialDelayMs = initialDelayMs; }
+        public int getBatchSize() { return batchSize; }
+        public void setBatchSize(int batchSize) { this.batchSize = batchSize; }
+        public int getMaxConcurrency() { return maxConcurrency; }
+        public void setMaxConcurrency(int maxConcurrency) { this.maxConcurrency = maxConcurrency; }
+        public int getMaxRetries() { return maxRetries; }
+        public void setMaxRetries(int maxRetries) { this.maxRetries = maxRetries; }
+        public List<String> getAllowedImageHosts() { return allowedImageHosts; }
+        public void setAllowedImageHosts(List<String> allowedImageHosts) {
+            this.allowedImageHosts = allowedImageHosts == null ? new ArrayList<>() : new ArrayList<>(allowedImageHosts);
         }
     }
 }

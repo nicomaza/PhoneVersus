@@ -33,4 +33,13 @@ public class SeoProductHighlight {
 
     @Column(name = "sort_order", nullable = false)
     private int sortOrder;
+
+    @Column(name = "source_key", length = 512)
+    private String sourceKey;
+
+    @Column(name = "source_text", length = 1000)
+    private String sourceText;
+
+    @Column(name = "manually_edited", nullable = false)
+    private boolean manuallyEdited;
 }

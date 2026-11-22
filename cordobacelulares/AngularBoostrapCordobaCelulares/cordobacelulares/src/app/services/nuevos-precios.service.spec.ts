@@ -73,17 +73,14 @@ describe('NuevosPreciosService catalog variants', () => {
       .toEqual(jasmine.arrayWithExactContents(['Cosmic Orange', 'Deep Blue']));
   });
 
-  it('requests product characteristics through the same-origin public API', () => {
-    service.getLiberadosYaProductMatch('Samsung', 'Galaxy S25').subscribe();
+  it('requests published product characteristics from the local content API', () => {
+    service.getPublishedProductFeatures('galaxy-s25').subscribe();
+    service.getPublishedProductFeatures('galaxy-s25').subscribe();
 
-    const request = httpMock.expectOne(req =>
-      req.url === '/api/public/products/liberadosya/match'
-      && req.params.get('brand') === 'Samsung'
-      && req.params.get('model') === 'Galaxy S25'
-    );
+    const request = httpMock.expectOne('/api/public/product-content/products/galaxy-s25/features');
 
     expect(request.request.method).toBe('GET');
-    request.flush({ nombre: 'Samsung Galaxy S25' });
+    request.flush({ highlights: [], specSections: [], images: [] });
   });
 
   function variant(color: string, precioUsd: number, precioPesos: number) {

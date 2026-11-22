@@ -3,10 +3,12 @@
 .editor-card { margin-bottom: 16px; padding: 20px; border: 1px solid #dfe3ea; border-radius: 12px; background: #fff; }
 .editor-card h3 { margin: 0 0 14px; color: #111827; font-size: 1rem; font-weight: 800; }
 .editor-card h3 small { color: #94a3b8; font-size: .75rem; font-weight: 600; }
-.product-summary { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
+.product-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 14px; }
 .product-summary div, label { display: grid; gap: 5px; }
 .product-summary span, label span { color: #64748b; font-size: .76rem; font-weight: 700; }
 .slug { overflow-wrap: anywhere; }
+.porte-update-action { align-content: end; }
+.porte-update-action .btn { width: 100%; }
 .section-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px; }
 .section-heading h3 { margin: 0; }
 .section-heading > span { color: #64748b; font-size: .82rem; }

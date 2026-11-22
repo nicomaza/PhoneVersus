@@ -1,4 +1,4 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { catchError, finalize, map, Observable, of, shareReplay, tap, throwError } from 'rxjs';
 
@@ -58,27 +58,19 @@ export interface PublishedProductSlugsResponse {
   slugs: string[];
 }
 
-export type LiberadosYaDynamicValue =
-  | string
-  | number
-  | boolean
-  | null
-  | LiberadosYaDynamicValue[]
-  | { [key: string]: LiberadosYaDynamicValue };
-
-export type LiberadosYaDynamicRecord = Record<string, LiberadosYaDynamicValue>;
-
-export interface LiberadosYaProductMatchResponse {
-  nombre?: string | null;
-  marca?: string | null;
-  modelo?: string | null;
-  version_comercial?: string | null;
-  descripcion_texto?: string | null;
-  ficha_resumida?: LiberadosYaDynamicRecord | null;
-  ventajas?: string[] | null;
-  especificaciones?: Record<string, LiberadosYaDynamicRecord | null | undefined> | null;
-  imagen_principal?: string | null;
-  imagenes?: string[] | null;
+export interface PublishedProductFeaturesResponse {
+  sourceName?: string | null;
+  sourceUrl?: string | null;
+  highlights: Array<{ text: string }>;
+  specSections: Array<{
+    title: string;
+    specs: Array<{ label: string; value: string }>;
+  }>;
+  images: Array<{
+    publicPath: string;
+    altText: string;
+    primaryImage: boolean;
+  }>;
 }
 
 @Injectable({
@@ -86,7 +78,6 @@ export interface LiberadosYaProductMatchResponse {
 })
 export class NuevosPreciosService {
   private readonly API_URL = '/api/tiendaporte/equipos';
-  private readonly LIBERADOS_YA_PUBLIC_URL = '/api/public/products/liberadosya';
   private readonly PRODUCT_CONTENT_PUBLIC_URL = '/api/public/product-content';
 
   private allCatalogCache: TiendaPorteBrandResponse[] | null = null;
@@ -96,6 +87,7 @@ export class NuevosPreciosService {
   private readonly categoryPageState = new Map<string, TiendaPorteCategoryPageState>();
   private readonly categoryLoadedPages = new Map<string, Set<number>>();
   private readonly categoryRequests = new Map<string, Observable<TiendaPorteCategoryPageResponse>>();
+  private readonly productFeaturesRequests = new Map<string, Observable<PublishedProductFeaturesResponse>>();
 
   constructor(private http: HttpClient) {}
 
@@ -190,23 +182,27 @@ export class NuevosPreciosService {
     return request$;
   }
 
-  getLiberadosYaProductMatch(
-    brand: string,
-    model: string
-  ): Observable<LiberadosYaProductMatchResponse> {
-    const params = new HttpParams()
-      .set('brand', brand)
-      .set('model', model);
-
-    return this.http.get<LiberadosYaProductMatchResponse>(
-      `${this.LIBERADOS_YA_PUBLIC_URL}/match`,
-      { params }
-    );
-  }
-
   getPublishedProductSlugs(): Observable<string[]> {
     return this.http.get<PublishedProductSlugsResponse>(`${this.PRODUCT_CONTENT_PUBLIC_URL}/published-slugs`)
       .pipe(map(response => Array.isArray(response?.slugs) ? response.slugs : []));
+  }
+
+  getPublishedProductFeatures(slug: string): Observable<PublishedProductFeaturesResponse> {
+    const key = (slug ?? '').trim().toLowerCase();
+    const cached = this.productFeaturesRequests.get(key);
+    if (cached) return cached;
+
+    const request$ = this.http.get<PublishedProductFeaturesResponse>(
+      `${this.PRODUCT_CONTENT_PUBLIC_URL}/products/${encodeURIComponent(key)}/features`
+    ).pipe(
+      catchError(error => {
+        this.productFeaturesRequests.delete(key);
+        return throwError(() => error);
+      }),
+      shareReplay(1)
+    );
+    this.productFeaturesRequests.set(key, request$);
+    return request$;
   }
 
   private storeCategoryPage(

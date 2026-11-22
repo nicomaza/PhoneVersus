@@ -71,6 +71,35 @@ public class SeoProductMediaStorage {
         );
     }
 
+    public StoredMedia storeDownloaded(byte[] bytes, String originalFilename, String declaredContentType) {
+        if (bytes == null || bytes.length == 0) {
+            throw new ApiBadRequestException("La imagen descargada esta vacia");
+        }
+        if (bytes.length > maxSizeBytes) {
+            throw new ApiBadRequestException("La imagen supera el tamano maximo permitido");
+        }
+        DetectedImage detected = detectImage(java.util.Arrays.copyOf(bytes, Math.min(bytes.length, 16)));
+        String normalizedDeclared = declaredContentType == null
+                ? "" : declaredContentType.split(";", 2)[0].trim().toLowerCase(Locale.ROOT);
+        if (!normalizedDeclared.isBlank() && !detected.mimeType().equals(normalizedDeclared)) {
+            throw new ApiBadRequestException("El MIME declarado no coincide con el contenido de la imagen");
+        }
+
+        String storedFilename = UUID.randomUUID().toString().toLowerCase(Locale.ROOT) + detected.extension();
+        Path target = safePath(storedFilename);
+        try {
+            Files.write(target, bytes);
+        } catch (IOException ex) {
+            throw new ApiInternalException("No se pudo guardar la imagen del producto");
+        }
+        return new StoredMedia(
+                storedFilename,
+                "/product-media/" + storedFilename,
+                safeOriginalFilename(originalFilename),
+                detected.mimeType()
+        );
+    }
+
     public Resource load(String storedFilename) {
         Path target = safePath(storedFilename);
         if (!Files.isRegularFile(target)) {

@@ -36,4 +36,16 @@ public class SeoProductSpec {
 
     @Column(name = "sort_order", nullable = false)
     private int sortOrder;
+
+    @Column(name = "source_key", length = 512)
+    private String sourceKey;
+
+    @Column(name = "source_label", length = 255)
+    private String sourceLabel;
+
+    @Column(name = "source_value", length = 2000)
+    private String sourceValue;
+
+    @Column(name = "manually_edited", nullable = false)
+    private boolean manuallyEdited;
 }

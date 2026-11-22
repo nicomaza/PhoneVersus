@@ -128,6 +128,45 @@ class SeoProductContentServiceTest {
                 .singleElement().extracting(ProductContentAdminDtos.ImageResponse::altText).isEqualTo("Dorso");
     }
 
+    @Test
+    void keepsImportedIdentityMarksManualEditsAndRegistersDeletedItemsAsExclusions() {
+        ProductContentAdminDtos.DetailResponse initial = service.saveDraft(
+                "redmi-note-15",
+                new ProductContentAdminDtos.SaveRequest(
+                        "", "", "",
+                        List.of(new ProductContentAdminDtos.HighlightInput("AMOLED")),
+                        List.of(new ProductContentAdminDtos.SpecSectionInput(
+                                "Pantalla", List.of(new ProductContentAdminDtos.SpecInput("Otros", "6.7"))
+                        ))
+                )
+        );
+        var highlight = stored.get().getHighlights().get(0);
+        highlight.setSourceKey("highlight:display:1");
+        highlight.setSourceText("AMOLED");
+        var section = stored.get().getSpecSections().get(0);
+        section.setSourceKey("section:display:1");
+        section.setSourceTitle("Pantalla");
+        var spec = section.getSpecs().get(0);
+        spec.setSourceKey("section:display:1/row:otros:1");
+        spec.setSourceLabel("Otros");
+        spec.setSourceValue("6.7");
+
+        service.saveDraft(
+                "redmi-note-15",
+                new ProductContentAdminDtos.SaveRequest(
+                        "", "", "",
+                        List.of(new ProductContentAdminDtos.HighlightInput(highlight.getId(), "AMOLED editado")),
+                        List.of()
+                )
+        );
+
+        assertThat(stored.get().getHighlights().get(0).getSourceKey()).isEqualTo("highlight:display:1");
+        assertThat(stored.get().getHighlights().get(0).isManuallyEdited()).isTrue();
+        assertThat(stored.get().getImportExclusions())
+                .extracting(item -> item.getItemType() + "|" + item.getSourceKey())
+                .contains("SECTION|section:display:1");
+    }
+
     private ProductContentAdminDtos.SaveRequest requestWithDescription(String description) {
         return new ProductContentAdminDtos.SaveRequest(description, "", "", List.of(), List.of());
     }

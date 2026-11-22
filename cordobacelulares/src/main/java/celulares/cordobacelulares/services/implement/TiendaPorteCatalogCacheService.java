@@ -317,6 +317,11 @@ public class TiendaPorteCatalogCacheService {
         copy.setPricePesos(productReference.getPricePesos());
         copy.setColorPrices(copyMap(productReference.getColorPrices()));
         copy.setCategory(copyCategory(productReference.getCategory()));
+        copy.setImages(
+                productReference.getImages() == null
+                        ? List.of()
+                        : new ArrayList<>(productReference.getImages())
+        );
         return copy;
     }
 
@@ -391,6 +396,11 @@ public class TiendaPorteCatalogCacheService {
         copy.setPricePesos(productReference.getPricePesos());
         copy.setColorPrices(staticCopyMap(productReference.getColorPrices()));
         copy.setCategory(staticCopyCategory(productReference.getCategory()));
+        copy.setImages(
+                productReference.getImages() == null
+                        ? List.of()
+                        : new ArrayList<>(productReference.getImages())
+        );
         return copy;
     }
 

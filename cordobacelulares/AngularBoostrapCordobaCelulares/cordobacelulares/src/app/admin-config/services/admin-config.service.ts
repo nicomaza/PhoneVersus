@@ -12,6 +12,8 @@ import {
   CredentialPatchRequest,
   CredentialResponse,
   LiberadosYaQuotationResponse,
+  PorteProductSyncStartResponse,
+  PorteProductSyncStatus,
   PriceConfigurationRequest,
   PriceConfigurationResponse
   , ProductContentDetail
@@ -164,6 +166,23 @@ export class AdminConfigService {
   getProductContent(slug: string): Observable<ProductContentDetail> {
     return this.http.get<ProductContentDetail>(`${this.apiUrl}/admin/product-content/products/${encodeURIComponent(slug)}`)
       .pipe(catchError(error => this.handleError(error)));
+  }
+
+  startPorteProductContentSync(): Observable<PorteProductSyncStartResponse> {
+    return this.http.post<PorteProductSyncStartResponse>(
+      `${this.apiUrl}/admin/product-content/porte/sync`, {}
+    ).pipe(catchError(error => this.handleError(error)));
+  }
+
+  getPorteProductContentSyncStatus(): Observable<PorteProductSyncStatus> {
+    return this.http.get<PorteProductSyncStatus>(`${this.apiUrl}/admin/product-content/porte/sync/status`)
+      .pipe(catchError(error => this.handleError(error)));
+  }
+
+  syncProductContentFromPorte(slug: string): Observable<PorteProductSyncStartResponse> {
+    return this.http.post<PorteProductSyncStartResponse>(
+      `${this.apiUrl}/admin/product-content/products/${encodeURIComponent(slug)}/porte/sync`, {}
+    ).pipe(catchError(error => this.handleError(error)));
   }
 
   saveProductContentDraft(slug: string, request: ProductContentSaveRequest): Observable<ProductContentDetail> {

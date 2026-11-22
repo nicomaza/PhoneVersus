@@ -1,119 +1,162 @@
-<!-- FAQ 2 - Bootstrap Brain Component -->
-<section class="bsb-faq-2 bg-light py-3 py-md-5 py-xl-8 animated-div">
-  <div class="container">
-    <div class="row justify-content-center justify-items-center align-items-center py-5">
-      <div class="col-12 col-lg-6 py-5 justify-content-center px-5">
-        <h2 class="h1 mb-3">¿Tenés dudas? Te ayudamos a despejarlas...</h2>
-        <p class="lead fs-4 text-secondary mb-4">¡Te damos la bienvenida a nuestra sección de info sobre smartphones!
-          Aquí respondemos las dudas más frecuentes de clientes y usuarios. ¿Tenés otra pregunta? ¡Escribinos por
-          WhatsApp! Estamos para ayudarte a elegir el equipo ideal para vos
-        </p>
-        <a class="btn btn-success"  href="https://wa.me/5493512129922?text=Hola%21%20Vengo%20desde%20la%20p%C3%A1gina%20😃%20tengo%20algunas%20consultas%20para%20hacerte..." 
-        target="_blank">Whatsapp</a>
-      </div>
-      <div class="col-12 col-lg-6">
-        <div class="row justify-content-xl-end">
-          <div class="col-12 col-xl-11">
-            <div class="accordion accordion-flush" id="accordionExample">
-              <div class="accordion-item mb-4 shadow-sm">
-                <h2 class="accordion-header" id="headingOne">
-                  <button class="accordion-button bg-transparent fw-bold" type="button" data-bs-toggle="collapse"
-                    data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-                    ¿Qué precio tienen los equipos?
-                  </button>
-                </h2>
-                <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne"
-                  data-bs-parent="#accordionExample">
-                  <div class="accordion-body">
-                    <p>En este link, podes acceder a la lista de precios y stock actualizado</p>
-                    <ul>
-                      <a href="https://cordobacelulares.com/listapreciosactual"
-                        target="_blank">
-                        <li>Lista de precios del dia de hoy</li>
-                      </a>
+<main class="faq-page">
+  <section class="faq-shell" aria-labelledby="faq-title">
+    <header class="faq-hero">
+      <span class="faq-eyebrow"><i class="bi bi-chat-square-heart" aria-hidden="true"></i> Estamos para ayudarte</span>
+      <h1 id="faq-title">Preguntas frecuentes</h1>
+      <p>Todo lo que necesitás saber antes de comprar tu próximo celular</p>
+    </header>
 
-                    </ul>
-                  </div>
-                </div>
-              </div>
-              <div class="accordion-item mb-4 shadow-sm">
-                <h2 class="accordion-header" id="headingTwo">
-                  <button class="accordion-button collapsed bg-transparent fw-bold" type="button"
-                    data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false"
-                    aria-controls="collapseTwo">
-                    ¿Tienen local físico?
-                  </button>
-                </h2>
-                <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#accordionExample">
-                  <div class="accordion-body">
-                    Si! contamos con oficina comercial para que retires tus equipos. Importante: Solo con turno previo </div>
-                </div>
-              </div>
-              <div class="accordion-item mb-4 shadow-sm">
-                <h2 class="accordion-header" id="headingThree">
-                  <button class="accordion-button collapsed bg-transparent fw-bold" type="button"
-                    data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false"
-                    aria-controls="collapseThree">
-                    ¿Se puede pagar con tarjeta?
-                  </button>
-                </h2>
-                <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#accordionExample">
-                  <div class="accordion-body">
-                    <p>Por el momento, no estamos recibiendo tarjetas. Los precios de la lista corresponden a pagos en
-                      efectivo o transferencia. Los medios de pago son:</p>
-                    <li>Pesos</li>
-                    <li>Dolares</li>
-                    <li>USDT</li>
-                    <li>Transferencias Bancarias</li>
-                  </div>
+    <div class="faq-list">
+      <article class="faq-item" [class.open]="isOpen('new')">
+        <h2>
+          <button type="button" (click)="toggleFaq('new')" [attr.aria-expanded]="isOpen('new')" aria-controls="faq-new">
+            <span class="question-icon"><i class="bi bi-phone" aria-hidden="true"></i></span>
+            <span>¿Los equipos son nuevos?</span>
+            <i class="bi bi-chevron-down chevron" aria-hidden="true"></i>
+          </button>
+        </h2>
+        <div id="faq-new" class="faq-answer-wrap" [attr.aria-hidden]="!isOpen('new')">
+          <div class="faq-answer"><p>¡Sí! Vendemos exclusivamente equipos nuevos, originales, liberados, sellados de fábrica y con garantía. No comercializamos equipos usados.</p></div>
+        </div>
+      </article>
 
-                </div>
-              </div>
-              <div class="accordion-item mb-4 shadow-sm">
-                <h2 class="accordion-header" id="headingFour">
-                  <button class="accordion-button collapsed bg-transparent fw-bold" type="button"
-                    data-bs-toggle="collapse" data-bs-target="#collapseFour" aria-expanded="false"
-                    aria-controls="collapseFour">
-                    ¿Tienen garantía?
-                  </button>
-                </h2>
-                <div id="collapseFour" class="accordion-collapse collapse" aria-labelledby="headingFour" data-bs-parent="#accordionExample">
-                  <div class="accordion-body">
-                    ¡Si! Todos los equipos tienen garantía. La misma se entrega en el momento de la compra. Podes
-                    acceder al siguiente link con las condiciones detalladas: </div>
-                  <ul>
-                    <a [routerLink]="'../warranty'">
-                      <li>Condiciones de garantia</li>
-                    </a>
-
-                  </ul>
-                </div>
-
-
-              </div>
-              <div class="accordion-item shadow-sm">
-                <h2 class="accordion-header" id="headingFive">
-                  <button class="accordion-button collapsed bg-transparent fw-bold" type="button"
-                    data-bs-toggle="collapse" data-bs-target="#collapseFive" aria-expanded="false"
-                    aria-controls="collapseFive" >
-                    ¿Si no soy de Córdoba puedo comprar?
-                  </button>
-                </h2>
-                <div id="collapseFive" class="accordion-collapse collapse" aria-labelledby="headingFive" data-bs-parent="#accordionExample">
-                  <div class="accordion-body">
-                    <P>Si sos de otra localidad o provincia:</P>
-                    <ul>
-                      <li>Despachamos por encomienda la cual normalmente llega al día siguiente o en las próximas 48 horas</li>
-                      <li>Podés mandar tu comisionista a retirar coordiná al siguiente <a class=""  href="https://wa.me/5493512129922?text=Hola%21%20Vengo%20desde%20la%20p%C3%A1gina%20😃%20tengo%20algunas%20dudas%20sobre%20el%20envio%20de%20mi%20equipo..." 
-                        target="_blank" style="color: green;"><i class="bi bi-whatsapp" style="color: green;"></i> Whatsapp</a></li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
+      <article class="faq-item" [class.open]="isOpen('prices')">
+        <h2>
+          <button type="button" (click)="toggleFaq('prices')" [attr.aria-expanded]="isOpen('prices')" aria-controls="faq-prices">
+            <span class="question-icon"><i class="bi bi-tags" aria-hidden="true"></i></span>
+            <span>¿Qué precio tienen los equipos?</span>
+            <i class="bi bi-chevron-down chevron" aria-hidden="true"></i>
+          </button>
+        </h2>
+        <div id="faq-prices" class="faq-answer-wrap" [attr.aria-hidden]="!isOpen('prices')">
+          <div class="faq-answer">
+            <p>Todos nuestros precios están actualizados en nuestra lista de productos. Podés consultar los valores en efectivo, transferencia y financiación con tarjeta.</p>
+            <a class="faq-link-button" routerLink="/"><i class="bi bi-list-ul" aria-hidden="true"></i> Ver lista de precios</a>
+            <div class="price-preview" aria-label="Representación ilustrativa del modal de precios">
+              <div class="preview-top"><span></span><span></span><span></span><small>Vista ilustrativa</small></div>
+              <div class="preview-product"><i class="bi bi-phone" aria-hidden="true"></i><div><strong>Nombre del equipo</strong><span>Precios actualizados al consultar</span></div></div>
+              <div class="preview-row"><span>Efectivo</span><strong>Precio actual</strong></div>
+              <div class="preview-row"><span>Transferencia</span><strong>Precio actual</strong></div>
+              <div class="preview-row"><span>Financiación</span><strong>Opciones disponibles</strong></div>
             </div>
           </div>
         </div>
-      </div>
+      </article>
+
+      <article class="faq-item" [class.open]="isOpen('office')">
+        <h2>
+          <button type="button" (click)="toggleFaq('office')" [attr.aria-expanded]="isOpen('office')" aria-controls="faq-office">
+            <span class="question-icon"><i class="bi bi-geo-alt" aria-hidden="true"></i></span>
+            <span>¿Tienen local físico?</span>
+            <i class="bi bi-chevron-down chevron" aria-hidden="true"></i>
+          </button>
+        </h2>
+        <div id="faq-office" class="faq-answer-wrap" [attr.aria-hidden]="!isOpen('office')">
+          <div class="faq-answer">
+            <p>¡Sí! Contamos con oficina comercial en <strong>Simón Bolívar 350, Córdoba Capital</strong>, donde podés retirar tu equipo.</p>
+            <p class="important-note"><i class="bi bi-calendar-check" aria-hidden="true"></i><span><strong>Importante:</strong> atendemos únicamente con turno previo.</span></p>
+          </div>
+        </div>
+      </article>
+
+      <article class="faq-item" [class.open]="isOpen('cards')">
+        <h2>
+          <button type="button" (click)="toggleFaq('cards')" [attr.aria-expanded]="isOpen('cards')" aria-controls="faq-cards">
+            <span class="question-icon"><i class="bi bi-credit-card" aria-hidden="true"></i></span>
+            <span>¿Se puede pagar con tarjeta?</span>
+            <i class="bi bi-chevron-down chevron" aria-hidden="true"></i>
+          </button>
+        </h2>
+        <div id="faq-cards" class="faq-answer-wrap" [attr.aria-hidden]="!isOpen('cards')">
+          <div class="faq-answer">
+            <p>¡Sí! Aceptamos todas las tarjetas mediante link de pago.</p>
+            <p>También recibimos pesos, dólares y USDT, estos últimos a cotización del día.</p>
+
+            <section class="payment-simulator" aria-labelledby="simulator-title">
+              <div class="simulator-heading">
+                <span><i class="bi bi-calculator" aria-hidden="true"></i></span>
+                <div><h3 id="simulator-title">Simulador de pagos</h3><p>Ingresá el precio en efectivo del equipo.</p></div>
+              </div>
+              <label for="faq-base-price">Precio del equipo en pesos argentinos</label>
+              <div class="money-input" [class.invalid]="invalidPrice()">
+                <span>$</span>
+                <input id="faq-base-price" type="number" min="1" step="1" inputmode="decimal"
+                       [formControl]="priceControl" (blur)="markPriceTouched()" placeholder="Ej. 500000">
+              </div>
+              <small *ngIf="invalidPrice()" class="field-error">Ingresá un monto válido mayor que cero.</small>
+              <p *ngIf="pricingLoading" class="simulator-status"><span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Cargando modalidades actuales...</p>
+              <p *ngIf="pricingError" class="simulator-error">{{ pricingError }}</p>
+
+              <div *ngIf="simulation as result" class="simulation-results" aria-live="polite">
+                <div class="result-row"><span>Efectivo</span><strong>{{ formatArs(result.cash) }}</strong></div>
+                <div class="result-row"><span>Transferencia</span><strong>{{ formatArs(result.transfer) }}</strong></div>
+                <div *ngFor="let option of result.financing" class="result-row financing-result">
+                  <span>{{ option.label }}<small *ngIf="installmentDetail(option)">{{ installmentDetail(option) }}</small></span>
+                  <strong>{{ formatArs(option.total) }}</strong>
+                </div>
+                <p *ngIf="result.financing.length === 0" class="simulator-error">No hay modalidades de financiación disponibles actualmente.</p>
+              </div>
+            </section>
+
+            <section class="payment-guide">
+              <h3>¿Cómo compro con tarjeta?</h3>
+              <ol>
+                <li><span>1</span>Te enviamos un link de pago.</li>
+                <li><span>2</span>Realizás el pago online.</li>
+                <li><span>3</span>Te asignamos un turno para el mismo día.</li>
+                <li><span>4</span>Retirás tu equipo en nuestra oficina o coordinamos el envío.</li>
+              </ol>
+            </section>
+
+            <section class="conditions">
+              <h3>Condiciones importantes</h3>
+              <div><strong>Retiro presencial</strong><p>Únicamente puede retirar el equipo el titular de la tarjeta, presentando su DNI físico. Sin excepciones.</p></div>
+              <div><strong>Envío a domicilio</strong><p>Si abonaste con tarjeta, solamente el titular de la tarjeta puede recibir el equipo, presentando su DNI en mano. Sin excepciones.</p></div>
+              <div><strong>Pagos en oficina</strong><p>Solo aceptamos efectivo o transferencia. Los pagos con tarjeta se realizan exclusivamente mediante link de pago. No se puede abonar presencialmente con tarjeta.</p></div>
+            </section>
+          </div>
+        </div>
+      </article>
+
+      <article class="faq-item" [class.open]="isOpen('warranty')">
+        <h2>
+          <button type="button" (click)="toggleFaq('warranty')" [attr.aria-expanded]="isOpen('warranty')" aria-controls="faq-warranty">
+            <span class="question-icon"><i class="bi bi-shield-check" aria-hidden="true"></i></span>
+            <span>¿Tienen garantía?</span>
+            <i class="bi bi-chevron-down chevron" aria-hidden="true"></i>
+          </button>
+        </h2>
+        <div id="faq-warranty" class="faq-answer-wrap" [attr.aria-hidden]="!isOpen('warranty')">
+          <div class="faq-answer">
+            <p>¡Sí! Todos nuestros equipos son nuevos, originales, sellados de fábrica y cuentan con garantía.</p>
+            <a class="faq-secondary-link" routerLink="/warranty"><i class="bi bi-shield-check" aria-hidden="true"></i> Consultar garantía</a>
+          </div>
+        </div>
+      </article>
+
+      <article class="faq-item" [class.open]="isOpen('shipping')">
+        <h2>
+          <button type="button" (click)="toggleFaq('shipping')" [attr.aria-expanded]="isOpen('shipping')" aria-controls="faq-shipping">
+            <span class="question-icon"><i class="bi bi-truck" aria-hidden="true"></i></span>
+            <span>¿Hacen envíos?</span>
+            <i class="bi bi-chevron-down chevron" aria-hidden="true"></i>
+          </button>
+        </h2>
+        <div id="faq-shipping" class="faq-answer-wrap" [attr.aria-hidden]="!isOpen('shipping')">
+          <div class="faq-answer">
+            <p>¡Sí! Realizamos envíos en Córdoba Capital y a todo el país.</p>
+            <div class="shipping-grid">
+              <div><i class="bi bi-geo" aria-hidden="true"></i><strong>Córdoba Capital</strong><p>Envíos <strong>gratis</strong> dentro del anillo de Circunvalación, confirmando la compra antes de las 16 h.</p></div>
+              <div><i class="bi bi-box-seam" aria-hidden="true"></i><strong>Resto del país</strong><p>Despachamos por encomienda en el mismo día, según el horario de confirmación y despacho. Normalmente llega al día siguiente o dentro de las próximas 48 horas, dependiendo del destino y del transporte.</p></div>
+            </div>
+          </div>
+        </div>
+      </article>
     </div>
-  </div>
-</section>
+
+    <section class="faq-contact">
+      <div><span>¿Te quedó alguna duda?</span><h2>Escribinos y te ayudamos a elegir</h2><p>Respondemos consultas sobre equipos, formas de pago y envíos.</p></div>
+      <button type="button" (click)="consultarWhatsapp()"><i class="bi bi-whatsapp" aria-hidden="true"></i> Consultar por WhatsApp</button>
+    </section>
+  </section>
+</main>

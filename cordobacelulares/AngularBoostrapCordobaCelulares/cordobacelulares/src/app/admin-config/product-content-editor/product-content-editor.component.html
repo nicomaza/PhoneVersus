@@ -3,6 +3,7 @@
 <div *ngIf="loading" class="editor-card loading">Cargando contenido...</div>
 <p *ngIf="error" class="alert alert-danger">{{ error }}</p>
 <p *ngIf="message" class="alert alert-success">{{ message }}</p>
+<p *ngIf="porteSyncMessage" class="alert alert-info">{{ porteSyncMessage }}</p>
 
 <ng-container *ngIf="content as item">
   <section class="editor-card product-summary">
@@ -11,6 +12,15 @@
     <div><span>Slug</span><strong class="slug">{{ item.slug }}</strong></div>
     <div><span>Catálogo</span><strong>{{ item.active ? 'Activo' : 'Inactivo' }}</strong></div>
     <div><span>Contenido</span><strong>{{ statusLabel() }}</strong></div>
+    <div><span>Fuente</span><strong>{{ item.sourceName || '—' }}</strong></div>
+    <div><span>Actualizado</span><strong>{{ item.updatedAt ? (item.updatedAt | date:'short') : '—' }}</strong></div>
+    <div class="porte-update-action">
+      <button type="button" class="btn btn-outline-dark btn-sm" (click)="updateFromPorte()"
+              [disabled]="syncingFromPorte || saving">
+        <span *ngIf="syncingFromPorte" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+        {{ syncingFromPorte ? 'Actualizando...' : 'Actualizar desde Porte' }}
+      </button>
+    </div>
   </section>
 
   <section class="editor-card">
@@ -57,7 +67,7 @@
   </section>
 
   <section class="editor-card">
-    <h3>Fuente oficial <small>opcional</small></h3>
+    <h3>Fuente de las especificaciones <small>opcional</small></h3>
     <div class="two-columns">
       <label><span>Nombre</span><input class="form-control" [(ngModel)]="item.sourceName" placeholder="Ej. Samsung Argentina"></label>
       <label><span>URL</span><input type="url" class="form-control" [(ngModel)]="item.sourceUrl" placeholder="https://..."></label>

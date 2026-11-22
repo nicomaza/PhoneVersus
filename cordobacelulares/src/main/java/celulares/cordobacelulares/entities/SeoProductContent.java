@@ -65,6 +65,21 @@ public class SeoProductContent {
     @Column(name = "draft_dirty", nullable = false)
     private boolean draftDirty;
 
+    @Column(name = "porte_reference_id")
+    private Long porteReferenceId;
+
+    @Column(name = "porte_hash", length = 255)
+    private String porteHash;
+
+    @Column(name = "porte_last_synced_at")
+    private Instant porteLastSyncedAt;
+
+    @Column(name = "porte_sync_status", length = 60)
+    private String porteSyncStatus;
+
+    @Column(name = "porte_sync_error", length = 1000)
+    private String porteSyncError;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -85,6 +100,9 @@ public class SeoProductContent {
     @OneToMany(mappedBy = "content", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("primaryImage DESC, sortOrder ASC, id ASC")
     private List<SeoProductImage> images = new ArrayList<>();
+
+    @OneToMany(mappedBy = "content", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<SeoProductImportExclusion> importExclusions = new ArrayList<>();
 
     @PrePersist
     void prePersist() {

@@ -2,8 +2,8 @@ import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { Subscription, debounceTime, distinctUntilChanged, finalize } from 'rxjs';
-import { ProductContentListItem } from '../models/admin-config.models';
+import { Subscription, debounceTime, distinctUntilChanged, finalize, switchMap, timer } from 'rxjs';
+import { PorteProductSyncStatus, ProductContentListItem } from '../models/admin-config.models';
 import { AdminConfigService } from '../services/admin-config.service';
 
 @Component({
@@ -32,8 +32,13 @@ export class ProductContentAdminComponent implements OnInit, OnDestroy {
   totalPages = 0;
   loading = false;
   error = '';
+  syncStatus: PorteProductSyncStatus | null = null;
+  syncStarting = false;
+  syncError = '';
+  syncMessage = '';
 
   private readonly subscriptions = new Subscription();
+  private syncWasRunning = false;
 
   constructor(private service: AdminConfigService) {}
 
@@ -47,6 +52,22 @@ export class ProductContentAdminComponent implements OnInit, OnDestroy {
         })
     );
     this.load();
+    this.subscriptions.add(
+      timer(0, 3000).pipe(
+        switchMap(() => this.service.getPorteProductContentSyncStatus())
+      ).subscribe({
+        next: status => {
+          const justFinished = this.syncWasRunning && !status.running;
+          this.syncStatus = status;
+          this.syncWasRunning = status.running;
+          if (justFinished) {
+            this.syncMessage = 'Sincronización de Tienda Porte finalizada.';
+            this.load();
+          }
+        },
+        error: (error: Error) => this.syncError = error.message
+      })
+    );
   }
 
   ngOnDestroy(): void {
@@ -99,6 +120,53 @@ export class ProductContentAdminComponent implements OnInit, OnDestroy {
     this.load();
   }
 
+  startPorteSync(): void {
+    if (this.syncStarting || this.syncStatus?.running) return;
+    this.syncStarting = true;
+    this.syncError = '';
+    this.syncMessage = '';
+    this.subscriptions.add(this.service.startPorteProductContentSync()
+      .pipe(finalize(() => this.syncStarting = false))
+      .subscribe({
+        next: response => {
+          this.syncStatus = response.status;
+          this.syncWasRunning = response.status.running;
+          this.syncMessage = response.message;
+        },
+        error: (error: Error) => this.syncError = error.message
+      }));
+  }
+
+  pendingProducts(): number {
+    if (!this.syncStatus) return 0;
+    return Math.max(0, this.syncStatus.totalProducts - this.syncStatus.processedProducts);
+  }
+
+  syncProgress(): number {
+    const status = this.syncStatus;
+    if (!status || status.totalProducts <= 0) return 0;
+    return Math.min(100, Math.round(status.processedProducts * 100 / status.totalProducts));
+  }
+
+  syncStateLabel(): string {
+    if (!this.syncStatus) return 'Sin información';
+    if (this.syncStatus.running) return 'Sincronizando';
+    const labels: Record<string, string> = {
+      IDLE: 'Sin ejecuciones recientes',
+      COMPLETED: 'Completada',
+      COMPLETED_WITH_ERRORS: 'Completada con errores',
+      FAILED: 'Fallida'
+    };
+    return labels[this.syncStatus.state] ?? this.syncStatus.state;
+  }
+
+  automaticIntervalLabel(): string {
+    const interval = this.syncStatus?.automaticIntervalMs ?? 0;
+    if (interval <= 0) return '—';
+    const hours = interval / 3_600_000;
+    return Number.isInteger(hours) ? `cada ${hours} h` : `cada ${Math.round(interval / 60_000)} min`;
+  }
+
   statusLabel(item: ProductContentListItem): string {
     if (item.status === 'PUBLISHED') return item.hasUnpublishedChanges ? 'Publicado · cambios pendientes' : 'Publicado';
     if (item.status === 'DRAFT') return 'Borrador';
@@ -111,7 +179,7 @@ export class ProductContentAdminComponent implements OnInit, OnDestroy {
     return 'status-empty';
   }
 
-  formatDate(value: string | null): string {
+  formatDate(value: string | number | null): string {
     if (!value) return '—';
     const date = new Date(value);
     return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString('es-AR');

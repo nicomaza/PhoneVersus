@@ -369,7 +369,6 @@
           <div class="text-muted small mb-1">Colores</div>
           <span *ngFor="let color of colorNames(p)" class="badge text-bg-secondary me-1 mb-1">{{ color }}</span>
         </div>
-<!--
         <button
           *ngIf="canShowCharacteristicsButton(p)"
           type="button"
@@ -380,7 +379,7 @@
         >
           <i class="bi bi-card-list me-2" aria-hidden="true"></i>
           Ver caracter&iacute;sticas
-        </button> -->
+        </button>
 
         <div class="lp-legend mt-3">
           <div *ngIf="shouldShowColors(p)" class="lp-legend-note">
@@ -515,13 +514,23 @@
               </div>
             </section>
 
+            <section *ngIf="featuresHighlights.length > 0" class="lp-features-section">
+              <h3>Destacados</h3>
+              <ul class="lp-feature-highlights">
+                <li *ngFor="let highlight of featuresHighlights">{{ highlight }}</li>
+              </ul>
+            </section>
+
             <section class="lp-feature-info-note" aria-label="Aviso informativo">
               <i class="bi bi-info-circle lp-feature-info-icon" aria-hidden="true"></i>
-              <p>
-                Informaci&oacute;n t&eacute;cnica de referencia obtenida de fuentes especializadas como Smart-GSM.
-                Las especificaciones pueden contener diferencias o errores de carga. Recomendamos verificar siempre
-                la informaci&oacute;n en el sitio oficial del fabricante antes de tomar una decisi&oacute;n de compra.
+              <p *ngIf="hasGsmaArenaFeaturesSource(); else neutralFeaturesNotice">
+                Las características técnicas se basan en información de
+                <a [href]="featuresSourceUrl" target="_blank" rel="noopener noreferrer">GSMArena</a>
+                y se proporcionan únicamente a título orientativo. Pueden variar según el modelo, la versión, el mercado o la región. Córdoba Celulares no garantiza la exactitud ni la actualización permanente de estos datos. Recomendamos confirmar las características específicas del equipo antes de realizar la compra.
               </p>
+              <ng-template #neutralFeaturesNotice>
+                <p>Las características técnicas se proporcionan únicamente a título orientativo. Pueden variar según el modelo, la versión, el mercado o la región. Córdoba Celulares no garantiza la exactitud ni la actualización permanente de estos datos. Recomendamos confirmar las características específicas del equipo antes de realizar la compra.</p>
+              </ng-template>
             </section>
 
             <section *ngIf="featuresSpecSections.length > 0" class="lp-features-section">

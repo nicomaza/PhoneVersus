@@ -1,7 +1,10 @@
 package celulares.cordobacelulares.controller;
 
 import celulares.cordobacelulares.dtos.seo.ProductContentAdminDtos;
+import celulares.cordobacelulares.dtos.seo.PorteProductSyncDtos;
 import celulares.cordobacelulares.services.SeoProductContentService;
+import celulares.cordobacelulares.services.SeoPorteSyncService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,9 +23,31 @@ import org.springframework.web.multipart.MultipartFile;
 public class AdminProductContentController {
 
     private final SeoProductContentService service;
+    private final SeoPorteSyncService porteSyncService;
 
-    public AdminProductContentController(SeoProductContentService service) {
+    public AdminProductContentController(
+            SeoProductContentService service,
+            SeoPorteSyncService porteSyncService
+    ) {
         this.service = service;
+        this.porteSyncService = porteSyncService;
+    }
+
+    @PostMapping("/porte/sync")
+    @org.springframework.web.bind.annotation.ResponseStatus(HttpStatus.ACCEPTED)
+    public PorteProductSyncDtos.StartResponse synchronizeFromPorte() {
+        return porteSyncService.startAll("MANUAL");
+    }
+
+    @GetMapping("/porte/sync/status")
+    public PorteProductSyncDtos.StatusResponse porteSyncStatus() {
+        return porteSyncService.status();
+    }
+
+    @PostMapping("/products/{slug}/porte/sync")
+    @org.springframework.web.bind.annotation.ResponseStatus(HttpStatus.ACCEPTED)
+    public PorteProductSyncDtos.StartResponse synchronizeProductFromPorte(@PathVariable String slug) {
+        return porteSyncService.startProduct(slug);
     }
 
     @GetMapping("/products")

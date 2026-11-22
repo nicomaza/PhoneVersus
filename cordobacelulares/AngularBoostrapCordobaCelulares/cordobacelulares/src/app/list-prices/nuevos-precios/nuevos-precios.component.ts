@@ -6,18 +6,18 @@ import { RouterLink } from '@angular/router';
 import { debounceTime, distinctUntilChanged, Subscription } from 'rxjs';
 import {
   CatalogProductOrigin,
-  LiberadosYaDynamicRecord,
-  LiberadosYaDynamicValue,
-  LiberadosYaProductMatchResponse,
   NuevosPreciosService,
+  PublishedProductFeaturesResponse,
   TiendaPorteBrandResponse,
   TiendaPorteColorStockResponse,
   TiendaPorteModelResponse
 } from '../../services/nuevos-precios.service';
+import { CatalogWhatsappService } from '../../services/catalog-whatsapp.service';
 import {
-  CatalogWhatsappFinancing,
-  CatalogWhatsappService
-} from '../../services/catalog-whatsapp.service';
+  CatalogFinancingKey,
+  CatalogFinancingOption,
+  CatalogFinancingService
+} from '../../services/catalog-financing.service';
 import { HomeBannerService, PublicHomeBanner } from '../../services/home-banner.service';
 import {
   catalogProductConditionLabel,
@@ -34,8 +34,6 @@ type ColorStockLista = { color: string; stock: number | null };
 type FeatureErrorKind = 'not-found' | 'ambiguous' | 'unavailable' | 'general';
 type FeatureDisplayEntry = { label: string; value: string };
 type FeatureDisplaySection = { label: string; entries: FeatureDisplayEntry[] };
-type FinancingKey = 'tarjeta1' | 'qr1' | 'planZ3' | 'tarjeta3' | 'tarjeta6';
-type FinancingOption = CatalogWhatsappFinancing & { key: FinancingKey };
 
 export interface NuevoProductoLista {
   marca: string;
@@ -113,18 +111,20 @@ export class NuevosPreciosComponent implements OnDestroy {
   selected: NuevoProductoLista | null = null;
   modalOpen = false;
   financingDropdownOpen = false;
-  selectedFinancingKey: FinancingKey = 'tarjeta6';
+  selectedFinancingKey: CatalogFinancingKey = 'tarjeta6';
   featuresModalOpen = false;
   featuresLoading = false;
   featuresError: FeatureErrorKind | null = null;
   featuresProduct: NuevoProductoLista | null = null;
-  featuresData: LiberadosYaProductMatchResponse | null = null;
   featuresImages: string[] = [];
+  featuresHighlights: string[] = [];
   featuresImageIndex = 0;
   featuresSpecSections: FeatureDisplaySection[] = [];
+  featuresSourceName = '';
+  featuresSourceUrl = '';
   hasAvailableCharacteristics = false;
   characteristicsLoaded = false;
-  matchedCharacteristicsProduct: LiberadosYaProductMatchResponse | null = null;
+  matchedCharacteristicsProduct: PublishedProductFeaturesResponse | null = null;
   warningModalOpen = false;
   pendingWhatsappProduct: NuevoProductoLista | null = null;
   warningTitle = '';
@@ -151,53 +151,20 @@ export class NuevosPreciosComponent implements OnDestroy {
   private readonly scrollHandler = (): void => this.handleWindowScroll();
   private readonly failedFeatureImages = new Set<string>();
   private publishedContentSlugs = new Set<string>();
-  private featuresRequestId = 0;
   private characteristicsRequestId = 0;
   private matchedCharacteristicsImages: string[] = [];
+  private matchedCharacteristicsHighlights: string[] = [];
   private matchedCharacteristicsSpecSections: FeatureDisplaySection[] = [];
+  private matchedCharacteristicsSourceName = '';
+  private matchedCharacteristicsSourceUrl = '';
+  private featuresImageAlts = new Map<string, string>();
+  private matchedCharacteristicsImageAlts = new Map<string, string>();
   private featuresTriggerElement: HTMLElement | null = null;
-  private readonly specSectionLabels: Record<string, string> = {
-    'FICHA TECNICA': 'General',
-    GENERAL: 'General',
-    PANTALLA: 'Pantalla',
-    DISPLAY: 'Pantalla',
-    PLATAFORMA: 'Plataforma',
-    MEMORIA: 'Memoria',
-    CAMARA: 'C\u00E1mara principal',
-    CAMARA_PRINCIPAL: 'C\u00E1mara principal',
-    'CAMARA PRINCIPAL': 'C\u00E1mara principal',
-    CAMARA_FRONTAL: 'C\u00E1mara frontal',
-    'CAMARA FRONTAL': 'C\u00E1mara frontal',
-    CONECTIVIDAD: 'Conectividad',
-    REDES: 'Redes',
-    SONIDO: 'Sonido',
-    SENSORES: 'Sensores',
-    BATERIA: 'Bater\u00EDa',
-    CUERPO: 'Dise\u00F1o y cuerpo',
-    TAMANO: 'Dise\u00F1o y cuerpo',
-    'DISENO Y CUERPO': 'Dise\u00F1o y cuerpo',
-    LANZAMIENTO: 'Lanzamiento',
-    CARACTERISTICAS: 'Caracter\u00EDsticas',
-  };
-  private readonly specSectionOrder: Record<string, number> = {
-    GENERAL: 0,
-    PANTALLA: 1,
-    PLATAFORMA: 2,
-    MEMORIA: 3,
-    'CAMARA PRINCIPAL': 4,
-    'CAMARA FRONTAL': 5,
-    CONECTIVIDAD: 6,
-    REDES: 7,
-    SONIDO: 8,
-    SENSORES: 9,
-    BATERIA: 10,
-    'DISENO Y CUERPO': 11,
-    LANZAMIENTO: 12,
-  };
 
   constructor(
     private service: NuevosPreciosService,
     private whatsappService: CatalogWhatsappService,
+    private catalogFinancingService: CatalogFinancingService,
     private homeBannerService: HomeBannerService,
     private title: Title,
     private meta: Meta,
@@ -377,36 +344,11 @@ export class NuevosPreciosComponent implements OnDestroy {
     return this.cuotaTarjeta6(p) !== null;
   }
 
-  financingOptions(p: NuevoProductoLista): FinancingOption[] {
-    const definitions: Array<{
-      key: FinancingKey;
-      label: string;
-      total: number | null | undefined;
-      installments?: number;
-    }> = [
-      { key: 'tarjeta1', label: 'Tarjeta 1 pago', total: p.precioTarjeta1Pago },
-      { key: 'qr1', label: 'QR 1 pago', total: p.precioQr1Pago },
-      { key: 'planZ3', label: 'Plan Z · 3 pagos', total: p.precioPlanZ3Pagos, installments: 3 },
-      { key: 'tarjeta3', label: 'Tarjeta 3 cuotas', total: p.precioTarjeta3Pagos, installments: 3 },
-      { key: 'tarjeta6', label: 'Tarjeta 6 cuotas', total: p.precioTarjeta6Pagos, installments: 6 }
-    ];
-
-    return definitions
-      .filter((definition): definition is typeof definition & { total: number } =>
-        this.hasValidMoney(definition.total) && definition.total > 0
-      )
-      .map(definition => ({
-        key: definition.key,
-        label: definition.label,
-        total: definition.total,
-        installments: definition.installments ?? null,
-        installmentAmount: definition.installments
-          ? definition.total / definition.installments
-          : null
-      }));
+  financingOptions(p: NuevoProductoLista): CatalogFinancingOption[] {
+    return this.catalogFinancingService.options(p);
   }
 
-  selectedFinancing(p: NuevoProductoLista): FinancingOption | null {
+  selectedFinancing(p: NuevoProductoLista): CatalogFinancingOption | null {
     return this.financingOptions(p)
       .find(option => option.key === this.selectedFinancingKey) ?? null;
   }
@@ -418,7 +360,7 @@ export class NuevosPreciosComponent implements OnDestroy {
     }
   }
 
-  selectFinancing(option: FinancingOption, event: MouseEvent): void {
+  selectFinancing(option: CatalogFinancingOption, event: MouseEvent): void {
     event.stopPropagation();
     this.selectedFinancingKey = option.key;
     this.financingDropdownOpen = false;
@@ -515,10 +457,13 @@ export class NuevosPreciosComponent implements OnDestroy {
     this.featuresProduct = p;
     this.featuresLoading = false;
     this.featuresError = null;
-    this.featuresData = this.matchedCharacteristicsProduct;
     this.featuresImages = [...this.matchedCharacteristicsImages];
+    this.featuresHighlights = [...this.matchedCharacteristicsHighlights];
     this.featuresImageIndex = 0;
     this.featuresSpecSections = this.cloneFeatureSections(this.matchedCharacteristicsSpecSections);
+    this.featuresSourceName = this.matchedCharacteristicsSourceName;
+    this.featuresSourceUrl = this.matchedCharacteristicsSourceUrl;
+    this.featuresImageAlts = new Map(this.matchedCharacteristicsImageAlts);
     this.failedFeatureImages.clear();
     this.featuresModalOpen = true;
     document.body.classList.add('modal-open');
@@ -530,15 +475,16 @@ export class NuevosPreciosComponent implements OnDestroy {
       return;
     }
 
-    this.featuresRequestId++;
     this.featuresModalOpen = false;
     this.featuresLoading = false;
     this.featuresError = null;
     this.featuresProduct = null;
-    this.featuresData = null;
     this.featuresImages = [];
+    this.featuresHighlights = [];
     this.featuresImageIndex = 0;
     this.featuresSpecSections = [];
+    this.featuresSourceName = '';
+    this.featuresSourceUrl = '';
     this.failedFeatureImages.clear();
 
     const trigger = this.featuresTriggerElement;
@@ -558,9 +504,12 @@ export class NuevosPreciosComponent implements OnDestroy {
       return;
     }
 
-    this.featuresData = this.matchedCharacteristicsProduct;
     this.featuresImages = [...this.matchedCharacteristicsImages];
+    this.featuresHighlights = [...this.matchedCharacteristicsHighlights];
     this.featuresSpecSections = this.cloneFeatureSections(this.matchedCharacteristicsSpecSections);
+    this.featuresSourceName = this.matchedCharacteristicsSourceName;
+    this.featuresSourceUrl = this.matchedCharacteristicsSourceUrl;
+    this.featuresImageAlts = new Map(this.matchedCharacteristicsImageAlts);
     this.featuresImageIndex = 0;
     this.featuresError = null;
   }
@@ -573,6 +522,17 @@ export class NuevosPreciosComponent implements OnDestroy {
     return this.selected === p
       && this.hasAvailableCharacteristics
       && this.matchedCharacteristicsProduct !== null;
+  }
+
+  hasGsmaArenaFeaturesSource(): boolean {
+    if (this.featuresSourceName.trim().toLowerCase() !== 'gsmarena') return false;
+    try {
+      const url = new URL(this.featuresSourceUrl);
+      const host = url.hostname.toLowerCase();
+      return url.protocol === 'https:' && (host === 'gsmarena.com' || host.endsWith('.gsmarena.com'));
+    } catch {
+      return false;
+    }
   }
 
   featureCurrentImage(): string | null {
@@ -611,6 +571,7 @@ export class NuevosPreciosComponent implements OnDestroy {
 
   onFeatureImageError(imageUrl: string): void {
     this.failedFeatureImages.add(imageUrl);
+    this.featuresImageAlts.delete(imageUrl);
     const failedIndex = this.featuresImages.indexOf(imageUrl);
     this.featuresImages = this.featuresImages.filter(image => image !== imageUrl);
 
@@ -632,6 +593,9 @@ export class NuevosPreciosComponent implements OnDestroy {
   }
 
   featureImageAlt(): string {
+    const current = this.featureCurrentImage();
+    const storedAlt = current ? this.featuresImageAlts.get(current)?.trim() : '';
+    if (storedAlt) return storedAlt;
     const product = this.featuresProduct ?? this.selected;
     const name = `${product?.marca ?? ''} ${product?.modelo ?? ''}`.trim();
     return name ? `Imagen de ${name}` : 'Imagen del producto';
@@ -639,6 +603,7 @@ export class NuevosPreciosComponent implements OnDestroy {
 
   hasFeaturesContent(): boolean {
     return this.featuresImages.length > 0
+      || this.featuresHighlights.length > 0
       || this.featuresSpecSections.length > 0;
   }
 
@@ -673,8 +638,8 @@ export class NuevosPreciosComponent implements OnDestroy {
   }
 
   private preloadCharacteristics(p: NuevoProductoLista): void {
-    const matchParams = this.featureMatchParams(p);
-    if (!matchParams) {
+    const slug = this.productSlug(p);
+    if (!slug || !this.publishedContentSlugs.has(slug)) {
       this.characteristicsLoaded = true;
       return;
     }
@@ -683,19 +648,38 @@ export class NuevosPreciosComponent implements OnDestroy {
     const selectedKey = this.productKey(p);
 
     this.subscriptions.add(
-      this.service.getLiberadosYaProductMatch(matchParams.brand, matchParams.model).subscribe({
+      this.service.getPublishedProductFeatures(slug).subscribe({
         next: response => {
           if (!this.isActiveCharacteristicsRequest(requestId, selectedKey)) {
             return;
           }
 
-          const images = this.buildFeatureImages(response);
-          const specSections = this.buildSpecSections(response.especificaciones);
+          const imageRecords = [...(response.images ?? [])]
+            .filter(image => !!image?.publicPath?.trim())
+            .sort((a, b) => Number(b.primaryImage) - Number(a.primaryImage));
+          const images = Array.from(new Set(imageRecords.map(image => image.publicPath.trim())));
+          const highlights = (response.highlights ?? [])
+            .map(item => item?.text?.trim() ?? '')
+            .filter(Boolean);
+          const specSections = (response.specSections ?? [])
+            .map(section => ({
+              label: section?.title?.trim() ?? '',
+              entries: (section?.specs ?? [])
+                .map(spec => ({ label: spec?.label?.trim() ?? '', value: spec?.value?.trim() ?? '' }))
+                .filter(spec => !!spec.label && !!spec.value)
+            }))
+            .filter(section => !!section.label && section.entries.length > 0);
 
           this.matchedCharacteristicsProduct = response;
           this.matchedCharacteristicsImages = images;
+          this.matchedCharacteristicsHighlights = highlights;
           this.matchedCharacteristicsSpecSections = specSections;
-          this.hasAvailableCharacteristics = images.length > 0 || specSections.length > 0;
+          this.matchedCharacteristicsSourceName = response.sourceName?.trim() ?? '';
+          this.matchedCharacteristicsSourceUrl = response.sourceUrl?.trim() ?? '';
+          this.matchedCharacteristicsImageAlts = new Map(
+            imageRecords.map(image => [image.publicPath.trim(), image.altText?.trim() ?? ''])
+          );
+          this.hasAvailableCharacteristics = images.length > 0 || highlights.length > 0 || specSections.length > 0;
         },
         error: () => {
           if (!this.isActiveCharacteristicsRequest(requestId, selectedKey)) {
@@ -706,7 +690,11 @@ export class NuevosPreciosComponent implements OnDestroy {
           this.hasAvailableCharacteristics = false;
           this.matchedCharacteristicsProduct = null;
           this.matchedCharacteristicsImages = [];
+          this.matchedCharacteristicsHighlights = [];
           this.matchedCharacteristicsSpecSections = [];
+          this.matchedCharacteristicsSourceName = '';
+          this.matchedCharacteristicsSourceUrl = '';
+          this.matchedCharacteristicsImageAlts.clear();
         },
         complete: () => {
           if (this.isActiveCharacteristicsRequest(requestId, selectedKey)) {
@@ -717,31 +705,17 @@ export class NuevosPreciosComponent implements OnDestroy {
     );
   }
 
-  private featureMatchParams(p: NuevoProductoLista): { brand: string; model: string } | null {
-    const brand = this.cleanText(p.marca);
-    const model = this.cleanText(p.modelo);
-
-    if (!brand || !model) {
-      return null;
-    }
-
-    return { brand, model };
-  }
-
-  private buildFeatureImages(product: LiberadosYaProductMatchResponse): string[] {
-    return this.sanitizeProductImages([
-      product.imagen_principal,
-      ...(Array.isArray(product.imagenes) ? product.imagenes : [])
-    ]);
-  }
-
   private resetCharacteristicsState(): void {
     this.characteristicsRequestId++;
     this.characteristicsLoaded = false;
     this.hasAvailableCharacteristics = false;
     this.matchedCharacteristicsProduct = null;
     this.matchedCharacteristicsImages = [];
+    this.matchedCharacteristicsHighlights = [];
     this.matchedCharacteristicsSpecSections = [];
+    this.matchedCharacteristicsSourceName = '';
+    this.matchedCharacteristicsSourceUrl = '';
+    this.matchedCharacteristicsImageAlts.clear();
   }
 
   private isActiveCharacteristicsRequest(requestId: number, productKey: string): boolean {
@@ -756,496 +730,6 @@ export class NuevosPreciosComponent implements OnDestroy {
       label: section.label,
       entries: section.entries.map(entry => ({ ...entry }))
     }));
-  }
-
-  private sanitizeProductImages(candidates: unknown[]): string[] {
-    const imagesByKey = new Map<string, { url: string; quality: number }>();
-    for (const candidate of candidates) {
-      const url = this.normalizedProductImageUrl(candidate);
-      if (!url || !this.isSafeProductImageUrl(url)) {
-        continue;
-      }
-
-      const key = this.imageDedupeKey(url);
-      if (!key) {
-        continue;
-      }
-
-      const quality = this.imageQuality(url);
-      const existing = imagesByKey.get(key);
-      if (!existing || quality > existing.quality) {
-        imagesByKey.set(key, { url, quality });
-      }
-    }
-
-    return Array.from(imagesByKey.values()).map(image => image.url);
-  }
-
-  private normalizedProductImageUrl(value: unknown): string {
-    let raw = '';
-    if (typeof value === 'string') {
-      raw = value;
-    } else if (value && typeof value === 'object') {
-      const record = value as Record<string, unknown>;
-      raw = typeof record['url'] === 'string' ? record['url'] : '';
-    }
-
-    raw = raw.trim();
-    if (!raw) {
-      return '';
-    }
-
-    try {
-      const parsed = new URL(raw, 'https://www.cordobacelulares.com');
-      if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-        return '';
-      }
-
-      parsed.protocol = 'https:';
-      parsed.hash = '';
-      for (const param of ['w', 'width', 'h', 'height', 'size', 'resize', 'fit', 'crop', 'q', 'quality']) {
-        parsed.searchParams.delete(param);
-      }
-      return parsed.toString();
-    } catch {
-      return '';
-    }
-  }
-
-  private isSafeProductImageUrl(url: string): boolean {
-    const normalized = url.toLowerCase();
-    const blockedTerms = [
-      'pinterest',
-      'pinext',
-      'pinimg',
-      'facebook',
-      'instagram',
-      'whatsapp',
-      'twitter',
-      'tiktok',
-      'youtube',
-      'telegram',
-      'linkedin',
-      'logo',
-      'logos',
-      'favicon',
-      'icon',
-      'icons',
-      'sprite',
-      'flag',
-      'flags',
-      'bandera',
-      'argentina',
-      'usa',
-      'united-states',
-      'currency',
-      'country',
-      'locale',
-      'language',
-      'payment',
-      'mercadopago',
-      'visa',
-      'mastercard',
-      'social',
-      'banner',
-      'placeholder',
-      'loading',
-      'spinner',
-      'no-image',
-      'sin-imagen',
-      'avatar',
-      'profile',
-      'shipping',
-      'trust',
-      'badge'
-    ];
-
-    if (blockedTerms.some(term => normalized.includes(term))) {
-      return false;
-    }
-
-    try {
-      const parsed = new URL(url);
-      const host = parsed.hostname.toLowerCase();
-      const path = parsed.pathname.toLowerCase();
-      const allowedHost = host === 'acdn-us.mitiendanube.com'
-        || host.endsWith('.mitiendanube.com')
-        || host.endsWith('.nuvemshop.com');
-      const productPath = /^\/(?:tmp\/)?stores\/[^/]+\/[^/]+\/[^/]+\/products\/.+/.test(path);
-
-      return allowedHost && productPath && !path.includes('/themes/');
-    } catch {
-      return false;
-    }
-  }
-
-  private imageDedupeKey(url: string): string {
-    try {
-      const parsed = new URL(url, 'https://www.cordobacelulares.com');
-      parsed.hash = '';
-
-      const path = parsed.pathname
-        .toLowerCase()
-        .replace(/[-_]\d{2,4}x\d{2,4}(?=\.[a-z0-9]+$)/g, '')
-        .replace(/-\d{2,4}-\d{1,4}(?=\.[a-z0-9]+$)/g, '')
-        .replace(/\/+/g, '/');
-
-      const paramsToRemove = ['w', 'width', 'h', 'height', 'size', 'resize', 'fit', 'crop', 'q', 'quality'];
-      for (const param of paramsToRemove) {
-        parsed.searchParams.delete(param);
-      }
-
-      const queryPairs: Array<[string, string]> = [];
-      parsed.searchParams.forEach((value, key) => queryPairs.push([key, value]));
-
-      const search = queryPairs
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([key, value]) => `${key}=${value}`)
-        .join('&');
-
-      return `${parsed.hostname}${path}${search ? `?${search}` : ''}`;
-    } catch {
-      return url
-        .toLowerCase()
-        .replace(/[-_]\d{2,4}x\d{2,4}(?=\.[a-z0-9]+$)/g, '')
-        .replace(/-\d{2,4}-\d{1,4}(?=\.[a-z0-9]+$)/g, '');
-    }
-  }
-
-  private imageQuality(url: string): number {
-    const matchSizePair = url.match(/-(\d{2,4})-(\d{1,4})(?=\.[a-z0-9]+(?:\?|$))/i);
-    const matchSizeX = url.match(/[-_](\d{2,4})x(\d{2,4})(?=\.[a-z0-9]+(?:\?|$))/i);
-    const values = [
-      matchSizePair?.[1],
-      matchSizePair?.[2],
-      matchSizeX?.[1],
-      matchSizeX?.[2]
-    ]
-      .map(value => Number(value ?? 0))
-      .filter(value => Number.isFinite(value));
-
-    return values.length > 0 ? Math.max(...values) : 0;
-  }
-
-  private buildSpecSections(
-    specs: Record<string, LiberadosYaDynamicRecord | null | undefined> | null | undefined
-  ): FeatureDisplaySection[] {
-    if (!specs || typeof specs !== 'object') {
-      return [];
-    }
-
-    const sections: Array<FeatureDisplaySection & { originalIndex: number }> = [];
-
-    Object.entries(specs).forEach(([key, value], originalIndex) => {
-      const entries = this.buildDynamicEntries(value);
-      if (entries.length === 0) {
-        return;
-      }
-
-      const sectionKey = this.normalizedDynamicKey(key);
-      if (sectionKey === 'CAMARA') {
-        const frontEntries = entries.filter(entry => this.isCameraFrontEntry(entry));
-        const mainEntries = entries.filter(entry => !this.isCameraFrontEntry(entry));
-
-        this.addSpecSection(sections, 'C\u00E1mara principal', mainEntries, originalIndex);
-        this.addSpecSection(sections, 'C\u00E1mara frontal', frontEntries, originalIndex);
-        return;
-      }
-
-      if (sectionKey === 'CARACTERISTICAS') {
-        const sensorEntries = entries.filter(entry => this.normalizedDynamicKey(entry.label) === 'SENSORES');
-        const remainingEntries = entries.filter(entry => this.normalizedDynamicKey(entry.label) !== 'SENSORES');
-
-        this.addSpecSection(sections, 'Sensores', sensorEntries, originalIndex);
-        this.addSpecSection(sections, 'Caracter\u00EDsticas', remainingEntries, originalIndex);
-        return;
-      }
-
-      this.addSpecSection(sections, this.specSectionLabel(key), entries, originalIndex);
-    });
-
-    return this.mergeAndSortSpecSections(sections);
-  }
-
-  private buildDynamicEntries(record: LiberadosYaDynamicRecord | null | undefined): FeatureDisplayEntry[] {
-    if (!record || typeof record !== 'object' || Array.isArray(record)) {
-      return [];
-    }
-
-    const entries = Object.entries(record)
-      .map(([key, value]) => ({
-        label: this.prettyDynamicLabel(key),
-        value: this.dynamicValueToText(value)
-      }))
-      .filter(entry => !!entry.label && !!entry.value);
-
-    return this.dedupeFeatureEntries(entries);
-  }
-
-  private dynamicValueToText(value: LiberadosYaDynamicValue | undefined): string {
-    if (this.isEmptyDynamicValue(value)) {
-      return '';
-    }
-
-    if (Array.isArray(value)) {
-      return this.joinUniqueTextParts(value
-        .map(item => this.dynamicValueToText(item))
-        .filter(Boolean), ', ');
-    }
-
-    if (typeof value === 'object' && value !== null) {
-      return this.joinUniqueTextParts(Object.entries(value)
-        .map(([key, innerValue]) => {
-          const text = this.dynamicValueToText(innerValue);
-          return text ? `${this.prettyDynamicLabel(key)}: ${text}` : '';
-        })
-        .filter(Boolean), '; ');
-    }
-
-    if (typeof value === 'boolean') {
-      return value ? 'S\u00ED' : 'No';
-    }
-
-    if (typeof value === 'number') {
-      return Number.isFinite(value)
-        ? value.toLocaleString('es-AR', { maximumFractionDigits: 2 })
-        : '';
-    }
-
-    return this.cleanText(value).replace(/\s+/g, ' ');
-  }
-
-  private isEmptyDynamicValue(value: LiberadosYaDynamicValue | undefined): boolean {
-    if (value === null || value === undefined) {
-      return true;
-    }
-
-    if (typeof value === 'string') {
-      return !this.cleanText(value);
-    }
-
-    if (typeof value === 'number') {
-      return !Number.isFinite(value);
-    }
-
-    if (typeof value === 'boolean') {
-      return false;
-    }
-
-    if (Array.isArray(value)) {
-      return value.length === 0 || value.every(item => this.isEmptyDynamicValue(item));
-    }
-
-    const entries = Object.entries(value);
-    return entries.length === 0 || entries.every(([, innerValue]) => this.isEmptyDynamicValue(innerValue));
-  }
-
-  private specSectionLabel(key: string): string {
-    const normalized = this.normalizedDynamicKey(key);
-    return this.specSectionLabels[normalized] ?? this.prettyDynamicLabel(key);
-  }
-
-  private prettyDynamicLabel(key: string): string {
-    const normalized = this.normalizedDynamicKey(key);
-    const labelOverrides: Record<string, string> = {
-      '2G': '2G',
-      '3G': '3G',
-      '4G': '4G',
-      '5G': '5G',
-      OS: 'OS',
-      UI: 'UI',
-      GPU: 'GPU',
-      GPS: 'GPS',
-      USB: 'USB',
-      NFC: 'NFC',
-      SIM: 'SIM',
-      RAM: 'RAM',
-      HDR: 'HDR',
-      'WI FI': 'Wi-Fi',
-      'RADIO FM': 'Radio FM',
-      'MEMORIA RAM': 'Memoria RAM',
-      'CAMARA PRINCIPAL': 'C\u00E1mara principal',
-      'CAMARA FRONTAL': 'C\u00E1mara frontal',
-    };
-
-    if (labelOverrides[normalized]) {
-      return labelOverrides[normalized];
-    }
-
-    const clean = this.cleanText(key)
-      .replace(/_+/g, ' ')
-      .replace(/\s+/g, ' ')
-      .toLowerCase();
-
-    if (!clean) {
-      return '';
-    }
-
-    return clean
-      .split(' ')
-      .map((word, index) => this.prettyDynamicWord(word, index))
-      .join(' ');
-  }
-
-  private prettyDynamicWord(word: string, index: number): string {
-    const wordOverrides: Record<string, string> = {
-      '2G': '2G',
-      '3G': '3G',
-      '4G': '4G',
-      '5G': '5G',
-      OS: 'OS',
-      UI: 'UI',
-      GPU: 'GPU',
-      GPS: 'GPS',
-      USB: 'USB',
-      NFC: 'NFC',
-      SIM: 'SIM',
-      RAM: 'RAM',
-      HDR: 'HDR',
-      FM: 'FM',
-      'WI FI': 'Wi-Fi',
-    };
-    const normalized = this.normalizedDynamicKey(word);
-
-    if (wordOverrides[normalized]) {
-      return wordOverrides[normalized];
-    }
-
-    if (!word) {
-      return '';
-    }
-
-    return index === 0 ? `${word[0].toUpperCase()}${word.slice(1)}` : word;
-  }
-
-  private addSpecSection(
-    sections: Array<FeatureDisplaySection & { originalIndex: number }>,
-    label: string,
-    entries: FeatureDisplayEntry[],
-    originalIndex: number
-  ): void {
-    const cleanLabel = this.cleanText(label).replace(/\s+/g, ' ');
-    const cleanEntries = this.dedupeFeatureEntries(entries);
-
-    if (!cleanLabel || cleanEntries.length === 0) {
-      return;
-    }
-
-    sections.push({
-      label: cleanLabel,
-      entries: cleanEntries,
-      originalIndex
-    });
-  }
-
-  private mergeAndSortSpecSections(
-    sections: Array<FeatureDisplaySection & { originalIndex: number }>
-  ): FeatureDisplaySection[] {
-    const merged = new Map<string, FeatureDisplaySection & { originalIndex: number }>();
-
-    for (const section of sections) {
-      const label = this.specSectionLabel(section.label);
-      const key = this.normalizedDynamicKey(label);
-      const existing = merged.get(key);
-
-      if (existing) {
-        existing.entries = this.dedupeFeatureEntries([...existing.entries, ...section.entries]);
-        existing.originalIndex = Math.min(existing.originalIndex, section.originalIndex);
-        continue;
-      }
-
-      merged.set(key, {
-        label,
-        entries: this.dedupeFeatureEntries(section.entries),
-        originalIndex: section.originalIndex
-      });
-    }
-
-    return Array.from(merged.values())
-      .sort((a, b) => {
-        const orderDelta = this.specSectionSortValue(a.label) - this.specSectionSortValue(b.label);
-        if (orderDelta !== 0) {
-          return orderDelta;
-        }
-
-        return a.originalIndex - b.originalIndex
-          || a.label.localeCompare(b.label, 'es', { sensitivity: 'base' });
-      })
-      .map(({ label, entries }) => ({ label, entries }));
-  }
-
-  private dedupeFeatureEntries(entries: FeatureDisplayEntry[]): FeatureDisplayEntry[] {
-    const result: FeatureDisplayEntry[] = [];
-    const indexByLabel = new Map<string, number>();
-    const seenPairs = new Set<string>();
-
-    for (const entry of entries) {
-      const label = this.cleanText(entry.label).replace(/\s+/g, ' ');
-      const value = this.cleanText(entry.value).replace(/\s+/g, ' ');
-      const labelKey = this.normalizedDynamicKey(label);
-      const valueKey = this.normalizeFeatureValue(value);
-
-      if (!label || !value || !labelKey || !valueKey) {
-        continue;
-      }
-
-      const pairKey = `${labelKey}|${valueKey}`;
-      if (seenPairs.has(pairKey)) {
-        continue;
-      }
-      seenPairs.add(pairKey);
-
-      const existingIndex = indexByLabel.get(labelKey);
-      if (existingIndex !== undefined) {
-        result[existingIndex] = {
-          ...result[existingIndex],
-          value: this.joinUniqueTextParts([result[existingIndex].value, value], ' / ')
-        };
-        continue;
-      }
-
-      indexByLabel.set(labelKey, result.length);
-      result.push({ label, value });
-    }
-
-    return result;
-  }
-
-  private joinUniqueTextParts(values: string[], separator: string): string {
-    const seen = new Set<string>();
-    const result: string[] = [];
-
-    for (const value of values) {
-      const clean = this.cleanText(value).replace(/\s+/g, ' ');
-      const key = this.normalizeFeatureValue(clean);
-
-      if (!clean || !key || seen.has(key)) {
-        continue;
-      }
-
-      seen.add(key);
-      result.push(clean);
-    }
-
-    return result.join(separator);
-  }
-
-  private isCameraFrontEntry(entry: FeatureDisplayEntry): boolean {
-    const key = this.normalizedDynamicKey(entry.label);
-    return key === 'FRONTAL' || key === 'CAMARA FRONTAL';
-  }
-
-  private specSectionSortValue(label: string): number {
-    const key = this.normalizedDynamicKey(label);
-    return this.specSectionOrder[key] ?? Number.MAX_SAFE_INTEGER;
-  }
-
-  private normalizedDynamicKey(key: string): string {
-    return this.normalizeQ(key).toUpperCase();
-  }
-
-  private normalizeFeatureValue(value: string): string {
-    return this.normalizeQ(value);
   }
 
   abrirWhatsApp(p: NuevoProductoLista): void {

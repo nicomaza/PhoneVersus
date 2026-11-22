@@ -40,6 +40,15 @@ public class SeoProductSpecSection {
     @Column(name = "sort_order", nullable = false)
     private int sortOrder;
 
+    @Column(name = "source_key", length = 512)
+    private String sourceKey;
+
+    @Column(name = "source_title", length = 255)
+    private String sourceTitle;
+
+    @Column(name = "manually_edited", nullable = false)
+    private boolean manuallyEdited;
+
     @OneToMany(mappedBy = "section", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("sortOrder ASC, id ASC")
     private List<SeoProductSpec> specs = new ArrayList<>();

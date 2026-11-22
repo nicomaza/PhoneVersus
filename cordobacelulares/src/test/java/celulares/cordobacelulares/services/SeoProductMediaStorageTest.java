@@ -59,4 +59,16 @@ class SeoProductMediaStorageTest {
                 .isInstanceOf(ApiBadRequestException.class)
                 .hasMessageContaining("Nombre de imagen invalido");
     }
+
+    @Test
+    void validatesDeclaredMimeAgainstDownloadedImageContent() {
+        byte[] png = new byte[]{(byte) 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1};
+
+        assertThatThrownBy(() -> storage.storeDownloaded(png, "foto.jpg", "image/jpeg"))
+                .isInstanceOf(ApiBadRequestException.class)
+                .hasMessageContaining("MIME declarado");
+
+        SeoProductMediaStorage.StoredMedia stored = storage.storeDownloaded(png, "foto.png", "image/png");
+        assertThat(stored.storedFilename()).endsWith(".png");
+    }
 }

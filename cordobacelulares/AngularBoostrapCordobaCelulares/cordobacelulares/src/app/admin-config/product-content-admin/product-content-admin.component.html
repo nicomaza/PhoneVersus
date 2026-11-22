@@ -1,4 +1,43 @@
 <section class="content-panel">
+  <section class="porte-sync" aria-labelledby="porte-sync-title">
+    <div class="porte-sync-heading">
+      <div>
+        <h3 id="porte-sync-title">Contenido desde Tienda Porte</h3>
+        <p>Obtiene fichas e imágenes sin publicar automáticamente los cambios.</p>
+      </div>
+      <button type="button" class="btn btn-dark" (click)="startPorteSync()"
+              [disabled]="syncStarting || syncStatus?.running">
+        <span *ngIf="syncStatus?.running" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+        {{ syncStatus?.running ? 'Sincronizando...' : (syncStarting ? 'Iniciando...' : 'Obtener todos desde Porte') }}
+      </button>
+    </div>
+
+    <div *ngIf="syncStatus as sync" class="sync-status">
+      <div class="sync-summary">
+        <span class="sync-state" [class.running]="sync.running">{{ syncStateLabel() }}</span>
+        <span>Automática: <strong>{{ sync.automaticEnabled ? automaticIntervalLabel() : 'desactivada' }}</strong></span>
+        <span>Última sincronización: <strong>{{ formatDate(sync.finishedAt) }}</strong></span>
+      </div>
+      <div *ngIf="sync.running" class="progress" role="progressbar" [attr.aria-valuenow]="syncProgress()" aria-valuemin="0" aria-valuemax="100">
+        <div class="progress-bar" [style.width.%]="syncProgress()">{{ syncProgress() }}%</div>
+      </div>
+      <div class="sync-metrics">
+        <div><span>Detectados</span><strong>{{ sync.totalProducts }}</strong></div>
+        <div><span>Procesados</span><strong>{{ sync.processedProducts }}</strong></div>
+        <div><span>Pendientes</span><strong>{{ pendingProducts() }}</strong></div>
+        <div><span>Importados</span><strong>{{ sync.imported }}</strong></div>
+        <div><span>Actualizados</span><strong>{{ sync.updated }}</strong></div>
+        <div><span>Sin cambios</span><strong>{{ sync.unchanged }}</strong></div>
+        <div><span>Sin ficha en Porte</span><strong>{{ sync.withoutSheet }}</strong></div>
+        <div><span>Errores</span><strong>{{ sync.errors }}</strong></div>
+      </div>
+      <p *ngIf="sync.running && sync.currentSlug" class="sync-current">Procesando: {{ sync.currentSlug }}</p>
+      <p *ngIf="sync.lastError" class="sync-last-error">{{ sync.lastError }}</p>
+    </div>
+    <p *ngIf="syncError" class="alert alert-danger sync-feedback">{{ syncError }}</p>
+    <p *ngIf="syncMessage && !syncError" class="alert alert-success sync-feedback">{{ syncMessage }}</p>
+  </section>
+
   <div class="filters">
     <label class="search-field">
       <span>Buscar marca o modelo</span>

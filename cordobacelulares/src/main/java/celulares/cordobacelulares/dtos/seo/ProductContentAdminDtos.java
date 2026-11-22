@@ -17,9 +17,15 @@ public final class ProductContentAdminDtos {
             List<SpecSectionInput> specSections
     ) {}
 
-    public record HighlightInput(String text) {}
-    public record SpecSectionInput(String title, List<SpecInput> specs) {}
-    public record SpecInput(String label, String value) {}
+    public record HighlightInput(Long id, String text) {
+        public HighlightInput(String text) { this(null, text); }
+    }
+    public record SpecSectionInput(Long id, String title, List<SpecInput> specs) {
+        public SpecSectionInput(String title, List<SpecInput> specs) { this(null, title, specs); }
+    }
+    public record SpecInput(Long id, String label, String value) {
+        public SpecInput(String label, String value) { this(null, label, value); }
+    }
     public record ImageAltRequest(String altText) {}
     public record ImageOrderRequest(List<Long> imageIds) {}
 

@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { Subscription, concatMap, finalize, from, switchMap } from 'rxjs';
+import { Subscription, concatMap, filter, finalize, from, map, switchMap, take, timer } from 'rxjs';
 import {
   ProductContentDetail,
   ProductContentHighlight,
@@ -23,11 +23,14 @@ export class ProductContentEditorComponent implements OnInit, OnDestroy {
   loading = false;
   saving = false;
   uploading = false;
+  syncingFromPorte = false;
+  porteSyncMessage = '';
   dragActive = false;
   error = '';
   message = '';
 
   private slug = '';
+  private draftBaseline = '';
   private readonly subscriptions = new Subscription();
 
   constructor(private route: ActivatedRoute, private service: AdminConfigService) {}
@@ -46,7 +49,7 @@ export class ProductContentEditorComponent implements OnInit, OnDestroy {
     this.error = '';
     this.subscriptions.add(this.service.getProductContent(this.slug)
       .pipe(finalize(() => this.loading = false))
-      .subscribe({ next: content => this.content = content, error: (error: Error) => this.error = error.message }));
+      .subscribe({ next: content => this.applyContent(content), error: (error: Error) => this.error = error.message }));
   }
 
   addHighlight(): void {
@@ -100,7 +103,7 @@ export class ProductContentEditorComponent implements OnInit, OnDestroy {
       switchMap(() => this.service.publishProductContent(this.slug)),
       finalize(() => this.saving = false)
     ).subscribe({
-      next: content => { this.content = content; this.message = 'Contenido publicado.'; },
+      next: content => { this.applyContent(content); this.message = 'Contenido publicado.'; },
       error: (error: Error) => this.error = error.message
     }));
   }
@@ -112,9 +115,37 @@ export class ProductContentEditorComponent implements OnInit, OnDestroy {
     this.subscriptions.add(this.service.unpublishProductContent(this.slug)
       .pipe(finalize(() => this.saving = false))
       .subscribe({
-        next: content => { this.content = content; this.message = 'Contenido despublicado; el borrador se conserva.'; },
+        next: content => { this.applyContent(content); this.message = 'Contenido despublicado; el borrador se conserva.'; },
         error: (error: Error) => this.error = error.message
       }));
+  }
+
+  updateFromPorte(): void {
+    if (!this.content || this.syncingFromPorte || this.saving) return;
+
+    if (!this.hasUnsavedDraftChanges()) {
+      this.startIndividualPorteSync();
+      return;
+    }
+
+    if (window.confirm('Hay cambios sin guardar. ¿Querés guardarlos antes de actualizar desde Tienda Porte?')) {
+      this.saving = true;
+      this.clearFeedback();
+      this.subscriptions.add(this.service.saveProductContentDraft(this.slug, this.request()).pipe(
+        finalize(() => this.saving = false)
+      ).subscribe({
+        next: content => {
+          this.applyContent(content);
+          this.startIndividualPorteSync();
+        },
+        error: (error: Error) => this.error = error.message
+      }));
+      return;
+    }
+
+    if (window.confirm('¿Descartar los cambios sin guardar y recargar el contenido desde Tienda Porte?')) {
+      this.startIndividualPorteSync();
+    }
   }
 
   chooseFiles(event: Event): void {
@@ -182,7 +213,7 @@ export class ProductContentEditorComponent implements OnInit, OnDestroy {
       concatMap(file => this.service.uploadProductImage(this.slug, file, '')),
       finalize(() => this.uploading = false)
     ).subscribe({
-      next: content => this.content = content,
+      next: content => this.applyContent(content),
       complete: () => this.message = 'Imágenes cargadas. Publicá para hacerlas visibles.',
       error: (error: Error) => this.error = error.message
     }));
@@ -194,10 +225,11 @@ export class ProductContentEditorComponent implements OnInit, OnDestroy {
       description: content.description ?? '',
       sourceUrl: content.sourceUrl ?? '',
       sourceName: content.sourceName ?? '',
-      highlights: content.highlights.map(item => ({ text: item.text })),
+      highlights: content.highlights.map(item => ({ id: item.id, text: item.text })),
       specSections: content.specSections.map(section => ({
+        id: section.id,
         title: section.title,
-        specs: section.specs.map(spec => ({ label: spec.label, value: spec.value }))
+        specs: section.specs.map(spec => ({ id: spec.id, label: spec.label, value: spec.value }))
       }))
     };
   }
@@ -206,7 +238,7 @@ export class ProductContentEditorComponent implements OnInit, OnDestroy {
     this.saving = true;
     this.clearFeedback();
     this.subscriptions.add(request.pipe(finalize(() => this.saving = false)).subscribe({
-      next: content => { this.content = content; this.message = message; },
+      next: content => { this.applyContent(content); this.message = message; },
       error: (error: Error) => this.error = error.message
     }));
   }
@@ -214,7 +246,7 @@ export class ProductContentEditorComponent implements OnInit, OnDestroy {
   private runImageChange(request: ReturnType<AdminConfigService['deleteProductImage']>, message: string): void {
     this.clearFeedback();
     this.subscriptions.add(request.subscribe({
-      next: content => { this.content = content; this.message = message; },
+      next: content => { this.applyContent(content); this.message = message; },
       error: (error: Error) => this.error = error.message
     }));
   }
@@ -228,5 +260,61 @@ export class ProductContentEditorComponent implements OnInit, OnDestroy {
   private clearFeedback(): void {
     this.error = '';
     this.message = '';
+    this.porteSyncMessage = '';
+  }
+
+  private startIndividualPorteSync(): void {
+    this.syncingFromPorte = true;
+    this.clearFeedback();
+    this.porteSyncMessage = 'Obteniendo características desde Porte...';
+    this.subscriptions.add(this.service.syncProductContentFromPorte(this.slug).subscribe({
+      next: response => {
+        if (!response.started) {
+          this.syncingFromPorte = false;
+          this.porteSyncMessage = '';
+          this.message = response.message;
+          return;
+        }
+
+        this.subscriptions.add(timer(500, 1000).pipe(
+          switchMap(() => this.service.getPorteProductContentSyncStatus()),
+          filter(status => !status.running),
+          take(1),
+          switchMap(status => this.service.getProductContent(this.slug).pipe(
+            map(content => ({ status, content }))
+          )),
+          finalize(() => {
+            this.syncingFromPorte = false;
+            this.porteSyncMessage = '';
+          })
+        ).subscribe({
+          next: ({ status, content }) => {
+            this.applyContent(content);
+            if (status.errors > 0) {
+              this.error = status.lastError?.trim() || 'No se pudo actualizar el contenido desde Porte.';
+            } else if (status.withoutSheet > 0) {
+              this.message = 'No hay una ficha de características disponible en Porte para este equipo.';
+            } else {
+              this.message = 'Contenido actualizado desde Tienda Porte. Revisá el borrador antes de publicar.';
+            }
+          },
+          error: (error: Error) => this.error = error.message
+        }));
+      },
+      error: (error: Error) => {
+        this.syncingFromPorte = false;
+        this.porteSyncMessage = '';
+        this.error = error.message;
+      }
+    }));
+  }
+
+  private hasUnsavedDraftChanges(): boolean {
+    return !!this.content && JSON.stringify(this.request()) !== this.draftBaseline;
+  }
+
+  private applyContent(content: ProductContentDetail): void {
+    this.content = content;
+    this.draftBaseline = JSON.stringify(this.request());
   }
 }

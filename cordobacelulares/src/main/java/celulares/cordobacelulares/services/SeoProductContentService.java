@@ -7,6 +7,7 @@ import celulares.cordobacelulares.entities.SeoProductContent;
 import celulares.cordobacelulares.entities.SeoProductContentStatus;
 import celulares.cordobacelulares.entities.SeoProductHighlight;
 import celulares.cordobacelulares.entities.SeoProductImage;
+import celulares.cordobacelulares.entities.SeoProductImportExclusion;
 import celulares.cordobacelulares.entities.SeoProductSpec;
 import celulares.cordobacelulares.entities.SeoProductSpecSection;
 import celulares.cordobacelulares.exceptions.ApiBadRequestException;
@@ -31,6 +32,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -226,6 +228,9 @@ public class SeoProductContentService {
         SeoProductImage image = requireImage(content, imageId);
         boolean retainedByPublication = publishedSnapshotReferences(content, image.getPublicPath());
         boolean wasPrimary = image.isPrimaryImage();
+        if (image.isImportedFromPorte() && image.getSourceKey() != null) {
+            addExclusion(content, "IMAGE", image.getSourceKey());
+        }
         content.getImages().remove(image);
         imageRepository.delete(image);
         for (int index = 0; index < content.getImages().size(); index++) {
@@ -270,23 +275,37 @@ public class SeoProductContentService {
         content.setSourceName(limit(clean(request.sourceName()), 255));
         content.setSourceUrl(validSourceUrl(request.sourceUrl()));
 
-        content.getHighlights().clear();
+        List<SeoProductHighlight> existingHighlights = new ArrayList<>(content.getHighlights());
+        List<SeoProductHighlight> nextHighlights = new ArrayList<>();
         List<ProductContentAdminDtos.HighlightInput> highlights = request.highlights() == null
                 ? List.of() : request.highlights();
-        for (ProductContentAdminDtos.HighlightInput input : highlights) {
+        for (int index = 0; index < highlights.size(); index++) {
+            ProductContentAdminDtos.HighlightInput input = highlights.get(index);
             String text = limit(clean(input == null ? null : input.text()), 1000);
             if (text.isBlank()) continue;
-            SeoProductHighlight highlight = new SeoProductHighlight();
+            SeoProductHighlight highlight = findHighlight(existingHighlights, input, text, index);
+            if (highlight == null) highlight = new SeoProductHighlight();
+            existingHighlights.remove(highlight);
             highlight.setContent(content);
             highlight.setText(text);
-            highlight.setSortOrder(content.getHighlights().size());
-            content.getHighlights().add(highlight);
+            highlight.setSortOrder(nextHighlights.size());
+            if (highlight.getSourceKey() != null) {
+                highlight.setManuallyEdited(!Objects.equals(text, clean(highlight.getSourceText())));
+            }
+            nextHighlights.add(highlight);
         }
+        existingHighlights.stream()
+                .filter(item -> item.getSourceKey() != null)
+                .forEach(item -> addExclusion(content, "HIGHLIGHT", item.getSourceKey()));
+        content.getHighlights().clear();
+        content.getHighlights().addAll(nextHighlights);
 
-        content.getSpecSections().clear();
+        List<SeoProductSpecSection> existingSections = new ArrayList<>(content.getSpecSections());
+        List<SeoProductSpecSection> nextSections = new ArrayList<>();
         List<ProductContentAdminDtos.SpecSectionInput> sections = request.specSections() == null
                 ? List.of() : request.specSections();
-        for (ProductContentAdminDtos.SpecSectionInput input : sections) {
+        for (int sectionIndex = 0; sectionIndex < sections.size(); sectionIndex++) {
+            ProductContentAdminDtos.SpecSectionInput input = sections.get(sectionIndex);
             if (input == null) continue;
             List<ProductContentAdminDtos.SpecInput> requestedSpecs = input.specs() == null
                     ? List.of() : input.specs();
@@ -295,26 +314,115 @@ public class SeoProductContentService {
             if (title.isBlank() && !hasEnteredSpec) continue;
             if (title.isBlank()) throw new ApiBadRequestException("Cada seccion debe tener un nombre");
 
-            SeoProductSpecSection section = new SeoProductSpecSection();
+            SeoProductSpecSection section = findSection(existingSections, input, title, sectionIndex);
+            if (section == null) section = new SeoProductSpecSection();
+            existingSections.remove(section);
             section.setContent(content);
             section.setTitle(title);
-            section.setSortOrder(content.getSpecSections().size());
-            for (ProductContentAdminDtos.SpecInput specInput : requestedSpecs) {
+            section.setSortOrder(nextSections.size());
+            if (section.getSourceKey() != null) {
+                section.setManuallyEdited(!Objects.equals(title, clean(section.getSourceTitle())));
+            }
+            List<SeoProductSpec> existingSpecs = new ArrayList<>(section.getSpecs());
+            List<SeoProductSpec> nextSpecs = new ArrayList<>();
+            for (int specIndex = 0; specIndex < requestedSpecs.size(); specIndex++) {
+                ProductContentAdminDtos.SpecInput specInput = requestedSpecs.get(specIndex);
                 if (specInput == null || !hasEnteredSpec(specInput)) continue;
                 String label = limit(clean(specInput.label()), 255);
                 String value = limit(clean(specInput.value()), 2000);
                 if (label.isBlank() || value.isBlank()) {
                     throw new ApiBadRequestException("Cada especificacion debe tener etiqueta y valor");
                 }
-                SeoProductSpec spec = new SeoProductSpec();
+                SeoProductSpec spec = findSpec(existingSpecs, specInput, label, value, specIndex);
+                if (spec == null) spec = new SeoProductSpec();
+                existingSpecs.remove(spec);
                 spec.setSection(section);
                 spec.setLabel(label);
                 spec.setValue(value);
-                spec.setSortOrder(section.getSpecs().size());
-                section.getSpecs().add(spec);
+                spec.setSortOrder(nextSpecs.size());
+                if (spec.getSourceKey() != null) {
+                    spec.setManuallyEdited(
+                            !Objects.equals(label, clean(spec.getSourceLabel()))
+                                    || !Objects.equals(value, clean(spec.getSourceValue()))
+                    );
+                }
+                nextSpecs.add(spec);
             }
-            content.getSpecSections().add(section);
+            existingSpecs.stream()
+                    .filter(item -> item.getSourceKey() != null)
+                    .forEach(item -> addExclusion(content, "SPEC", item.getSourceKey()));
+            section.getSpecs().clear();
+            section.getSpecs().addAll(nextSpecs);
+            nextSections.add(section);
         }
+        existingSections.stream()
+                .filter(item -> item.getSourceKey() != null)
+                .forEach(item -> addExclusion(content, "SECTION", item.getSourceKey()));
+        content.getSpecSections().clear();
+        content.getSpecSections().addAll(nextSections);
+    }
+
+    private SeoProductHighlight findHighlight(
+            List<SeoProductHighlight> existing,
+            ProductContentAdminDtos.HighlightInput input,
+            String text,
+            int index
+    ) {
+        if (input != null && input.id() != null) {
+            Optional<SeoProductHighlight> byId = existing.stream()
+                    .filter(item -> input.id().equals(item.getId())).findFirst();
+            if (byId.isPresent()) return byId.get();
+        }
+        Optional<SeoProductHighlight> exact = existing.stream()
+                .filter(item -> Objects.equals(clean(item.getText()), text)).findFirst();
+        return exact.orElse(existing.isEmpty() ? null : existing.get(0));
+    }
+
+    private SeoProductSpecSection findSection(
+            List<SeoProductSpecSection> existing,
+            ProductContentAdminDtos.SpecSectionInput input,
+            String title,
+            int index
+    ) {
+        if (input.id() != null) {
+            Optional<SeoProductSpecSection> byId = existing.stream()
+                    .filter(item -> input.id().equals(item.getId())).findFirst();
+            if (byId.isPresent()) return byId.get();
+        }
+        Optional<SeoProductSpecSection> exact = existing.stream()
+                .filter(item -> Objects.equals(clean(item.getTitle()), title)).findFirst();
+        return exact.orElse(existing.isEmpty() ? null : existing.get(0));
+    }
+
+    private SeoProductSpec findSpec(
+            List<SeoProductSpec> existing,
+            ProductContentAdminDtos.SpecInput input,
+            String label,
+            String value,
+            int index
+    ) {
+        if (input.id() != null) {
+            Optional<SeoProductSpec> byId = existing.stream()
+                    .filter(item -> input.id().equals(item.getId())).findFirst();
+            if (byId.isPresent()) return byId.get();
+        }
+        Optional<SeoProductSpec> exact = existing.stream()
+                .filter(item -> Objects.equals(clean(item.getLabel()), label)
+                        && Objects.equals(clean(item.getValue()), value))
+                .findFirst();
+        return exact.orElse(existing.isEmpty() ? null : existing.get(0));
+    }
+
+    private void addExclusion(SeoProductContent content, String itemType, String sourceKey) {
+        if (sourceKey == null || sourceKey.isBlank()) return;
+        boolean exists = content.getImportExclusions().stream()
+                .anyMatch(item -> itemType.equals(item.getItemType()) && sourceKey.equals(item.getSourceKey()));
+        if (exists) return;
+        SeoProductImportExclusion exclusion = new SeoProductImportExclusion();
+        exclusion.setContent(content);
+        exclusion.setItemType(itemType);
+        exclusion.setSourceKey(sourceKey);
+        content.getImportExclusions().add(exclusion);
     }
 
     private boolean hasEnteredSpec(ProductContentAdminDtos.SpecInput spec) {
