@@ -344,3 +344,24 @@ export interface PorteProductSyncStartResponse {
   message: string;
   status: PorteProductSyncStatus;
 }
+
+export interface PorteBulkPublishPreview {
+  eligibleToPublish: number;
+  alreadyPublished: number;
+  withoutValidPorteSheet: number;
+  inactiveProducts: number;
+  skippedOtherReasons: number;
+}
+
+export interface PorteBulkPublishError {
+  slug: string;
+  message: string;
+}
+
+export interface PorteBulkPublishResponse {
+  totalEvaluated: number;
+  published: number;
+  skipped: number;
+  errors: number;
+  errorDetails: PorteBulkPublishError[];
+}

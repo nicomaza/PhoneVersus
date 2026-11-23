@@ -60,6 +60,62 @@ describe('NuevosPreciosComponent catalog variants', () => {
 
   afterEach(() => fixture.destroy());
 
+  it('shows both floating social buttons only after scrolling and hides them for catalog modals', () => {
+    let scrollY = 0;
+    spyOnProperty(window, 'scrollY', 'get').and.callFake(() => scrollY);
+
+    (component as any).handleWindowScroll();
+    fixture.detectChanges();
+    expect(component.showFloatingSocial).toBeFalse();
+    expect(fixture.nativeElement.querySelector('.home-instagram')?.classList.contains('home-social-visible')).toBeFalse();
+    expect(fixture.nativeElement.querySelector('.home-whatsapp')?.classList.contains('home-social-visible')).toBeFalse();
+
+    scrollY = 301;
+    (component as any).handleWindowScroll();
+    fixture.detectChanges();
+    expect(component.showFloatingSocial).toBeTrue();
+    expect(fixture.nativeElement.querySelector('.home-instagram')?.classList.contains('home-social-visible')).toBeTrue();
+    expect(fixture.nativeElement.querySelector('.home-whatsapp')?.classList.contains('home-social-visible')).toBeTrue();
+
+    component.modalOpen = true;
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.home-instagram')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.home-whatsapp')).toBeNull();
+
+    component.modalOpen = false;
+    scrollY = 0;
+    (component as any).handleWindowScroll();
+    expect(component.showFloatingSocial).toBeFalse();
+  });
+
+  it('scrolls to a new search only once per search session', fakeAsync(() => {
+    const scrollSpy = spyOn<any>(component, 'scrollToSearchResults');
+
+    component.searchCtrl.setValue('iphone');
+    tick(150);
+    tick(20);
+    component.searchCtrl.setValue('iphone 17');
+    tick(150);
+    tick(20);
+
+    expect(scrollSpy).toHaveBeenCalledTimes(1);
+  }));
+
+  it('exposes category expansion state and the one-time interaction hint accessibly', () => {
+    component.toggleCategory('IPHONE');
+    (component as any).categoryHinted.add('XIAOMI');
+    fixture.detectChanges();
+
+    const xiaomi = fixture.nativeElement.querySelector('[data-category="XIAOMI"]') as HTMLButtonElement;
+    expect(xiaomi.classList.contains('lp-category-hint')).toBeTrue();
+    expect(xiaomi.getAttribute('aria-expanded')).toBe('false');
+
+    xiaomi.click();
+    fixture.detectChanges();
+    expect(xiaomi.getAttribute('aria-expanded')).toBe('true');
+    expect(fixture.nativeElement.querySelector(`#${component.categoryPanelId('XIAOMI')}`)).not.toBeNull();
+  });
+
   it('renders one card per color with that variant ARS price', () => {
     const cards = Array.from(
       fixture.nativeElement.querySelectorAll('.lp-category-body .lp-card') as NodeListOf<HTMLElement>

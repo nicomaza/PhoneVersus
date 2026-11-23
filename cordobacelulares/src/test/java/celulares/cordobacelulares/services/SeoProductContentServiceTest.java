@@ -1,6 +1,7 @@
 package celulares.cordobacelulares.services;
 
 import celulares.cordobacelulares.dtos.seo.ProductContentAdminDtos;
+import celulares.cordobacelulares.dtos.tiendaporte.response.CatalogProductOrigin;
 import celulares.cordobacelulares.entities.SeoCatalogProduct;
 import celulares.cordobacelulares.entities.SeoProductContent;
 import celulares.cordobacelulares.entities.SeoProductContentStatus;
@@ -110,6 +111,40 @@ class SeoProductContentServiceTest {
     }
 
     @Test
+    void porteBulkPlanUsesPersistedOriginSyncPublicationActivityAndUsefulContent() {
+        SeoProductContent eligible = porteContent("eligible", true, "SINCRONIZADO", "Ficha");
+        SeoProductContent published = porteContent("published", true, "SINCRONIZADO", "Ficha");
+        published.setPublishedSnapshot("{}");
+        SeoProductContent withoutSheet = porteContent("without-sheet", true, "SIN_FICHA_EN_PORTE", "");
+        SeoProductContent inactive = porteContent("inactive", false, "SINCRONIZADO", "Ficha");
+        SeoProductContent otherOrigin = porteContent("other-origin", true, "SINCRONIZADO", "Ficha");
+        otherOrigin.getSeoCatalogProduct().setOrigen(CatalogProductOrigin.GOOGLE_SHEET);
+        SeoProductContent empty = porteContent("empty", true, "SINCRONIZADO", "");
+        when(contentRepository.findAll()).thenReturn(List.of(
+                eligible, published, withoutSheet, inactive, otherOrigin, empty
+        ));
+
+        SeoProductContentService.PorteBulkPublishPlan plan = service.porteBulkPublishPlan();
+
+        assertThat(plan.eligibleSlugs()).containsExactly("eligible");
+        assertThat(plan.preview().eligibleToPublish()).isEqualTo(1);
+        assertThat(plan.preview().alreadyPublished()).isEqualTo(1);
+        assertThat(plan.preview().withoutValidPorteSheet()).isEqualTo(1);
+        assertThat(plan.preview().inactiveProducts()).isEqualTo(1);
+        assertThat(plan.preview().skippedOtherReasons()).isEqualTo(2);
+    }
+
+    @Test
+    void porteCandidatePublishesOnceUsingTheRegularSnapshotLogic() {
+        SeoProductContent content = porteContent("redmi-note-15", true, "SINCRONIZADO", "Importada");
+        stored.set(content);
+
+        assertThat(service.publishPorteCandidate("redmi-note-15")).isTrue();
+        assertThat(stored.get().getPublishedSnapshot()).contains("Importada");
+        assertThat(service.publishPorteCandidate("redmi-note-15")).isFalse();
+    }
+
+    @Test
     void firstUploadedImageIsPrimaryAndPrimaryCanBeChanged() {
         when(mediaStorage.store(any())).thenReturn(
                 new SeoProductMediaStorage.StoredMedia("one.webp", "/product-media/one.webp", "one.webp", "image/webp"),
@@ -169,5 +204,20 @@ class SeoProductContentServiceTest {
 
     private ProductContentAdminDtos.SaveRequest requestWithDescription(String description) {
         return new ProductContentAdminDtos.SaveRequest(description, "", "", List.of(), List.of());
+    }
+
+    private SeoProductContent porteContent(String slug, boolean active, String syncStatus, String description) {
+        SeoCatalogProduct product = new SeoCatalogProduct(
+                null, slug, "MARCA", slug, CatalogProductOrigin.TIENDA_PORTE,
+                Instant.now(), Instant.now(), active
+        );
+        SeoProductContent content = new SeoProductContent();
+        content.setSeoCatalogProduct(product);
+        content.setStatus(SeoProductContentStatus.DRAFT);
+        content.setPorteReferenceId(10L);
+        content.setPorteLastSyncedAt(Instant.now());
+        content.setPorteSyncStatus(syncStatus);
+        content.setDescription(description);
+        return content;
     }
 }

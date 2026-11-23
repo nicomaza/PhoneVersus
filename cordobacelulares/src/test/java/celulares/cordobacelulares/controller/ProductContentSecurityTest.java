@@ -4,6 +4,7 @@ import celulares.cordobacelulares.config.BombaiSecurityProperties;
 import celulares.cordobacelulares.dtos.seo.PublishedProductContent;
 import celulares.cordobacelulares.security.AdminSecurityConfig;
 import celulares.cordobacelulares.services.SeoPorteSyncService;
+import celulares.cordobacelulares.services.SeoPorteBulkPublishService;
 import celulares.cordobacelulares.services.SeoProductContentService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,11 +40,18 @@ class ProductContentSecurityTest {
     @MockBean
     private SeoPorteSyncService syncService;
 
+    @MockBean
+    private SeoPorteBulkPublishService bulkPublishService;
+
     @Test
     void syncEndpointsRequireAdministratorAuthentication() throws Exception {
         mockMvc.perform(post("/api/admin/product-content/porte/sync"))
                 .andExpect(status().isUnauthorized());
         mockMvc.perform(get("/api/admin/product-content/porte/sync/status"))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/api/admin/product-content/porte/publish/preview"))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(post("/api/admin/product-content/porte/publish"))
                 .andExpect(status().isUnauthorized());
     }
 

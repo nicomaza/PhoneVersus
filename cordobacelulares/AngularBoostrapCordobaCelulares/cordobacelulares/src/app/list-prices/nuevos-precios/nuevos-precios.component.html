@@ -95,7 +95,7 @@
     </div>
   </div>
 
-  <div *ngIf="hasSearch" class="lp-search-summary" role="status" aria-live="polite">
+  <div #searchResultsAnchor *ngIf="hasSearch" class="lp-search-summary" role="status" aria-live="polite">
     Resultados para <strong>&quot;{{ searchCtrl.value.trim() }}&quot;</strong> &middot; {{ searchResultCount }} modelos
   </div>
 
@@ -171,10 +171,15 @@
 
     <div *ngFor="let categoria of categorias; trackBy: trackByCategory" class="lp-brand-block lp-category-block">
       <button
+        #categoryHeader
         type="button"
         class="lp-brand-header lp-category-header"
         [class.lp-category-open]="isExpanded(categoria)"
+        [class.lp-category-hint]="isCategoryHinted(categoria)"
         [attr.data-brand]="categoria"
+        [attr.data-category]="categoria"
+        [attr.aria-expanded]="isExpanded(categoria)"
+        [attr.aria-controls]="categoryPanelId(categoria)"
         (click)="toggleCategory(categoria)"
       >
         <div class="lp-brand-left">
@@ -210,7 +215,7 @@
         </div>
       </button>
 
-      <div *ngIf="isExpanded(categoria)" class="lp-category-body">
+      <div *ngIf="isExpanded(categoria)" class="lp-category-body" [id]="categoryPanelId(categoria)">
         <div *ngIf="isCategoryLoading(categoria)" class="lp-loading">
           Cargando {{ categoria }}...
         </div>
@@ -263,13 +268,13 @@
 <a
   *ngIf="!isCatalogModalOpen"
   class="home-instagram"
-  [class.home-instagram-visible]="footerVisible"
+  [class.home-social-visible]="showFloatingSocial"
   href="https://www.instagram.com/cordobacelularesoficial/"
   target="_blank"
   rel="noopener noreferrer"
   aria-label="Visitar Instagram"
-  [attr.aria-hidden]="footerVisible ? null : 'true'"
-  [attr.tabindex]="footerVisible ? 0 : -1"
+  [attr.aria-hidden]="showFloatingSocial ? null : 'true'"
+  [attr.tabindex]="showFloatingSocial ? 0 : -1"
 >
   <i class="bi bi-instagram" aria-hidden="true"></i>
 </a>
@@ -278,7 +283,10 @@
   *ngIf="!isCatalogModalOpen"
   type="button"
   class="home-whatsapp"
+  [class.home-social-visible]="showFloatingSocial"
   aria-label="Consultar por WhatsApp"
+  [attr.aria-hidden]="showFloatingSocial ? null : 'true'"
+  [attr.tabindex]="showFloatingSocial ? 0 : -1"
   (click)="openFloatingWhatsapp()"
 >
   <i class="bi bi-whatsapp" aria-hidden="true"></i>

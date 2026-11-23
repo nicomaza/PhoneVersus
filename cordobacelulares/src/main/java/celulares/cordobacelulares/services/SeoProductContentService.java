@@ -1,7 +1,9 @@
 package celulares.cordobacelulares.services;
 
 import celulares.cordobacelulares.dtos.seo.ProductContentAdminDtos;
+import celulares.cordobacelulares.dtos.seo.PorteBulkPublishDtos;
 import celulares.cordobacelulares.dtos.seo.PublishedProductContent;
+import celulares.cordobacelulares.dtos.tiendaporte.response.CatalogProductOrigin;
 import celulares.cordobacelulares.entities.SeoCatalogProduct;
 import celulares.cordobacelulares.entities.SeoProductContent;
 import celulares.cordobacelulares.entities.SeoProductContentStatus;
@@ -141,6 +143,46 @@ public class SeoProductContentService {
         content.setPublishedAt(Instant.now());
         content.setDraftDirty(false);
         return toDetail(product, contentRepository.save(content));
+    }
+
+    @Transactional(readOnly = true)
+    public PorteBulkPublishPlan porteBulkPublishPlan() {
+        int alreadyPublished = 0;
+        int withoutValidPorteSheet = 0;
+        int inactiveProducts = 0;
+        int skippedOtherReasons = 0;
+        List<String> eligibleSlugs = new ArrayList<>();
+
+        for (SeoProductContent content : contentRepository.findAll()) {
+            SeoCatalogProduct product = content.getSeoCatalogProduct();
+            if (product.getOrigen() != CatalogProductOrigin.TIENDA_PORTE) {
+                skippedOtherReasons++;
+            } else if (!product.isActive()) {
+                inactiveProducts++;
+            } else if (hasPublishedSnapshot(content)) {
+                alreadyPublished++;
+            } else if (!hasValidPorteSynchronization(content)) {
+                withoutValidPorteSheet++;
+            } else if (!hasUsefulContent(content)) {
+                skippedOtherReasons++;
+            } else {
+                eligibleSlugs.add(product.getSlug());
+            }
+        }
+
+        PorteBulkPublishDtos.PreviewResponse preview = new PorteBulkPublishDtos.PreviewResponse(
+                eligibleSlugs.size(), alreadyPublished, withoutValidPorteSheet,
+                inactiveProducts, skippedOtherReasons
+        );
+        return new PorteBulkPublishPlan(preview, List.copyOf(eligibleSlugs));
+    }
+
+    @Transactional
+    public boolean publishPorteCandidate(String slug) {
+        SeoProductContent content = contentRepository.findBySeoCatalogProductSlug(slug).orElse(null);
+        if (content == null || !isEligiblePorteCandidate(content)) return false;
+        publish(slug);
+        return true;
     }
 
     @Transactional
@@ -553,6 +595,38 @@ public class SeoProductContentService {
         return deserialize(content.getPublishedSnapshot()).images().stream()
                 .anyMatch(image -> publicPath.equals(image.publicPath()));
     }
+
+    private boolean isEligiblePorteCandidate(SeoProductContent content) {
+        SeoCatalogProduct product = content.getSeoCatalogProduct();
+        return product.getOrigen() == CatalogProductOrigin.TIENDA_PORTE
+                && product.isActive()
+                && !hasPublishedSnapshot(content)
+                && hasValidPorteSynchronization(content)
+                && hasUsefulContent(content);
+    }
+
+    private boolean hasPublishedSnapshot(SeoProductContent content) {
+        return content.getPublishedSnapshot() != null && !content.getPublishedSnapshot().isBlank();
+    }
+
+    private boolean hasValidPorteSynchronization(SeoProductContent content) {
+        return "SINCRONIZADO".equals(content.getPorteSyncStatus())
+                && content.getPorteReferenceId() != null
+                && content.getPorteLastSyncedAt() != null;
+    }
+
+    private boolean hasUsefulContent(SeoProductContent content) {
+        if (!clean(content.getDescription()).isBlank()) return true;
+        if (content.getHighlights().stream().anyMatch(item -> !clean(item.getText()).isBlank())) return true;
+        if (content.getSpecSections().stream().flatMap(section -> section.getSpecs().stream())
+                .anyMatch(spec -> !clean(spec.getLabel()).isBlank() && !clean(spec.getValue()).isBlank())) return true;
+        return content.getImages().stream().anyMatch(image -> !clean(image.getPublicPath()).isBlank());
+    }
+
+    public record PorteBulkPublishPlan(
+            PorteBulkPublishDtos.PreviewResponse preview,
+            List<String> eligibleSlugs
+    ) {}
 
     private String serialize(PublishedProductContent content) {
         try {

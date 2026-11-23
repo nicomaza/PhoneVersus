@@ -5,11 +5,18 @@
         <h3 id="porte-sync-title">Contenido desde Tienda Porte</h3>
         <p>Obtiene fichas e imágenes sin publicar automáticamente los cambios.</p>
       </div>
-      <button type="button" class="btn btn-dark" (click)="startPorteSync()"
-              [disabled]="syncStarting || syncStatus?.running">
-        <span *ngIf="syncStatus?.running" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
-        {{ syncStatus?.running ? 'Sincronizando...' : (syncStarting ? 'Iniciando...' : 'Obtener todos desde Porte') }}
-      </button>
+      <div class="porte-sync-actions">
+        <button type="button" class="btn btn-dark" (click)="startPorteSync()"
+                [disabled]="syncStarting || syncStatus?.running">
+          <span *ngIf="syncStatus?.running" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+          {{ syncStatus?.running ? 'Sincronizando...' : (syncStarting ? 'Iniciando...' : 'Obtener todos desde Porte') }}
+        </button>
+        <button type="button" class="btn btn-outline-dark" (click)="openPortePublishPreview()"
+                [disabled]="publishPreviewLoading || bulkPublishing">
+          <span *ngIf="publishPreviewLoading || bulkPublishing" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+          {{ bulkPublishing ? 'Publicando...' : (publishPreviewLoading ? 'Consultando...' : 'Publicar fichas de Porte') }}
+        </button>
+      </div>
     </div>
 
     <div *ngIf="syncStatus as sync" class="sync-status">
@@ -36,6 +43,14 @@
     </div>
     <p *ngIf="syncError" class="alert alert-danger sync-feedback">{{ syncError }}</p>
     <p *ngIf="syncMessage && !syncError" class="alert alert-success sync-feedback">{{ syncMessage }}</p>
+    <p *ngIf="bulkPublishError" class="alert alert-danger sync-feedback">{{ bulkPublishError }}</p>
+    <div *ngIf="bulkPublishResult as result" class="alert alert-success sync-feedback publish-result" role="status">
+      <strong>Publicaci&oacute;n finalizada:</strong>
+      {{ result.published }} publicados, {{ result.skipped }} omitidos y {{ result.errors }} errores.
+      <ul *ngIf="result.errorDetails.length > 0">
+        <li *ngFor="let detail of result.errorDetails"><strong>{{ detail.slug }}:</strong> {{ detail.message }}</li>
+      </ul>
+    </div>
   </section>
 
   <div class="filters">
@@ -91,3 +106,42 @@
     </div>
   </footer>
 </section>
+
+<div *ngIf="publishModalOpen" class="modal-backdrop fade show"></div>
+<div *ngIf="publishModalOpen" class="modal fade show d-block publish-modal" tabindex="-1"
+     role="dialog" aria-modal="true" aria-labelledby="publish-modal-title">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="publish-modal-title" class="modal-title fs-6">Publicar fichas de Porte</h2>
+        <button type="button" class="btn-close" aria-label="Cancelar" [disabled]="bulkPublishing"
+                (click)="closePortePublishModal()"></button>
+      </div>
+      <div class="modal-body" *ngIf="publishPreview as preview">
+        <p *ngIf="preview.eligibleToPublish > 0; else noEligible">
+          Se publicar&aacute;n <strong>{{ preview.eligibleToPublish }}</strong> fichas importadas desde Tienda Porte.
+        </p>
+        <ng-template #noEligible>
+          <p>No hay fichas elegibles pendientes de publicaci&oacute;n.</p>
+        </ng-template>
+        <dl class="publish-preview-details">
+          <div><dt>Ya publicadas</dt><dd>{{ preview.alreadyPublished }}</dd></div>
+          <div><dt>Sin ficha v&aacute;lida</dt><dd>{{ preview.withoutValidPorteSheet }}</dd></div>
+          <div><dt>Productos inactivos</dt><dd>{{ preview.inactiveProducts }}</dd></div>
+          <div><dt>Otros omitidos</dt><dd>{{ preview.skippedOtherReasons }}</dd></div>
+        </dl>
+        <p *ngIf="bulkPublishError" class="alert alert-danger mb-0">{{ bulkPublishError }}</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" [disabled]="bulkPublishing"
+                (click)="closePortePublishModal()">Cancelar</button>
+        <button type="button" class="btn btn-dark"
+                [disabled]="bulkPublishing || !publishPreview || publishPreview.eligibleToPublish <= 0"
+                (click)="publishPorteSheets()">
+          <span *ngIf="bulkPublishing" class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+          {{ bulkPublishing ? 'Publicando...' : 'Publicar' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

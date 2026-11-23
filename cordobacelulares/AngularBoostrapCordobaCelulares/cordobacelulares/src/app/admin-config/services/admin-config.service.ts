@@ -14,6 +14,8 @@ import {
   LiberadosYaQuotationResponse,
   PorteProductSyncStartResponse,
   PorteProductSyncStatus,
+  PorteBulkPublishPreview,
+  PorteBulkPublishResponse,
   PriceConfigurationRequest,
   PriceConfigurationResponse
   , ProductContentDetail
@@ -177,6 +179,18 @@ export class AdminConfigService {
   getPorteProductContentSyncStatus(): Observable<PorteProductSyncStatus> {
     return this.http.get<PorteProductSyncStatus>(`${this.apiUrl}/admin/product-content/porte/sync/status`)
       .pipe(catchError(error => this.handleError(error)));
+  }
+
+  getPorteBulkPublishPreview(): Observable<PorteBulkPublishPreview> {
+    return this.http.get<PorteBulkPublishPreview>(
+      `${this.apiUrl}/admin/product-content/porte/publish/preview`
+    ).pipe(catchError(error => this.handleError(error)));
+  }
+
+  publishPorteProductContents(): Observable<PorteBulkPublishResponse> {
+    return this.http.post<PorteBulkPublishResponse>(
+      `${this.apiUrl}/admin/product-content/porte/publish`, {}
+    ).pipe(catchError(error => this.handleError(error)));
   }
 
   syncProductContentFromPorte(slug: string): Observable<PorteProductSyncStartResponse> {

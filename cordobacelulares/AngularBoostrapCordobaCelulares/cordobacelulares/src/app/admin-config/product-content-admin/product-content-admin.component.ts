@@ -3,7 +3,13 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { Subscription, debounceTime, distinctUntilChanged, finalize, switchMap, timer } from 'rxjs';
-import { PorteProductSyncStatus, ProductContentListItem } from '../models/admin-config.models';
+import {
+  ApiDateValue,
+  PorteBulkPublishPreview,
+  PorteBulkPublishResponse,
+  PorteProductSyncStatus,
+  ProductContentListItem
+} from '../models/admin-config.models';
 import { AdminConfigService } from '../services/admin-config.service';
 
 @Component({
@@ -36,6 +42,12 @@ export class ProductContentAdminComponent implements OnInit, OnDestroy {
   syncStarting = false;
   syncError = '';
   syncMessage = '';
+  publishPreview: PorteBulkPublishPreview | null = null;
+  publishModalOpen = false;
+  publishPreviewLoading = false;
+  bulkPublishing = false;
+  bulkPublishError = '';
+  bulkPublishResult: PorteBulkPublishResponse | null = null;
 
   private readonly subscriptions = new Subscription();
   private syncWasRunning = false;
@@ -137,6 +149,45 @@ export class ProductContentAdminComponent implements OnInit, OnDestroy {
       }));
   }
 
+  openPortePublishPreview(): void {
+    if (this.publishPreviewLoading || this.bulkPublishing) return;
+    this.publishPreviewLoading = true;
+    this.bulkPublishError = '';
+    this.bulkPublishResult = null;
+    this.subscriptions.add(this.service.getPorteBulkPublishPreview()
+      .pipe(finalize(() => this.publishPreviewLoading = false))
+      .subscribe({
+        next: preview => {
+          this.publishPreview = preview;
+          this.publishModalOpen = true;
+        },
+        error: (error: Error) => this.bulkPublishError = error.message
+      }));
+  }
+
+  closePortePublishModal(): void {
+    if (this.bulkPublishing) return;
+    this.publishModalOpen = false;
+    this.publishPreview = null;
+  }
+
+  publishPorteSheets(): void {
+    if (this.bulkPublishing || !this.publishPreview || this.publishPreview.eligibleToPublish <= 0) return;
+    this.bulkPublishing = true;
+    this.bulkPublishError = '';
+    this.subscriptions.add(this.service.publishPorteProductContents()
+      .pipe(finalize(() => this.bulkPublishing = false))
+      .subscribe({
+        next: result => {
+          this.bulkPublishResult = result;
+          this.publishModalOpen = false;
+          this.publishPreview = null;
+          this.load();
+        },
+        error: (error: Error) => this.bulkPublishError = error.message
+      }));
+  }
+
   pendingProducts(): number {
     if (!this.syncStatus) return 0;
     return Math.max(0, this.syncStatus.totalProducts - this.syncStatus.processedProducts);
@@ -179,9 +230,17 @@ export class ProductContentAdminComponent implements OnInit, OnDestroy {
     return 'status-empty';
   }
 
-  formatDate(value: string | number | null): string {
+  formatDate(value: ApiDateValue): string {
     if (!value) return '—';
-    const date = new Date(value);
-    return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString('es-AR');
+    const numericValue = typeof value === 'number'
+      ? value
+      : (/^-?\d+(\.\d+)?$/.test(value.trim()) ? Number(value) : null);
+    const normalizedValue = numericValue === null
+      ? value
+      : (Math.abs(numericValue) < 1_000_000_000_000 ? numericValue * 1000 : numericValue);
+    const date = new Date(normalizedValue);
+    return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString('es-AR', {
+      timeZone: 'America/Argentina/Buenos_Aires'
+    });
   }
 }

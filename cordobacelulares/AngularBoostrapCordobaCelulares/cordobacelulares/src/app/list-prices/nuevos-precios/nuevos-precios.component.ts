@@ -1,5 +1,15 @@
 import { CommonModule, DOCUMENT } from '@angular/common';
-import { AfterViewInit, Component, ElementRef, HostListener, Inject, OnDestroy, ViewChild } from '@angular/core';
+import {
+  AfterViewInit,
+  Component,
+  ElementRef,
+  HostListener,
+  Inject,
+  OnDestroy,
+  QueryList,
+  ViewChild,
+  ViewChildren
+} from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { Meta, Title } from '@angular/platform-browser';
 import { RouterLink } from '@angular/router';
@@ -109,7 +119,9 @@ export class NuevosPreciosComponent implements AfterViewInit, OnDestroy {
   }
 
   @ViewChild('searchInput') private searchInput?: ElementRef<HTMLInputElement>;
+  @ViewChild('searchResultsAnchor') private searchResultsAnchor?: ElementRef<HTMLElement>;
   @ViewChild('featuresCloseButton') private featuresCloseButton?: ElementRef<HTMLButtonElement>;
+  @ViewChildren('categoryHeader') private categoryHeaders!: QueryList<ElementRef<HTMLButtonElement>>;
 
   grupos: GrupoMarca[] = [];
   expandedCategory: string | null = null;
@@ -138,6 +150,7 @@ export class NuevosPreciosComponent implements AfterViewInit, OnDestroy {
   warningConfirmLabel = 'Continuar';
   warningEmphasized = false;
   financingAttention = false;
+  showFloatingSocial = false;
 
   private readonly CATEGORY_LIMIT = 50;
 
@@ -169,11 +182,11 @@ export class NuevosPreciosComponent implements AfterViewInit, OnDestroy {
   private featuresImageAlts = new Map<string, string>();
   private matchedCharacteristicsImageAlts = new Map<string, string>();
   private featuresTriggerElement: HTMLElement | null = null;
-  private footerObserver?: IntersectionObserver;
-  private footerObserverFrame: number | null = null;
+  private categoryObserver?: IntersectionObserver;
+  private readonly categoryHinted = new Set<string>();
+  private searchScrollHandled = false;
   private financingAttentionTimer?: ReturnType<typeof setTimeout>;
   private financingAttentionEndTimer?: ReturnType<typeof setTimeout>;
-  footerVisible = false;
 
   constructor(
     private service: NuevosPreciosService,
@@ -189,6 +202,7 @@ export class NuevosPreciosComponent implements AfterViewInit, OnDestroy {
     this.previousCanonical = this.document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.href ?? null;
     this.applyHomeMetadata();
     window.addEventListener('scroll', this.scrollHandler, { passive: true });
+    this.showFloatingSocial = window.scrollY > 300;
     this.applyFilter('');
     this.loadCatalogInBackground();
     this.loadPublishedContentSlugs();
@@ -197,7 +211,11 @@ export class NuevosPreciosComponent implements AfterViewInit, OnDestroy {
     this.subscriptions.add(
       this.searchCtrl.valueChanges
         .pipe(debounceTime(120), distinctUntilChanged())
-        .subscribe(q => this.applyFilter(q, false))
+        .subscribe(q => {
+          const hasQuery = !!this.normalizeQ(q);
+          this.applyFilter(q, hasQuery && !this.searchScrollHandled);
+          this.searchScrollHandled = hasQuery;
+        })
     );
   }
 
@@ -237,27 +255,26 @@ export class NuevosPreciosComponent implements AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit(): void {
-    this.footerObserverFrame = window.requestAnimationFrame(() => {
-      const footer = this.document.getElementById('site-footer');
-      if (!footer || !('IntersectionObserver' in window)) {
-        return;
+    if (this.reducedMotion || !('IntersectionObserver' in window)) return;
+    this.categoryObserver = new IntersectionObserver(entries => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        const header = entry.target as HTMLButtonElement;
+        const category = header.dataset['category'];
+        if (!category || this.isExpanded(category) || this.categoryHinted.has(category)) continue;
+        this.categoryHinted.add(category);
+        this.categoryObserver?.unobserve(header);
       }
-
-      this.footerObserver = new IntersectionObserver(([entry]) => {
-        this.footerVisible = entry.isIntersecting;
-      }, { threshold: 0.01 });
-      this.footerObserver.observe(footer);
-    });
+    }, { threshold: 0.35, rootMargin: '0px 0px -10% 0px' });
+    this.observeCategoryHeaders();
+    this.subscriptions.add(this.categoryHeaders.changes.subscribe(() => this.observeCategoryHeaders()));
   }
 
   ngOnDestroy(): void {
     this.subscriptions.unsubscribe();
     this.stopCarousel();
     this.cancelFinancingAttention();
-    this.footerObserver?.disconnect();
-    if (this.footerObserverFrame !== null) {
-      window.cancelAnimationFrame(this.footerObserverFrame);
-    }
+    this.categoryObserver?.disconnect();
     window.removeEventListener('scroll', this.scrollHandler);
     document.body.classList.remove('modal-open');
     this.restoreMetadata();
@@ -780,6 +797,7 @@ export class NuevosPreciosComponent implements AfterViewInit, OnDestroy {
   }
 
   clearSearch(): void {
+    this.searchScrollHandled = false;
     this.searchCtrl.setValue('');
     this.applyFilter('');
     setTimeout(() => this.searchInput?.nativeElement?.focus?.());
@@ -894,6 +912,14 @@ export class NuevosPreciosComponent implements AfterViewInit, OnDestroy {
 
   isExpanded(categoria: string): boolean {
     return this.expandedCategory === categoria;
+  }
+
+  isCategoryHinted(categoria: string): boolean {
+    return this.categoryHinted.has(categoria);
+  }
+
+  categoryPanelId(categoria: string): string {
+    return `category-${this.normalizeQ(categoria).replace(/[^a-z0-9]+/g, '-')}`;
   }
 
   isCategoryLoading(categoria: string): boolean {
@@ -1025,6 +1051,7 @@ export class NuevosPreciosComponent implements AfterViewInit, OnDestroy {
   }
 
   private handleWindowScroll(): void {
+    this.showFloatingSocial = window.scrollY > 300;
     const categoria = this.expandedCategory;
     if (!categoria || this.hasSearch || this.catalogLoaded || !this.paginatedCategories.has(categoria)) {
       return;
@@ -1156,10 +1183,32 @@ export class NuevosPreciosComponent implements AfterViewInit, OnDestroy {
     const ranked = this.smartSearch(this.all, qRaw);
     this.grupos = this.groupByBrand(ranked);
 
-    if (scrollToTop && window.scrollY > 120) {
-      requestAnimationFrame(() => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      });
+    if (scrollToTop) requestAnimationFrame(() => this.scrollToSearchResults());
+  }
+
+  private scrollToSearchResults(): void {
+    const anchor = this.searchResultsAnchor?.nativeElement;
+    if (!anchor) return;
+    const search = this.document.querySelector<HTMLElement>('.lp-search');
+    const container = this.document.querySelector<HTMLElement>('.lp-container');
+    const topOffset = container
+      ? Number.parseFloat(getComputedStyle(container).getPropertyValue('--lp-top-offset')) || 0
+      : 0;
+    const desiredTop = topOffset + (search?.offsetHeight ?? 0) + 12;
+    const anchorTop = anchor.getBoundingClientRect().top;
+    if (anchorTop >= desiredTop && anchorTop <= window.innerHeight * .45) return;
+    window.scrollTo({
+      top: Math.max(0, window.scrollY + anchorTop - desiredTop),
+      behavior: this.reducedMotion ? 'auto' : 'smooth'
+    });
+  }
+
+  private observeCategoryHeaders(): void {
+    if (!this.categoryObserver) return;
+    for (const reference of this.categoryHeaders) {
+      const header = reference.nativeElement;
+      const category = header.dataset['category'];
+      if (category && !this.categoryHinted.has(category)) this.categoryObserver.observe(header);
     }
   }
 

@@ -1,7 +1,9 @@
 package celulares.cordobacelulares.controller;
 
 import celulares.cordobacelulares.dtos.seo.ProductContentAdminDtos;
+import celulares.cordobacelulares.dtos.seo.PorteBulkPublishDtos;
 import celulares.cordobacelulares.dtos.seo.PorteProductSyncDtos;
+import celulares.cordobacelulares.services.SeoPorteBulkPublishService;
 import celulares.cordobacelulares.services.SeoProductContentService;
 import celulares.cordobacelulares.services.SeoPorteSyncService;
 import org.springframework.http.HttpStatus;
@@ -24,13 +26,16 @@ public class AdminProductContentController {
 
     private final SeoProductContentService service;
     private final SeoPorteSyncService porteSyncService;
+    private final SeoPorteBulkPublishService porteBulkPublishService;
 
     public AdminProductContentController(
             SeoProductContentService service,
-            SeoPorteSyncService porteSyncService
+            SeoPorteSyncService porteSyncService,
+            SeoPorteBulkPublishService porteBulkPublishService
     ) {
         this.service = service;
         this.porteSyncService = porteSyncService;
+        this.porteBulkPublishService = porteBulkPublishService;
     }
 
     @PostMapping("/porte/sync")
@@ -42,6 +47,16 @@ public class AdminProductContentController {
     @GetMapping("/porte/sync/status")
     public PorteProductSyncDtos.StatusResponse porteSyncStatus() {
         return porteSyncService.status();
+    }
+
+    @GetMapping("/porte/publish/preview")
+    public PorteBulkPublishDtos.PreviewResponse portePublishPreview() {
+        return porteBulkPublishService.preview();
+    }
+
+    @PostMapping("/porte/publish")
+    public PorteBulkPublishDtos.PublishResponse publishFromPorte() {
+        return porteBulkPublishService.publish();
     }
 
     @PostMapping("/products/{slug}/porte/sync")

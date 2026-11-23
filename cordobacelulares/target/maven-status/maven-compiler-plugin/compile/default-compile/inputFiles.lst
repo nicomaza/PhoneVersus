@@ -49,6 +49,7 @@ C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\cel
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\dtos\priceconfiguration\PriceConfigurationPatchRequest.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\dtos\priceconfiguration\PriceConfigurationResponse.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\dtos\priceconfiguration\PriceConfigurationUpdateRequest.java
+C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\dtos\seo\PorteBulkPublishDtos.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\dtos\seo\PorteProductSyncDtos.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\dtos\seo\ProductContentAdminDtos.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\dtos\seo\PublishedProductContent.java
@@ -202,6 +203,7 @@ C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\cel
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\services\PriceConfigurationService.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\services\SeoCatalogService.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\services\SeoCatalogSyncScheduler.java
+C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\services\SeoPorteBulkPublishService.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\services\SeoPorteContentImporter.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\services\SeoPorteSyncService.java
 C:\Users\nicol\Desktop\cbacel2025\PhoneVersus\cordobacelulares\src\main\java\celulares\cordobacelulares\services\SeoProductContentService.java

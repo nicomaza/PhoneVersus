@@ -278,6 +278,11 @@
   color: #fff;
   box-shadow: 0 10px 26px rgba(15, 23, 42, .24);
   font-size: 1.75rem;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(8px) scale(.9);
+  transition: opacity 180ms ease, transform 180ms ease, visibility 0s linear 180ms, background-color 180ms ease;
 }
 
 .home-whatsapp:hover { background: #20bd5a; transform: translateY(-2px); }
@@ -304,7 +309,7 @@
   transition: opacity 180ms ease, transform 180ms ease, visibility 0s linear 180ms;
 }
 
-.home-instagram-visible {
+.home-social-visible {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
@@ -315,12 +320,45 @@
 .home-instagram:hover { color: #fff; transform: translateY(-2px) scale(1); }
 .home-instagram:focus-visible { outline: 3px solid rgba(225, 48, 108, .35); outline-offset: 3px; }
 
+.lp-category-header.lp-category-hint {
+  animation: lp-category-highlight 900ms ease-out;
+}
+
+.lp-category-header.lp-category-hint .lp-category-chevron:not(.lp-category-chevron-open) {
+  animation: lp-category-chevron-hint 420ms ease-in-out 2;
+}
+
+.lp-category-body {
+  transform-origin: top center;
+  animation: lp-category-body-in 200ms ease-out;
+}
+
+@keyframes lp-category-highlight {
+  0%, 100% { border-color: rgba(17, 24, 39, .08); box-shadow: 0 15px 34px rgba(15, 23, 42, .045); }
+  45% { border-color: color-mix(in srgb, var(--brand-accent, #9ca3af) 28%, transparent); box-shadow: 0 17px 38px rgba(15, 23, 42, .075); }
+}
+
+@keyframes lp-category-chevron-hint {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(5px); }
+}
+
+@keyframes lp-category-body-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .home-carousel-slide { transition: none; }
   :host .lp-financing-chevron { transition: none; }
   :host .lp-financing-menu,
   :host .lp-financing-attention,
-  :host .lp-financing-attention .lp-financing-chevron { animation: none; }
+  :host .lp-financing-attention .lp-financing-chevron,
+  .lp-category-header.lp-category-hint,
+  .lp-category-header.lp-category-hint .lp-category-chevron,
+  .lp-category-body { animation: none; }
+  .home-whatsapp,
+  .home-instagram { transition: none; }
 }
 
 @media (max-width: 640px) {
