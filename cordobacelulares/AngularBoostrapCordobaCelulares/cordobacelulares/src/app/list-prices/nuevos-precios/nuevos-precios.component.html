@@ -62,7 +62,7 @@
 
   <!-- Buscador -->
   <div class="lp-search">
-    <div class="lp-search-card">
+    <div class="lp-search-card" [class.lp-search-attention]="searchAttention">
       <label class="lp-search-field">
         <i class="bi bi-search lp-search-icon" aria-hidden="true"></i>
         <span class="lp-search-copy">
@@ -75,6 +75,8 @@
               autocomplete="off"
               inputmode="search"
               aria-label="Buscar marca o modelo"
+              (focus)="onSearchInteraction()"
+              (input)="onSearchInteraction()"
             />
             <button
               *ngIf="searchCtrl.value"
@@ -138,10 +140,16 @@
       <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-2">
         <div class="col" *ngFor="let p of g.items; trackBy: trackByProduct">
           <a
-            class="card lp-card w-100 text-start"
+            class="card lp-card lp-search-product-card w-100 text-start"
+            [class.lp-card-attention]="isSearchResultAttention(p)"
+            [attr.data-product-key]="productAnimationKey(p)"
             [href]="productHref(p)"
             (click)="onProductCardClick($event, p)"
           >
+            <span class="lp-card-action-hint" aria-hidden="true">
+              <i class="bi bi-hand-index" aria-hidden="true"></i>
+              Toc&aacute; para ver precios y cuotas
+            </span>
             <div class="card-body">
               <div class="lp-model">{{ p.modelo }}</div>
               <div *ngIf="cardColor(p) as color" class="small text-muted mt-1">
@@ -207,6 +215,7 @@
 
         <div class="lp-brand-count">
           <span class="lp-count-badge">{{ categoryCountLabel(categoria) }}</span>
+          <span class="lp-category-action-hint" aria-hidden="true">Toc&aacute; para ver modelos</span>
           <i
             class="bi bi-chevron-right lp-category-chevron"
             [class.lp-category-chevron-open]="isExpanded(categoria)"
@@ -232,10 +241,16 @@
           <div *ngIf="categoryItems(categoria).length > 0" class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-2">
             <div class="col" *ngFor="let p of categoryItems(categoria); trackBy: trackByProduct">
               <a
-                class="card lp-card w-100 text-start"
+                class="card lp-card lp-category-product-card w-100 text-start"
+                [class.lp-card-attention]="isCategoryProductAttention(p)"
+                [attr.data-product-key]="productAnimationKey(p)"
                 [href]="productHref(p)"
                 (click)="onProductCardClick($event, p)"
               >
+                <span class="lp-card-action-hint lp-category-card-action-hint" aria-hidden="true">
+                  <i class="bi bi-hand-index" aria-hidden="true"></i>
+                  Toc&aacute; para consultar
+                </span>
                 <div class="card-body">
                   <div class="lp-model">{{ p.modelo }}</div>
                   <div *ngIf="cardColor(p) as color" class="small text-muted mt-1">
@@ -278,19 +293,6 @@
 >
   <i class="bi bi-instagram" aria-hidden="true"></i>
 </a>
-
-<button
-  *ngIf="!isCatalogModalOpen"
-  type="button"
-  class="home-whatsapp"
-  [class.home-social-visible]="showFloatingSocial"
-  aria-label="Consultar por WhatsApp"
-  [attr.aria-hidden]="showFloatingSocial ? null : 'true'"
-  [attr.tabindex]="showFloatingSocial ? 0 : -1"
-  (click)="openFloatingWhatsapp()"
->
-  <i class="bi bi-whatsapp" aria-hidden="true"></i>
-</button>
 
 <!-- Modal (sin dependencia extra, bootstrap-friendly) -->
 <div *ngIf="modalOpen" class="modal-backdrop fade show lp-backdrop" (click)="closeModal()"></div>

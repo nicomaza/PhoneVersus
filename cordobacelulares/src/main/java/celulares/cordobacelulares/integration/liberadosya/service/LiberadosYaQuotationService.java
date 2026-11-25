@@ -43,6 +43,7 @@ public class LiberadosYaQuotationService {
     private static final String NUMBER = "(?:\\d+(?:\\.\\d*)?|\\.\\d+)";
     private static final MathContext CALCULATION_CONTEXT = MathContext.DECIMAL128;
     private static final BigDecimal ONE_HUNDRED = new BigDecimal("100");
+    private static final BigDecimal TRANSFER_DENOMINATOR = new BigDecimal("98");
     private static final Pattern OPTIONS_PATTERN = Pattern.compile(
             "const\\s+options\\s*=\\s*\\[(.*?)]\\s*;",
             Pattern.DOTALL
@@ -52,10 +53,10 @@ public class LiberadosYaQuotationService {
     private static final Pattern OPTION_KIND_PATTERN = Pattern.compile("kind\\s*:\\s*(['\"])(.*?)\\1");
     private static final Pattern OPTION_COUNT_PATTERN = Pattern.compile("count\\s*:\\s*(\\d+)");
     private static final Pattern OPTION_NET_PATTERN = Pattern.compile("net\\s*:\\s*([^,}]+)");
+    private static final Pattern OPTION_BASE_PATTERN = Pattern.compile("base\\s*:\\s*(['\"])(.*?)\\1");
     private static final Pattern QUOTE_FUNCTION_PATTERN = Pattern.compile("function\\s+quote\\s*\\([^)]*\\)\\s*\\{");
-    private static final Pattern SPECIAL_TRANSFER_PATTERN = Pattern.compile(
-            "consttransferArs=\\(p\\.net7Pricing\\|\\|p\\.net10Pricing\\)\\?Math\\.ceil\\(cashArs\\*(" + NUMBER
-                    + ")/(" + NUMBER + ")\\):Math\\.round\\(cashArs\\*transferMultiplier\\);"
+    private static final Pattern TRANSFER_PATTERN = Pattern.compile(
+            "consttransferArs=Math\\.ceil\\(cashArs\\*(" + NUMBER + ")/(" + NUMBER + ")\\);"
     );
 
     private final LiberadosYaProperties properties;
@@ -159,30 +160,30 @@ public class LiberadosYaQuotationService {
 
     private ParsedQuotation parseScript(String script) {
         BigDecimal exchange = numericConstant(script, "exchange");
-        BigDecimal transferMultiplier = numericConstant(script, "transferMultiplier");
         BigDecimal settlement = settlement(script);
         validatePositive("exchange", exchange);
-        validateMultiplier("transferMultiplier", transferMultiplier);
         validateNet("settlement", settlement);
 
         Map<String, PaymentOption> options = paymentOptions(script, settlement);
+        requireKind(options, "efectivo en pesos", "cash", 1);
+        requireKind(options, "dolar billete", "dollar", 1);
         requireKind(options, "transferencia en pesos", "transfer", 1);
         requireKind(options, "usdt criptomoneda", "usdt", 1);
-        BigDecimal tarjeta1Net = requireNet(options, "tarjeta 1 pago", 1);
-        BigDecimal qr1Net = requireNet(options, "qr 1 pago", 1);
-        BigDecimal planZ3Net = requireNet(options, "plan z 3 pagos", 3);
-        BigDecimal tarjeta3Net = requireNet(options, "tarjeta 3 cuotas", 3);
-        BigDecimal tarjeta6Net = requireNet(options, "tarjeta 6 cuotas", 6);
+        PaymentOption tarjeta1 = requireNet(options, "tarjeta 1 pago", 1, "transfer");
+        PaymentOption qr1 = requireNet(options, "qr 1 pago", 1, null);
+        PaymentOption planZ3 = requireNet(options, "plan z 3 pagos", 3, "transfer");
+        PaymentOption tarjeta3 = requireNet(options, "tarjeta 3 cuotas", 3, "transfer");
+        PaymentOption tarjeta6 = requireNet(options, "tarjeta 6 cuotas", 6, "transfer");
 
-        BigDecimal specialTransferMultiplier = validateQuoteFormula(script);
+        BigDecimal transferMultiplier = validateQuoteFormula(script);
         return new ParsedQuotation(
                 exchange,
-                markupByScheme(transferMultiplier, specialTransferMultiplier, BigDecimal.ONE),
-                markupByScheme(transferMultiplier, specialTransferMultiplier, tarjeta1Net),
-                markupByScheme(transferMultiplier, specialTransferMultiplier, qr1Net),
-                markupByScheme(transferMultiplier, specialTransferMultiplier, planZ3Net),
-                markupByScheme(transferMultiplier, specialTransferMultiplier, tarjeta3Net),
-                markupByScheme(transferMultiplier, specialTransferMultiplier, tarjeta6Net)
+                markupByScheme(transferMultiplier, BigDecimal.ONE),
+                markupByScheme(baseMultiplier(tarjeta1, transferMultiplier), tarjeta1.net()),
+                markupByScheme(baseMultiplier(qr1, transferMultiplier), qr1.net()),
+                markupByScheme(baseMultiplier(planZ3, transferMultiplier), planZ3.net()),
+                markupByScheme(baseMultiplier(tarjeta3, transferMultiplier), tarjeta3.net()),
+                markupByScheme(baseMultiplier(tarjeta6, transferMultiplier), tarjeta6.net())
         );
     }
 
@@ -222,8 +223,12 @@ public class LiberadosYaQuotationService {
             String kind = optionalGroup(OPTION_KIND_PATTERN, body);
             String countValue = requiredGroup(OPTION_COUNT_PATTERN, body, "cantidad de pagos para " + name);
             String netExpression = optionalGroup(OPTION_NET_PATTERN, body);
+            String base = optionalGroup(OPTION_BASE_PATTERN, body);
+            if (base != null && !"transfer".equals(base)) {
+                throw unsupported("Base no soportada para " + name);
+            }
             BigDecimal net = netExpression == null ? null : parseNet(netExpression, settlement, name);
-            PaymentOption previous = options.put(key, new PaymentOption(kind, Integer.parseInt(countValue), net));
+            PaymentOption previous = options.put(key, new PaymentOption(kind, Integer.parseInt(countValue), net, base));
             if (previous != null) {
                 throw unsupported("Medio de pago duplicado en options: " + name);
             }
@@ -253,18 +258,19 @@ public class LiberadosYaQuotationService {
         requireFormula(quoteBody, "constmode=options[index];");
         requireFormula(quoteBody, "constactive=currentCash(p,color);constcashArs=p.currency==='USD'?active*exchange:active;");
         requireFormula(quoteBody, "constrounding=(p.net7Pricing||p.net10Pricing)?Math.ceil:Math.round;");
-        Matcher specialMatcher = SPECIAL_TRANSFER_PATTERN.matcher(quoteBody);
-        if (!specialMatcher.find()) {
-            throw unsupported("Cambio no soportado en la formula de transferencia net7Pricing/net10Pricing");
+        Matcher transferMatcher = TRANSFER_PATTERN.matcher(quoteBody);
+        if (!transferMatcher.find()) {
+            throw unsupported("Cambio no soportado en la formula de transferencia");
         }
         requireFormula(
                 quoteBody,
-                "consttotal=mode.net?rounding(transferArs/mode.net):mode.kind==='dollar'?rounding(cashArs/exchange):mode.kind==='usdt'?rounding(transferArs/exchange):mode.kind==='transfer'?transferArs:cashArs;"
+                "consttotal=mode.net?rounding((mode.base==='transfer'?transferArs:cashArs)/mode.net):mode.kind==='dollar'?rounding(cashArs/exchange):mode.kind==='usdt'?rounding(transferArs/exchange):mode.kind==='transfer'?transferArs:cashArs;"
         );
-        BigDecimal numerator = new BigDecimal(specialMatcher.group(1));
-        BigDecimal denominator = new BigDecimal(specialMatcher.group(2));
-        validatePositive("numerador de transferencia especial", numerator);
-        validatePositive("denominador de transferencia especial", denominator);
+        BigDecimal numerator = new BigDecimal(transferMatcher.group(1));
+        BigDecimal denominator = new BigDecimal(transferMatcher.group(2));
+        if (numerator.compareTo(ONE_HUNDRED) != 0 || denominator.compareTo(TRANSFER_DENOMINATOR) != 0) {
+            throw unsupported("Factores no soportados en la formula de transferencia");
+        }
         return numerator.divide(denominator, CALCULATION_CONTEXT);
     }
 
@@ -297,17 +303,24 @@ public class LiberadosYaQuotationService {
 
     private void requireKind(Map<String, PaymentOption> options, String name, String expectedKind, int expectedCount) {
         PaymentOption option = requireOption(options, name);
-        if (!expectedKind.equals(option.kind()) || option.count() != expectedCount || option.net() != null) {
+        if (!expectedKind.equals(option.kind()) || option.count() != expectedCount
+                || option.net() != null || option.base() != null) {
             throw unsupported("Definicion no soportada para " + name);
         }
     }
 
-    private BigDecimal requireNet(Map<String, PaymentOption> options, String name, int expectedCount) {
+    private PaymentOption requireNet(
+            Map<String, PaymentOption> options,
+            String name,
+            int expectedCount,
+            String expectedBase
+    ) {
         PaymentOption option = requireOption(options, name);
-        if (option.kind() != null || option.count() != expectedCount || option.net() == null) {
+        if (option.kind() != null || option.count() != expectedCount || option.net() == null
+                || !java.util.Objects.equals(expectedBase, option.base())) {
             throw unsupported("Definicion no soportada para " + name);
         }
-        return option.net();
+        return option;
     }
 
     private PaymentOption requireOption(Map<String, PaymentOption> options, String name) {
@@ -319,14 +332,18 @@ public class LiberadosYaQuotationService {
     }
 
     private MarkupByTransferScheme markupByScheme(
-            BigDecimal generalTransfer,
-            BigDecimal specialTransfer,
+            BigDecimal baseMultiplier,
             BigDecimal net
     ) {
+        BigDecimal markup = markup(baseMultiplier, net);
         return new MarkupByTransferScheme(
-                markup(generalTransfer, net),
-                markup(specialTransfer, net)
+                markup,
+                markup
         );
+    }
+
+    private BigDecimal baseMultiplier(PaymentOption option, BigDecimal transferMultiplier) {
+        return "transfer".equals(option.base()) ? transferMultiplier : BigDecimal.ONE;
     }
 
     private BigDecimal markup(BigDecimal transferMultiplier, BigDecimal net) {
@@ -422,12 +439,6 @@ public class LiberadosYaQuotationService {
         }
     }
 
-    private void validateMultiplier(String label, BigDecimal value) {
-        if (value.compareTo(BigDecimal.ONE) < 0 || value.compareTo(new BigDecimal("3")) > 0) {
-            throw unsupported(label + " esta fuera del rango permitido");
-        }
-    }
-
     private void validateNet(String label, BigDecimal value) {
         if (value.signum() <= 0 || value.compareTo(BigDecimal.ONE) > 0) {
             throw unsupported(label + " esta fuera del rango permitido");
@@ -450,7 +461,7 @@ public class LiberadosYaQuotationService {
         return message.length() <= 300 ? message : message.substring(0, 300);
     }
 
-    private record PaymentOption(String kind, int count, BigDecimal net) {
+    private record PaymentOption(String kind, int count, BigDecimal net, String base) {
     }
 
     private record ParsedQuotation(

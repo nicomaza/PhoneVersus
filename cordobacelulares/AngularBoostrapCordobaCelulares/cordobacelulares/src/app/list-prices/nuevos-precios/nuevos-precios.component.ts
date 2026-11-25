@@ -151,6 +151,7 @@ export class NuevosPreciosComponent implements AfterViewInit, OnDestroy {
   warningEmphasized = false;
   financingAttention = false;
   showFloatingSocial = false;
+  searchAttention = false;
 
   private readonly CATEGORY_LIMIT = 50;
 
@@ -184,7 +185,22 @@ export class NuevosPreciosComponent implements AfterViewInit, OnDestroy {
   private featuresTriggerElement: HTMLElement | null = null;
   private categoryObserver?: IntersectionObserver;
   private readonly categoryHinted = new Set<string>();
+  private activeCategoryHint: string | null = null;
+  private categoryHintQueue: string[] = [];
+  private categoryHintTimer?: ReturnType<typeof setTimeout>;
+  private categoryHintGapTimer?: ReturnType<typeof setTimeout>;
   private searchScrollHandled = false;
+  private searchAttentionFinished = false;
+  private searchAttentionTimer?: ReturnType<typeof setTimeout>;
+  private searchAttentionEndTimer?: ReturnType<typeof setTimeout>;
+  private searchResultAttentionKey: string | null = null;
+  private searchResultAttentionTimer?: ReturnType<typeof setTimeout>;
+  private searchResultAttentionEndTimer?: ReturnType<typeof setTimeout>;
+  private categoryProductAttentionKey: string | null = null;
+  private categoryProductAttentionTimer?: ReturnType<typeof setTimeout>;
+  private categoryProductAttentionEndTimer?: ReturnType<typeof setTimeout>;
+  private categorySuggestionShownForOpen = false;
+  private lastCategorySuggestionAt = 0;
   private financingAttentionTimer?: ReturnType<typeof setTimeout>;
   private financingAttentionEndTimer?: ReturnType<typeof setTimeout>;
 
@@ -212,9 +228,15 @@ export class NuevosPreciosComponent implements AfterViewInit, OnDestroy {
       this.searchCtrl.valueChanges
         .pipe(debounceTime(120), distinctUntilChanged())
         .subscribe(q => {
+          this.cancelSearchAttention();
+          this.cancelSearchResultAttention();
+          this.cancelCategoryProductAttention();
           const hasQuery = !!this.normalizeQ(q);
           this.applyFilter(q, hasQuery && !this.searchScrollHandled);
           this.searchScrollHandled = hasQuery;
+          if (hasQuery) {
+            this.scheduleSearchResultAttention(this.normalizeQ(q));
+          }
         })
     );
   }
@@ -254,7 +276,13 @@ export class NuevosPreciosComponent implements AfterViewInit, OnDestroy {
     this.financingDropdownOpen = false;
   }
 
+  @HostListener('document:pointerdown')
+  cancelProductSuggestionOnInteraction(): void {
+    this.cancelCategoryProductAttention();
+  }
+
   ngAfterViewInit(): void {
+    this.scheduleSearchAttention();
     if (this.reducedMotion || !('IntersectionObserver' in window)) return;
     this.categoryObserver = new IntersectionObserver(entries => {
       for (const entry of entries) {
@@ -264,7 +292,9 @@ export class NuevosPreciosComponent implements AfterViewInit, OnDestroy {
         if (!category || this.isExpanded(category) || this.categoryHinted.has(category)) continue;
         this.categoryHinted.add(category);
         this.categoryObserver?.unobserve(header);
+        this.categoryHintQueue.push(category);
       }
+      this.startNextCategoryHint();
     }, { threshold: 0.35, rootMargin: '0px 0px -10% 0px' });
     this.observeCategoryHeaders();
     this.subscriptions.add(this.categoryHeaders.changes.subscribe(() => this.observeCategoryHeaders()));
@@ -274,6 +304,10 @@ export class NuevosPreciosComponent implements AfterViewInit, OnDestroy {
     this.subscriptions.unsubscribe();
     this.stopCarousel();
     this.cancelFinancingAttention();
+    this.cancelSearchAttention();
+    this.cancelSearchResultAttention();
+    this.cancelCategoryProductAttention();
+    this.cancelCategoryHints();
     this.categoryObserver?.disconnect();
     window.removeEventListener('scroll', this.scrollHandler);
     document.body.classList.remove('modal-open');
@@ -340,10 +374,6 @@ export class NuevosPreciosComponent implements AfterViewInit, OnDestroy {
       return;
     }
     distance > 0 ? this.previousBanner() : this.nextBanner();
-  }
-
-  openFloatingWhatsapp(): void {
-    this.whatsappService.openHomeConsultation();
   }
 
   fmtMoney(n?: number | null): string {
@@ -465,6 +495,8 @@ export class NuevosPreciosComponent implements AfterViewInit, OnDestroy {
   }
 
   onProductCardClick(event: MouseEvent, p: NuevoProductoLista): void {
+    this.cancelSearchResultAttention();
+    this.cancelCategoryProductAttention();
     const isModifiedClick = event.ctrlKey || event.metaKey || event.shiftKey || event.altKey;
     if (event.button !== 0 || isModifiedClick) {
       return;
@@ -475,6 +507,8 @@ export class NuevosPreciosComponent implements AfterViewInit, OnDestroy {
   }
 
   openDetails(p: NuevoProductoLista): void {
+    this.cancelSearchResultAttention();
+    this.cancelCategoryProductAttention();
     this.resetCharacteristicsState();
     this.selected = p;
     this.selectedFinancingKey = 'tarjeta6';
@@ -797,6 +831,8 @@ export class NuevosPreciosComponent implements AfterViewInit, OnDestroy {
   }
 
   clearSearch(): void {
+    this.cancelSearchResultAttention();
+    this.cancelCategoryProductAttention();
     this.searchScrollHandled = false;
     this.searchCtrl.setValue('');
     this.applyFilter('');
@@ -880,13 +916,19 @@ export class NuevosPreciosComponent implements AfterViewInit, OnDestroy {
   }
 
   toggleCategory(categoria: string): void {
+    this.stopCategoryHint(categoria);
+    this.cancelCategoryProductAttention();
     if (this.expandedCategory === categoria) {
       this.expandedCategory = null;
+      this.categorySuggestionShownForOpen = false;
+      this.startNextCategoryHint();
       return;
     }
 
     this.expandedCategory = categoria;
+    this.categorySuggestionShownForOpen = false;
     this.categoryErrors[categoria] = null;
+    this.scheduleCategoryProductAttention();
 
     if (this.catalogLoaded || this.service.hasCatalogCache()) {
       this.loadCategoryFromCatalog(categoria);
@@ -915,7 +957,25 @@ export class NuevosPreciosComponent implements AfterViewInit, OnDestroy {
   }
 
   isCategoryHinted(categoria: string): boolean {
-    return this.categoryHinted.has(categoria);
+    return this.activeCategoryHint === categoria;
+  }
+
+  onSearchInteraction(): void {
+    this.cancelSearchAttention();
+    this.cancelSearchResultAttention();
+    this.cancelCategoryProductAttention();
+  }
+
+  productAnimationKey(product: NuevoProductoLista): string {
+    return this.productKey(product);
+  }
+
+  isSearchResultAttention(product: NuevoProductoLista): boolean {
+    return this.searchResultAttentionKey === this.productKey(product);
+  }
+
+  isCategoryProductAttention(product: NuevoProductoLista): boolean {
+    return this.categoryProductAttentionKey === this.productKey(product);
   }
 
   categoryPanelId(categoria: string): string {
@@ -1052,6 +1112,8 @@ export class NuevosPreciosComponent implements AfterViewInit, OnDestroy {
 
   private handleWindowScroll(): void {
     this.showFloatingSocial = window.scrollY > 300;
+    this.cancelCategoryProductAttention();
+    this.scheduleCategoryProductAttention();
     const categoria = this.expandedCategory;
     if (!categoria || this.hasSearch || this.catalogLoaded || !this.paginatedCategories.has(categoria)) {
       return;
@@ -1177,6 +1239,7 @@ export class NuevosPreciosComponent implements AfterViewInit, OnDestroy {
 
     if (!qNorm) {
       this.grupos = [];
+      this.cancelSearchResultAttention();
       return;
     }
 
@@ -1210,6 +1273,165 @@ export class NuevosPreciosComponent implements AfterViewInit, OnDestroy {
       const category = header.dataset['category'];
       if (category && !this.categoryHinted.has(category)) this.categoryObserver.observe(header);
     }
+  }
+
+  private scheduleSearchAttention(): void {
+    if (this.reducedMotion || this.searchAttentionFinished || this.searchAttentionTimer) {
+      return;
+    }
+    this.searchAttentionTimer = setTimeout(() => {
+      this.searchAttentionTimer = undefined;
+      if (this.searchAttentionFinished || this.searchCtrl.value.trim()) {
+        return;
+      }
+      this.searchAttention = true;
+      this.searchAttentionEndTimer = setTimeout(() => {
+        this.searchAttention = false;
+        this.searchAttentionFinished = true;
+        this.searchAttentionEndTimer = undefined;
+      }, 2500);
+    }, 2000);
+  }
+
+  private cancelSearchAttention(): void {
+    if (this.searchAttentionTimer) {
+      clearTimeout(this.searchAttentionTimer);
+      this.searchAttentionTimer = undefined;
+    }
+    if (this.searchAttentionEndTimer) {
+      clearTimeout(this.searchAttentionEndTimer);
+      this.searchAttentionEndTimer = undefined;
+    }
+    this.searchAttention = false;
+    this.searchAttentionFinished = true;
+  }
+
+  private scheduleSearchResultAttention(query: string): void {
+    if (this.reducedMotion || !query) {
+      return;
+    }
+    this.searchResultAttentionTimer = setTimeout(() => {
+      this.searchResultAttentionTimer = undefined;
+      if (this.isCatalogModalOpen || this.normalizeQ(this.searchCtrl.value) !== query || this.searchResultCount === 0) {
+        return;
+      }
+      const cards = Array.from(this.document.querySelectorAll<HTMLElement>('.lp-search-product-card'));
+      const card = cards.find(candidate => this.isElementVisible(candidate));
+      const productKey = card?.dataset['productKey'];
+      if (!productKey) {
+        return;
+      }
+      this.searchResultAttentionKey = productKey;
+      this.searchResultAttentionEndTimer = setTimeout(() => {
+        this.searchResultAttentionKey = null;
+        this.searchResultAttentionEndTimer = undefined;
+      }, 2500);
+    }, 550);
+  }
+
+  private cancelSearchResultAttention(): void {
+    if (this.searchResultAttentionTimer) {
+      clearTimeout(this.searchResultAttentionTimer);
+      this.searchResultAttentionTimer = undefined;
+    }
+    if (this.searchResultAttentionEndTimer) {
+      clearTimeout(this.searchResultAttentionEndTimer);
+      this.searchResultAttentionEndTimer = undefined;
+    }
+    this.searchResultAttentionKey = null;
+  }
+
+  private startNextCategoryHint(): void {
+    if (this.reducedMotion || this.activeCategoryHint || this.categoryHintTimer
+        || this.expandedCategory || this.hasSearch || this.isCatalogModalOpen) {
+      return;
+    }
+    const category = this.categoryHintQueue.shift();
+    if (!category) {
+      return;
+    }
+    this.activeCategoryHint = category;
+    this.categoryHintTimer = setTimeout(() => {
+      this.activeCategoryHint = null;
+      this.categoryHintTimer = undefined;
+      this.categoryHintGapTimer = setTimeout(() => {
+        this.categoryHintGapTimer = undefined;
+        this.startNextCategoryHint();
+      }, 150);
+    }, 2500);
+  }
+
+  private stopCategoryHint(category: string): void {
+    this.categoryHintQueue = this.categoryHintQueue.filter(candidate => candidate !== category);
+    if (this.activeCategoryHint !== category) {
+      return;
+    }
+    if (this.categoryHintTimer) {
+      clearTimeout(this.categoryHintTimer);
+      this.categoryHintTimer = undefined;
+    }
+    this.activeCategoryHint = null;
+  }
+
+  private cancelCategoryHints(): void {
+    if (this.categoryHintTimer) clearTimeout(this.categoryHintTimer);
+    if (this.categoryHintGapTimer) clearTimeout(this.categoryHintGapTimer);
+    this.categoryHintTimer = undefined;
+    this.categoryHintGapTimer = undefined;
+    this.activeCategoryHint = null;
+    this.categoryHintQueue = [];
+  }
+
+  private scheduleCategoryProductAttention(): void {
+    const category = this.expandedCategory;
+    if (this.reducedMotion || !category || this.hasSearch || this.categorySuggestionShownForOpen
+        || this.isCatalogModalOpen || this.categoryProductAttentionTimer) {
+      return;
+    }
+    const remainingInterval = Math.max(0, 30000 - (Date.now() - this.lastCategorySuggestionAt));
+    this.categoryProductAttentionTimer = setTimeout(() => {
+      this.categoryProductAttentionTimer = undefined;
+      if (this.expandedCategory !== category || this.hasSearch || this.isCatalogModalOpen
+          || this.categorySuggestionShownForOpen) {
+        return;
+      }
+      const cards = Array.from(this.document.querySelectorAll<HTMLElement>('.lp-category-product-card'));
+      const card = cards.find(candidate => this.isElementFullyVisible(candidate));
+      const productKey = card?.dataset['productKey'];
+      if (!productKey) {
+        return;
+      }
+      this.categoryProductAttentionKey = productKey;
+      this.categorySuggestionShownForOpen = true;
+      this.lastCategorySuggestionAt = Date.now();
+      this.categoryProductAttentionEndTimer = setTimeout(() => {
+        this.categoryProductAttentionKey = null;
+        this.categoryProductAttentionEndTimer = undefined;
+      }, 2500);
+    }, Math.max(3000, remainingInterval));
+  }
+
+  private cancelCategoryProductAttention(): void {
+    if (this.categoryProductAttentionTimer) {
+      clearTimeout(this.categoryProductAttentionTimer);
+      this.categoryProductAttentionTimer = undefined;
+    }
+    if (this.categoryProductAttentionEndTimer) {
+      clearTimeout(this.categoryProductAttentionEndTimer);
+      this.categoryProductAttentionEndTimer = undefined;
+    }
+    this.categoryProductAttentionKey = null;
+  }
+
+  private isElementVisible(element: HTMLElement): boolean {
+    const rect = element.getBoundingClientRect();
+    return rect.height > 0 && rect.width > 0 && rect.bottom > 0 && rect.top < window.innerHeight;
+  }
+
+  private isElementFullyVisible(element: HTMLElement): boolean {
+    const rect = element.getBoundingClientRect();
+    return rect.height > 0 && rect.width > 0 && rect.top >= 0 && rect.bottom <= window.innerHeight
+      && rect.left >= 0 && rect.right <= window.innerWidth;
   }
 
   private replaceMemory(products: NuevoProductoLista[]): void {
@@ -1258,6 +1480,9 @@ export class NuevosPreciosComponent implements AfterViewInit, OnDestroy {
       ...this.categoryLoaded,
       [categoria]: true
     };
+    if (this.expandedCategory === categoria) {
+      this.scheduleCategoryProductAttention();
+    }
   }
 
   private refreshCategoriesFromCatalog(): void {

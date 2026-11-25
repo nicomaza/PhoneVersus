@@ -60,7 +60,7 @@ describe('NuevosPreciosComponent catalog variants', () => {
 
   afterEach(() => fixture.destroy());
 
-  it('shows both floating social buttons only after scrolling and hides them for catalog modals', () => {
+  it('shows only Instagram after scrolling and hides it for catalog modals', () => {
     let scrollY = 0;
     spyOnProperty(window, 'scrollY', 'get').and.callFake(() => scrollY);
 
@@ -68,14 +68,14 @@ describe('NuevosPreciosComponent catalog variants', () => {
     fixture.detectChanges();
     expect(component.showFloatingSocial).toBeFalse();
     expect(fixture.nativeElement.querySelector('.home-instagram')?.classList.contains('home-social-visible')).toBeFalse();
-    expect(fixture.nativeElement.querySelector('.home-whatsapp')?.classList.contains('home-social-visible')).toBeFalse();
+    expect(fixture.nativeElement.querySelector('.home-whatsapp')).toBeNull();
 
     scrollY = 301;
     (component as any).handleWindowScroll();
     fixture.detectChanges();
     expect(component.showFloatingSocial).toBeTrue();
     expect(fixture.nativeElement.querySelector('.home-instagram')?.classList.contains('home-social-visible')).toBeTrue();
-    expect(fixture.nativeElement.querySelector('.home-whatsapp')?.classList.contains('home-social-visible')).toBeTrue();
+    expect(fixture.nativeElement.querySelector('.home-whatsapp')).toBeNull();
 
     component.modalOpen = true;
     fixture.detectChanges();
@@ -103,18 +103,98 @@ describe('NuevosPreciosComponent catalog variants', () => {
 
   it('exposes category expansion state and the one-time interaction hint accessibly', () => {
     component.toggleCategory('IPHONE');
-    (component as any).categoryHinted.add('XIAOMI');
+    (component as any).activeCategoryHint = 'XIAOMI';
     fixture.detectChanges();
 
     const xiaomi = fixture.nativeElement.querySelector('[data-category="XIAOMI"]') as HTMLButtonElement;
     expect(xiaomi.classList.contains('lp-category-hint')).toBeTrue();
     expect(xiaomi.getAttribute('aria-expanded')).toBe('false');
+    expect(xiaomi.textContent).toContain('Tocá para ver modelos');
 
     xiaomi.click();
     fixture.detectChanges();
     expect(xiaomi.getAttribute('aria-expanded')).toBe('true');
     expect(fixture.nativeElement.querySelector(`#${component.categoryPanelId('XIAOMI')}`)).not.toBeNull();
   });
+
+  it('highlights the search once after two seconds and cancels it on focus', fakeAsync(() => {
+    (component as any).cancelSearchAttention();
+    (component as any).searchAttentionFinished = false;
+    (component as any).reducedMotion = false;
+    (component as any).scheduleSearchAttention();
+
+    tick(1999);
+    expect(component.searchAttention).toBeFalse();
+    tick(1);
+    expect(component.searchAttention).toBeTrue();
+
+    const input = fixture.nativeElement.querySelector('.lp-search input') as HTMLInputElement;
+    input.dispatchEvent(new Event('focus'));
+    expect(component.searchAttention).toBeFalse();
+    tick(3000);
+    expect(component.searchAttention).toBeFalse();
+  }));
+
+  it('highlights only the first visible result after the search stabilizes', fakeAsync(() => {
+    (component as any).reducedMotion = false;
+    component.searchCtrl.setValue('iphone');
+    tick(120);
+    fixture.detectChanges();
+
+    const cards = Array.from(
+      fixture.nativeElement.querySelectorAll('.lp-search-product-card') as NodeListOf<HTMLElement>
+    );
+    expect(cards.length).toBeGreaterThan(1);
+    spyOn(cards[0], 'getBoundingClientRect').and.returnValue({
+      x: 0, y: 100, top: 100, left: 0, right: 320, bottom: 260, width: 320, height: 160,
+      toJSON: () => ({})
+    });
+    for (const card of cards.slice(1)) {
+      spyOn(card, 'getBoundingClientRect').and.returnValue({
+        x: 0, y: 900, top: 900, left: 0, right: 320, bottom: 1060, width: 320, height: 160,
+        toJSON: () => ({})
+      });
+    }
+
+    tick(549);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelectorAll('.lp-card-attention').length).toBe(0);
+    tick(1);
+    fixture.detectChanges();
+
+    const highlighted = fixture.nativeElement.querySelectorAll('.lp-card-attention') as NodeListOf<HTMLElement>;
+    expect(highlighted.length).toBe(1);
+    expect(highlighted[0]).toBe(cards[0]);
+    expect(highlighted[0].textContent).toContain('Tocá para ver precios y cuotas');
+    tick(2500);
+  }));
+
+  it('suggests one fully visible category product after three idle seconds', fakeAsync(() => {
+    (component as any).cancelCategoryProductAttention();
+    (component as any).reducedMotion = false;
+    (component as any).categorySuggestionShownForOpen = false;
+    (component as any).lastCategorySuggestionAt = Date.now() - 30000;
+    const cards = Array.from(
+      fixture.nativeElement.querySelectorAll('.lp-category-product-card') as NodeListOf<HTMLElement>
+    );
+    spyOn(cards[0], 'getBoundingClientRect').and.returnValue({
+      x: 0, y: 100, top: 100, left: 0, right: 320, bottom: 260, width: 320, height: 160,
+      toJSON: () => ({})
+    });
+    (component as any).scheduleCategoryProductAttention();
+
+    tick(2999);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelectorAll('.lp-card-attention').length).toBe(0);
+    tick(1);
+    fixture.detectChanges();
+
+    const highlighted = fixture.nativeElement.querySelectorAll('.lp-card-attention') as NodeListOf<HTMLElement>;
+    expect(highlighted.length).toBe(1);
+    expect(highlighted[0]).toBe(cards[0]);
+    expect(highlighted[0].textContent).toContain('Tocá para consultar');
+    tick(2500);
+  }));
 
   it('renders one card per color with that variant ARS price', () => {
     const cards = Array.from(
