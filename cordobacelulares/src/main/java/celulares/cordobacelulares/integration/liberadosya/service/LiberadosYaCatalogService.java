@@ -45,6 +45,8 @@ public class LiberadosYaCatalogService {
     private static final String PHASE_PERSISTING = "PERSISTING";
     private static final String PHASE_COMPLETED = "COMPLETED";
     private static final String PHASE_FAILED = "FAILED";
+    private static final int MIN_EXPECTED_SOURCE_PRODUCTS = 20;
+    private static final int MIN_ACCEPTED_PERCENT = 50;
 
     private final LiberadosYaProperties properties;
     private final LiberadosYaScrapingClient scrapingClient;
@@ -217,6 +219,7 @@ public class LiberadosYaCatalogService {
             if (snapshot.getProducts() == null || snapshot.getProducts().isEmpty()) {
                 throw new LiberadosYaIntegrationException("El refresh de LiberadosYa no produjo productos validos");
             }
+            validateCatalogCompleteness(snapshot, store.current());
             updatePhase(PHASE_PERSISTING);
             LiberadosYaCatalogState state = store.replaceSnapshot(snapshot);
             lastSuccessfulRefreshAt.set(snapshot.getGeneratedAt());
@@ -246,6 +249,24 @@ public class LiberadosYaCatalogService {
                     ex
             );
             throw ex;
+        }
+    }
+
+    private void validateCatalogCompleteness(LiberadosYaCatalogSnapshot snapshot, LiberadosYaCatalogState previous) {
+        int sourceProducts = snapshot.getTotalUrlsFound();
+        int validProducts = snapshot.getProducts().size();
+        if (sourceProducts < MIN_EXPECTED_SOURCE_PRODUCTS) {
+            throw new LiberadosYaIntegrationException("El catalogo de LiberadosYa esta anormalmente incompleto");
+        }
+        if (validProducts * 100L < sourceProducts * (long) MIN_ACCEPTED_PERCENT) {
+            throw new LiberadosYaIntegrationException("El catalogo de LiberadosYa contiene muy pocos productos publicables");
+        }
+        int previousProducts = previous == null || previous.snapshot() == null
+                ? 0
+                : previous.snapshot().getTotalProducts();
+        if (previousProducts >= MIN_EXPECTED_SOURCE_PRODUCTS
+                && validProducts * 100L < previousProducts * (long) MIN_ACCEPTED_PERCENT) {
+            throw new LiberadosYaIntegrationException("El catalogo de LiberadosYa cayo de forma anormal respecto del snapshot anterior");
         }
     }
 

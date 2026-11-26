@@ -204,8 +204,6 @@ public class BombaiComparativaService {
         String usd = comparisonStatus(differences.getUsd());
         List<ComparisonValue> values = List.of(
                 new ComparisonValue(cash, mine == null ? null : mine.getCashArs(), competitor == null ? null : competitor.getCashArs(), differences.getCashArs()),
-                new ComparisonValue(transfer, mine == null ? null : mine.getTransferArs(), competitor == null ? null : competitor.getTransferArs(), differences.getTransferArs()),
-                new ComparisonValue(card, mine == null ? null : mine.getCardArs(), competitor == null ? null : competitor.getCardArs(), differences.getCardArs()),
                 new ComparisonValue(usd, mine == null ? null : mine.getPriceUsd(), competitor == null ? null : competitor.getMainUsd(), differences.getUsd())
         );
         List<ComparisonValue> comparable = values.stream()
@@ -249,10 +247,15 @@ public class BombaiComparativaService {
     private BombaiComparativaSummaryResponse summary(List<BombaiComparativaProductResponse> rows) {
         int total = rows.size();
         int matched = (int) rows.stream().filter(row -> MATCHED.equals(row.getMatchStatus())).count();
-        int comparable = (int) rows.stream().filter(row -> row.getComparison() != null && row.getComparison().getComparableCount() > 0).count();
-        int cheaper = countOverall(rows, CHEAPER_ALL);
-        int moreExpensive = countOverall(rows, MORE_EXPENSIVE_ALL);
-        int mixed = countOverall(rows, MIXED);
+        List<BombaiComparativaProductResponse> comparableRows = rows.stream()
+                .filter(row -> MATCHED.equals(row.getMatchStatus()))
+                .filter(row -> row.getDifferences() != null && row.getDifferences().getCashArs() != null)
+                .toList();
+        int comparable = comparableRows.size();
+        int cheaper = (int) comparableRows.stream().filter(row -> row.getDifferences().getCashArs().signum() > 0).count();
+        int moreExpensive = (int) comparableRows.stream().filter(row -> row.getDifferences().getCashArs().signum() < 0).count();
+        boolean mixedResult = cheaper > 0 && moreExpensive > 0;
+        int mixed = mixedResult ? 1 : 0;
         int withoutMatch = (int) rows.stream().filter(row -> !MATCHED.equals(row.getMatchStatus())).count();
 
         return new BombaiComparativaSummaryResponse(
@@ -276,14 +279,25 @@ public class BombaiComparativaService {
                 moreExpensive,
                 percentage(moreExpensive, comparable),
                 mixed,
-                withoutMatch
+                withoutMatch,
+                globalResultStatus(comparable, cheaper, moreExpensive, mixedResult)
         );
     }
 
-    private int countOverall(List<BombaiComparativaProductResponse> rows, String status) {
-        return (int) rows.stream()
-                .filter(row -> row.getComparison() != null && status.equals(row.getComparison().getOverall()))
-                .count();
+    private String globalResultStatus(int comparable, int cheaper, int moreExpensive, boolean mixedResult) {
+        if (comparable == 0) {
+            return INCOMPLETE;
+        }
+        if (mixedResult) {
+            return MIXED;
+        }
+        if (cheaper > 0) {
+            return CHEAPER_ALL;
+        }
+        if (moreExpensive > 0) {
+            return MORE_EXPENSIVE_ALL;
+        }
+        return COMPETITIVE;
     }
 
     private BombaiComparativaMetricResponse metric(List<BigDecimal> rawValues) {

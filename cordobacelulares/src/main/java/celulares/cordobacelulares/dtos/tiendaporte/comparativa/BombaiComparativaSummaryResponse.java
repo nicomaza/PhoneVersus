@@ -24,4 +24,5 @@ public class BombaiComparativaSummaryResponse {
     private BigDecimal mineMoreExpensivePercent;
     private Integer mixedCount;
     private Integer withoutMatchCount;
+    private String resultStatus;
 }

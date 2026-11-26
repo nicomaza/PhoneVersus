@@ -145,6 +145,22 @@ export interface CatalogRefreshResponse {
   status: CatalogCacheStatus;
 }
 
+export interface LiberadosYaCatalogStatus {
+  available: boolean;
+  refreshing: boolean;
+  phase: string;
+  processed_products: number;
+  total_products: number;
+  percent: number;
+  current_product: string | null;
+  generated_at: ApiDateValue;
+  total_urls_found: number;
+  errors_count: number;
+  last_successful_refresh_at: ApiDateValue;
+  last_attempt_at: ApiDateValue;
+  last_error: string | null;
+}
+
 export interface ComparativaMetric {
   average: number | null;
   median: number | null;
@@ -167,6 +183,7 @@ export interface ComparativaSummary {
   mineMoreExpensivePercent: number;
   mixedCount: number;
   withoutMatchCount: number;
+  resultStatus: ComparativaOverallStatus;
 }
 
 export interface ComparativaMinePrices {

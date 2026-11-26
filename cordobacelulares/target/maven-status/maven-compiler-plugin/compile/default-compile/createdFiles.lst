@@ -175,8 +175,10 @@ celulares\cordobacelulares\integration\liberadosya\dto\LiberadosYaErrorResponse.
 celulares\cordobacelulares\dtos\tiendaporte\external\TiendaPorteProductSpecsResponse$Highlight.class
 celulares\cordobacelulares\services\implement\SupplierSheetServiceImpl.class
 celulares\cordobacelulares\dtos\tiendaporte\response\CatalogProductOrigin.class
+celulares\cordobacelulares\integration\liberadosya\scraping\LiberadosYaCatalogScriptParser.class
 celulares\cordobacelulares\services\ColorService.class
 celulares\cordobacelulares\exceptions\ApiNotFoundException.class
+celulares\cordobacelulares\integration\liberadosya\scraping\LiberadosYaCatalogScriptParser$ParsedCatalog.class
 celulares\cordobacelulares\services\implement\BrandServiceImpl.class
 celulares\cordobacelulares\integration\liberadosya\dto\LiberadosYaRefreshResponse.class
 celulares\cordobacelulares\dtos\tiendaporte\credentials\TiendaPorteCredentialPatchRequest.class
@@ -240,6 +242,7 @@ celulares\cordobacelulares\utils\SeoProductSlug.class
 celulares\cordobacelulares\controller\BombaiComparativaController.class
 celulares\cordobacelulares\dtos\suppliersheet\SupplierSheetProduct.class
 celulares\cordobacelulares\services\SeoProductMediaStorage$DetectedImage.class
+celulares\cordobacelulares\integration\liberadosya\scraping\LiberadosYaScrapingClient$Asset.class
 celulares\cordobacelulares\controller\HomeBannerMediaController.class
 celulares\cordobacelulares\dtos\suppliersheet\SupplierSheetPreviewResponse.class
 celulares\cordobacelulares\integration\liberadosya\scraping\LiberadosYaProductImageSanitizer$ExtractionResult.class
@@ -248,7 +251,6 @@ celulares\cordobacelulares\integration\liberadosya\matching\LiberadosYaProductMa
 celulares\cordobacelulares\controller\PriceConfigurationController.class
 celulares\cordobacelulares\config\RestClientConfig.class
 celulares\cordobacelulares\services\implement\ColorServiceImpl.class
-celulares\cordobacelulares\integration\liberadosya\scraping\LiberadosYaScrapingClient$ProductScrapeResult.class
 celulares\cordobacelulares\repository\BlockedCatalogProductRepository.class
 celulares\cordobacelulares\dtos\phonedto\SearchPhone.class
 celulares\cordobacelulares\dtos\tiendaporte\credentials\TiendaPorteCredentialCreateRequest.class

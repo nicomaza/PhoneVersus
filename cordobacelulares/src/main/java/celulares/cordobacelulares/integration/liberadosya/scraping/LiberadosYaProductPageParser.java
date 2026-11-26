@@ -101,6 +101,7 @@ public class LiberadosYaProductPageParser {
                 identity.modelKey(),
                 title,
                 new LiberadosYaPrices(arsPrices, usdPrices),
+                Map.of(),
                 availability,
                 hasStock(mainArsText, availability, arsPrices),
                 colores(ars, mainArsText),

@@ -11,6 +11,7 @@ import {
   CredentialCreateRequest,
   CredentialPatchRequest,
   CredentialResponse,
+  LiberadosYaCatalogStatus,
   LiberadosYaQuotationResponse,
   PorteProductSyncStartResponse,
   PorteProductSyncStatus,
@@ -145,6 +146,11 @@ export class AdminConfigService {
 
   getComparativa(): Observable<ComparativaResponse> {
     return this.http.get<ComparativaResponse>(`${this.apiUrl}/config/bombai/comparativa`)
+      .pipe(catchError(error => this.handleError(error)));
+  }
+
+  getLiberadosYaCatalogStatus(): Observable<LiberadosYaCatalogStatus> {
+    return this.http.get<LiberadosYaCatalogStatus>(`${this.apiUrl}/admin/integrations/liberadosya/status`)
       .pipe(catchError(error => this.handleError(error)));
   }
 

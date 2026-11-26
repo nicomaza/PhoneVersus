@@ -25,6 +25,7 @@ public class LiberadosYaProduct {
     private String modelo;
     private String versionComercial;
     private LiberadosYaPrices precios;
+    private Map<String, LiberadosYaPrices> preciosPorVariante;
     private String disponibilidad;
     private Boolean tieneStock;
     private List<String> colores;

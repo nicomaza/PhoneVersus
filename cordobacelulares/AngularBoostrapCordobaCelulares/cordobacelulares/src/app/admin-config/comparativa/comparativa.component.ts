@@ -1,36 +1,24 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { Subscription, debounceTime, distinctUntilChanged, merge } from 'rxjs';
+import { Subscription, catchError, debounceTime, distinctUntilChanged, forkJoin, merge, of } from 'rxjs';
 import {
+  ApiDateValue,
   ComparativaMetric,
+  ComparativaOverallStatus,
   ComparativaProduct,
-  ComparativaResponse
+  ComparativaResponse,
+  LiberadosYaCatalogStatus
 } from '../models/admin-config.models';
 import { AdminConfigService } from '../services/admin-config.service';
 
-type FilterStatus = 'todos' | 'barato' | 'caro' | 'mixto' | 'sin-match';
+type FilterStatus = 'todos' | 'barato' | 'caro' | 'sin-comparativa';
 type AvailabilityFilter = 'todos' | 'comparables' | 'incompletos';
 type SortOption = 'ventaja' | 'desventaja' | 'marca' | 'modelo' | 'precio-propio' | 'precio-competencia';
 
 interface SelectOption {
   label: string;
   value: string;
-}
-
-interface DetailLine {
-  label: string;
-  mine?: string;
-  competitor?: string;
-  result?: string;
-  value?: string;
-  status?: string;
-}
-
-interface CompactDifferenceLine {
-  label: string;
-  difference: number;
-  status: string;
 }
 
 @Component({
@@ -42,6 +30,8 @@ interface CompactDifferenceLine {
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ComparativaComponent implements OnInit, OnDestroy {
+  private static readonly CATALOG_STALE_AFTER_MS = 6 * 60 * 60 * 1000;
+
   readonly searchControl = new FormControl<string>('', { nonNullable: true });
   readonly brandControl = new FormControl<string>('', { nonNullable: true });
   readonly statusControl = new FormControl<FilterStatus>('todos', { nonNullable: true });
@@ -50,33 +40,33 @@ export class ComparativaComponent implements OnInit, OnDestroy {
 
   readonly statusOptions: SelectOption[] = [
     { label: 'Todos', value: 'todos' },
-    { label: 'Yo mas barato', value: 'barato' },
-    { label: 'Yo mas caro', value: 'caro' },
-    { label: 'Resultados mixtos', value: 'mixto' },
-    { label: 'Sin match', value: 'sin-match' }
+    { label: 'Yo más barato', value: 'barato' },
+    { label: 'Yo más caro', value: 'caro' },
+    { label: 'Sin comparativa', value: 'sin-comparativa' }
   ];
-
   readonly availabilityOptions: SelectOption[] = [
     { label: 'Todas', value: 'todos' },
-    { label: 'Con comparacion', value: 'comparables' },
-    { label: 'Sin comparacion completa', value: 'incompletos' }
+    { label: 'Con comparativa', value: 'comparables' },
+    { label: 'Sin comparativa', value: 'incompletos' }
   ];
-
   readonly sortOptions: SelectOption[] = [
-    { label: 'Mayor ventaja mia', value: 'ventaja' },
-    { label: 'Mayor desventaja mia', value: 'desventaja' },
+    { label: 'Mayor ventaja mía', value: 'ventaja' },
+    { label: 'Mayor desventaja mía', value: 'desventaja' },
     { label: 'Marca', value: 'marca' },
     { label: 'Modelo', value: 'modelo' },
-    { label: 'Precio propio', value: 'precio-propio' },
-    { label: 'Precio LiberadosYa', value: 'precio-competencia' }
+    { label: 'Mi precio', value: 'precio-propio' },
+    { label: 'Precio competencia', value: 'precio-competencia' }
   ];
 
   response: ComparativaResponse | null = null;
+  catalogStatus: LiberadosYaCatalogStatus | null = null;
   rows: ComparativaProduct[] = [];
-  visibleRows: ComparativaProduct[] = [];
+  comparableRows: ComparativaProduct[] = [];
+  withoutComparisonRows: ComparativaProduct[] = [];
   brandOptions: SelectOption[] = [{ label: 'Todas', value: '' }];
   loading = false;
   error = '';
+  catalogStatusUnavailable = false;
 
   private readonly subscription = new Subscription();
 
@@ -98,7 +88,6 @@ export class ComparativaComponent implements OnInit, OnDestroy {
         this.changeDetectorRef.markForCheck();
       })
     );
-
     this.load();
   }
 
@@ -109,13 +98,23 @@ export class ComparativaComponent implements OnInit, OnDestroy {
   load(): void {
     this.loading = true;
     this.error = '';
+    this.catalogStatusUnavailable = false;
     this.changeDetectorRef.markForCheck();
 
     this.subscription.add(
-      this.adminConfigService.getComparativa().subscribe({
-        next: response => {
-          this.response = response;
-          this.rows = Array.isArray(response.products) ? response.products : [];
+      forkJoin({
+        comparison: this.adminConfigService.getComparativa(),
+        catalogStatus: this.adminConfigService.getLiberadosYaCatalogStatus().pipe(
+          catchError(() => {
+            this.catalogStatusUnavailable = true;
+            return of(null);
+          })
+        )
+      }).subscribe({
+        next: ({ comparison, catalogStatus }) => {
+          this.response = comparison;
+          this.catalogStatus = catalogStatus;
+          this.rows = Array.isArray(comparison.products) ? comparison.products : [];
           this.brandOptions = this.buildBrandOptions(this.rows);
           this.applyFilters();
           this.loading = false;
@@ -124,8 +123,10 @@ export class ComparativaComponent implements OnInit, OnDestroy {
         error: (error: Error) => {
           this.error = error.message || 'No se pudo cargar la comparativa.';
           this.response = null;
+          this.catalogStatus = null;
           this.rows = [];
-          this.visibleRows = [];
+          this.comparableRows = [];
+          this.withoutComparisonRows = [];
           this.loading = false;
           this.changeDetectorRef.markForCheck();
         }
@@ -143,54 +144,37 @@ export class ComparativaComponent implements OnInit, OnDestroy {
     this.changeDetectorRef.markForCheck();
   }
 
-  metricValue(metric: ComparativaMetric | null | undefined, type: 'percent' | 'money' | 'rate'): string {
-    if (!metric || !this.isFiniteNumber(metric.average)) {
-      return 'Sin datos';
-    }
-    if (type === 'percent') {
-      return this.formatPercent(metric.average);
-    }
-    if (type === 'rate') {
-      return this.formatRate(metric.average);
-    }
-    return this.formatMoney(metric.average);
+  estimatedCompetitionRate(metric: ComparativaMetric | null | undefined): string {
+    return this.formatRate(metric?.median);
   }
 
-  metricSub(metric: ComparativaMetric | null | undefined, type: 'percent' | 'money' | 'rate'): string {
+  metricProductCount(metric: ComparativaMetric | null | undefined): string {
     const count = metric?.count ?? 0;
-    if (count <= 0) {
-      return 'Sin productos validos';
-    }
-    const parts = [`${count} productos`];
-    if (this.isFiniteNumber(metric?.median)) {
-      parts.push(`mediana ${this.metricValue({ ...metric, average: metric.median }, type)}`);
-    }
-    return parts.join(' · ');
-  }
-
-  hasMetricData(metric: ComparativaMetric | null | undefined): boolean {
-    return (metric?.count ?? 0) > 0;
+    return count > 0 ? `${count} modelos válidos` : 'Sin modelos válidos';
   }
 
   formatMoney(value: number | null | undefined): string {
-    if (!this.isPositiveNumber(value)) {
-      return 'No disponible';
-    }
-    return new Intl.NumberFormat('es-AR', {
-      style: 'currency',
-      currency: 'ARS',
-      maximumFractionDigits: 0
-    }).format(value);
+    return this.isPositiveNumber(value) ? this.arsFormatter().format(value) : 'No disponible';
   }
 
   formatUsd(value: number | null | undefined): string {
     if (!this.isPositiveNumber(value)) {
       return 'No disponible';
     }
-    const formatted = new Intl.NumberFormat('es-AR', {
-      maximumFractionDigits: 2
-    }).format(value);
-    return `USD ${formatted}`;
+    return `USD ${new Intl.NumberFormat('es-AR', { maximumFractionDigits: 2 }).format(value)}`;
+  }
+
+  formatDifference(value: number | null | undefined, currency: 'ARS' | 'USD'): string {
+    if (!this.isFiniteNumber(value)) {
+      return 'No disponible';
+    }
+    if (value === 0) {
+      return currency === 'USD' ? 'USD 0' : this.arsFormatter().format(0);
+    }
+    const amount = currency === 'USD'
+      ? `USD ${new Intl.NumberFormat('es-AR', { maximumFractionDigits: 2 }).format(Math.abs(value))}`
+      : this.arsFormatter().format(Math.abs(value));
+    return `${value > 0 ? '+' : '-'}${amount}`;
   }
 
   formatPercent(value: number | null | undefined): string {
@@ -205,146 +189,152 @@ export class ComparativaComponent implements OnInit, OnDestroy {
       return 'Sin datos';
     }
     return `${new Intl.NumberFormat('es-AR', {
-      style: 'currency',
-      currency: 'ARS',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
+      style: 'currency', currency: 'ARS', minimumFractionDigits: 2, maximumFractionDigits: 2
     }).format(value)} / USD`;
   }
 
-  differenceLabel(value: number | null | undefined, currency: 'ARS' | 'USD'): string {
-    if (!this.isFiniteNumber(value)) {
-      return 'Sin comparacion';
-    }
-    if (value === 0) {
-      return 'Igual';
-    }
-    const amount = currency === 'USD' ? this.formatUsd(Math.abs(value)) : this.formatMoney(Math.abs(value));
-    return value > 0 ? `${amount} mas barato` : `${amount} mas caro`;
+  formatCatalogDate(): string {
+    const date = this.catalogDate();
+    return date
+      ? new Intl.DateTimeFormat('es-AR', { dateStyle: 'short', timeStyle: 'short' }).format(date)
+      : 'No disponible';
   }
 
-  comparisonClass(status: string | null | undefined): string {
-    return {
-      CHEAPER: 'is-cheaper',
-      MORE_EXPENSIVE: 'is-expensive',
-      EQUAL: 'is-equal'
-    }[status ?? ''] ?? 'is-unavailable';
+  catalogIsStale(): boolean {
+    if (this.catalogStatusUnavailable || !this.catalogStatus?.available || this.catalogStatus.last_error) {
+      return true;
+    }
+    const date = this.catalogDate();
+    return !date || Date.now() - date.getTime() > ComparativaComponent.CATALOG_STALE_AFTER_MS;
+  }
+
+  catalogWarning(): string {
+    if (this.catalogStatusUnavailable) {
+      return 'No se pudo verificar el estado del catálogo de LiberadosYa.';
+    }
+    if (!this.catalogStatus?.available) {
+      return 'El catálogo de LiberadosYa no está disponible.';
+    }
+    if (this.catalogStatus.last_error) {
+      return 'La última actualización del catálogo falló; se conserva el último catálogo válido.';
+    }
+    return 'El catálogo de LiberadosYa está desactualizado.';
+  }
+
+  comparisonResult(row: ComparativaProduct): string {
+    const difference = row.differences.cashArs;
+    if (!this.isFiniteNumber(difference)) {
+      return 'No disponible';
+    }
+    if (difference === 0) {
+      return 'Mismo precio';
+    }
+    const amount = this.arsFormatter().format(Math.abs(difference));
+    return difference > 0 ? `Yo más barato por ${amount}` : `Yo más caro por ${amount}`;
   }
 
   differenceClass(value: number | null | undefined): string {
     if (!this.isFiniteNumber(value)) {
       return 'is-unavailable';
     }
-    if (value > 0) {
-      return 'is-cheaper';
-    }
-    if (value < 0) {
-      return 'is-expensive';
-    }
-    return 'is-equal';
+    return value > 0 ? 'is-cheaper' : value < 0 ? 'is-expensive' : 'is-equal';
   }
 
-  overallLabel(status: string | null | undefined): string {
+  globalResultStatus(): ComparativaOverallStatus {
+    const status = this.response?.summary.resultStatus;
+    if (status) {
+      return status;
+    }
+    const cheaper = this.response?.summary.mineCheaperCount ?? 0;
+    const expensive = this.response?.summary.mineMoreExpensiveCount ?? 0;
+    if (cheaper > 0 && expensive > 0) {
+      return 'MIXED';
+    }
+    if (cheaper > 0) {
+      return 'CHEAPER_ALL';
+    }
+    if (expensive > 0) {
+      return 'MORE_EXPENSIVE_ALL';
+    }
+    return 'INCOMPLETE';
+  }
+
+  globalMixedValue(): string {
+    const status = this.globalResultStatus();
+    return status === 'INCOMPLETE' ? 'Sin datos' : status === 'MIXED' ? 'Sí' : 'No';
+  }
+
+  globalResultLabel(): string {
     return {
-      CHEAPER_ALL: 'Mas barato en todas',
-      MORE_EXPENSIVE_ALL: 'Mas caro en todas',
-      MIXED: 'Resultados mixtos',
-      COMPETITIVE: 'Competitivo',
-      INCOMPLETE: 'Sin comparacion completa'
-    }[status ?? ''] ?? 'Sin comparacion completa';
+      MIXED: 'Hay modelos más baratos y otros más caros',
+      CHEAPER_ALL: 'Yo más barato en los modelos comparables',
+      MORE_EXPENSIVE_ALL: 'Yo más caro en los modelos comparables',
+      COMPETITIVE: 'Mismo precio en los modelos comparables',
+      INCOMPLETE: 'Sin modelos comparables'
+    }[this.globalResultStatus()] ?? 'Sin modelos comparables';
   }
 
   matchLabel(row: ComparativaProduct): string {
-    if (row.matchStatus === 'MATCHED') {
-      return row.competitor.name || 'Coincidencia encontrada';
-    }
-    return row.matchMessage || 'Sin coincidencia en LiberadosYa';
+    return row.matchMessage || 'Sin coincidencia válida en LiberadosYa';
   }
 
-  ownDetails(row: ComparativaProduct): DetailLine[] {
-    return [
-      { label: 'Efectivo', value: this.formatMoney(row.mine.cashArs) },
-      { label: 'Transferencia', value: this.formatMoney(row.mine.transferArs) },
-      { label: 'Tarjeta', value: this.formatMoney(row.mine.cardArs) },
-      { label: 'Precio USD', value: this.formatUsd(row.mine.priceUsd) },
-      { label: 'Costo USD', value: this.formatUsd(row.mine.costUsd) }
-    ].filter(line => line.value !== 'No disponible');
+  showComparableSection(): boolean {
+    return this.statusControl.value !== 'sin-comparativa' && this.availabilityControl.value !== 'incompletos';
   }
 
-  competitorDetails(row: ComparativaProduct): DetailLine[] {
-    return [
-      { label: 'Efectivo ARS', value: this.formatMoney(row.competitor.cashArs) },
-      { label: 'Transferencia ARS', value: this.formatMoney(row.competitor.transferArs) },
-      { label: 'Tarjeta ARS', value: this.formatMoney(row.competitor.cardArs) },
-      { label: 'Efectivo USD', value: this.formatUsd(row.competitor.cashUsd) },
-      { label: 'Precio actual USD', value: this.formatUsd(row.competitor.currentUsd) },
-      { label: 'Precio lista USD', value: this.formatUsd(row.competitor.listUsd) }
-    ].filter(line => line.value !== 'No disponible');
+  showWithoutComparisonSection(): boolean {
+    return this.statusControl.value !== 'barato'
+      && this.statusControl.value !== 'caro'
+      && this.availabilityControl.value !== 'comparables';
   }
 
-  differenceDetails(row: ComparativaProduct): DetailLine[] {
-    return [
-      this.comparisonLine('Efectivo', row.mine.cashArs, row.competitor.cashArs, row.differences.cashArs, row.comparison.cash, 'ARS'),
-      this.comparisonLine('Transferencia', row.mine.transferArs, row.competitor.transferArs, row.differences.transferArs, row.comparison.transfer, 'ARS'),
-      this.comparisonLine('Tarjeta', row.mine.cardArs, row.competitor.cardArs, row.differences.cardArs, row.comparison.card, 'ARS'),
-      this.comparisonLine('USD', row.mine.priceUsd, row.competitor.mainUsd, row.differences.usd, row.comparison.usd, 'USD')
-    ].filter((line): line is DetailLine => line !== null);
-  }
-
-  compactDifferenceDetails(row: ComparativaProduct): CompactDifferenceLine[] {
-    return [
-      this.compactDifferenceLine('Ef.', row.mine.cashArs, row.competitor.cashArs, row.differences.cashArs, row.comparison.cash),
-      this.compactDifferenceLine('Tr.', row.mine.transferArs, row.competitor.transferArs, row.differences.transferArs, row.comparison.transfer),
-      this.compactDifferenceLine('Tarj.', row.mine.cardArs, row.competitor.cardArs, row.differences.cardArs, row.comparison.card)
-    ].filter((line): line is CompactDifferenceLine => line !== null);
+  visibleCount(): number {
+    return (this.showComparableSection() ? this.comparableRows.length : 0)
+      + (this.showWithoutComparisonSection() ? this.withoutComparisonRows.length : 0);
   }
 
   trackByRow(_: number, row: ComparativaProduct): string {
-    return `${row.brand}|${row.model}|${row.origin ?? ''}|${row.mine.priceUsd ?? ''}`;
+    return `${row.brand}|${row.model}|${row.origin ?? ''}|${row.mine.costUsd ?? ''}`;
   }
 
   private applyFilters(): void {
     const query = this.normalize(this.searchControl.value);
     const brand = this.brandControl.value;
-    const status = this.statusControl.value;
-    const availability = this.availabilityControl.value;
-
-    this.visibleRows = this.rows
+    const filtered = this.rows
       .filter(row => !query || this.normalize(`${row.brand} ${row.model}`).includes(query))
       .filter(row => !brand || row.brand === brand)
-      .filter(row => this.matchesStatus(row, status))
-      .filter(row => this.matchesAvailability(row, availability))
+      .filter(row => this.matchesStatus(row, this.statusControl.value))
+      .filter(row => this.matchesAvailability(row, this.availabilityControl.value))
       .sort(this.comparator(this.sortControl.value));
+
+    this.comparableRows = filtered.filter(row => this.isCashComparable(row));
+    this.withoutComparisonRows = filtered.filter(row => !this.isCashComparable(row));
   }
 
   private matchesStatus(row: ComparativaProduct, status: FilterStatus): boolean {
     if (status === 'todos') {
       return true;
     }
-    if (status === 'barato') {
-      return row.comparison.overall === 'CHEAPER_ALL' || row.comparison.usd === 'CHEAPER';
+    if (status === 'sin-comparativa') {
+      return !this.isCashComparable(row);
     }
-    if (status === 'caro') {
-      return row.comparison.overall === 'MORE_EXPENSIVE_ALL' || row.comparison.usd === 'MORE_EXPENSIVE';
+    if (!this.isCashComparable(row)) {
+      return false;
     }
-    if (status === 'mixto') {
-      return row.comparison.overall === 'MIXED';
-    }
-    return row.matchStatus !== 'MATCHED';
+    return status === 'barato' ? row.differences.cashArs! > 0 : row.differences.cashArs! < 0;
   }
 
   private matchesAvailability(row: ComparativaProduct, availability: AvailabilityFilter): boolean {
     if (availability === 'todos') {
       return true;
     }
-    const comparable = row.matchStatus === 'MATCHED' && row.comparison.comparableCount > 0;
-    return availability === 'comparables' ? comparable : !comparable || row.comparison.overall === 'INCOMPLETE';
+    return availability === 'comparables' ? this.isCashComparable(row) : !this.isCashComparable(row);
   }
 
   private comparator(sort: SortOption): (a: ComparativaProduct, b: ComparativaProduct) => number {
     return (a, b) => {
       if (sort === 'desventaja') {
-        return this.safeNumber(a.differences.usd) - this.safeNumber(b.differences.usd);
+        return this.compareOptional(a.differences.cashArs, b.differences.cashArs, 1) || this.compareModel(a, b);
       }
       if (sort === 'marca') {
         return a.brand.localeCompare(b.brand, 'es', { sensitivity: 'base' }) || this.compareModel(a, b);
@@ -353,68 +343,20 @@ export class ComparativaComponent implements OnInit, OnDestroy {
         return this.compareModel(a, b);
       }
       if (sort === 'precio-propio') {
-        return this.safeNumber(a.mine.priceUsd) - this.safeNumber(b.mine.priceUsd);
+        return this.compareOptional(a.mine.cashArs, b.mine.cashArs, 1) || this.compareModel(a, b);
       }
       if (sort === 'precio-competencia') {
-        return this.safeNumber(a.competitor.mainUsd) - this.safeNumber(b.competitor.mainUsd);
+        return this.compareOptional(a.competitor.cashArs, b.competitor.cashArs, 1) || this.compareModel(a, b);
       }
-      const priorityDelta = this.priority(a) - this.priority(b);
-      return priorityDelta || this.safeNumber(b.differences.usd) - this.safeNumber(a.differences.usd) || this.compareModel(a, b);
+      return this.compareOptional(a.differences.cashArs, b.differences.cashArs, -1) || this.compareModel(a, b);
     };
   }
 
-  private priority(row: ComparativaProduct): number {
-    if (row.comparison.overall === 'CHEAPER_ALL') {
-      return 0;
-    }
-    if (row.comparison.usd === 'CHEAPER') {
-      return 1;
-    }
-    if (row.comparison.overall === 'MIXED') {
-      return 2;
-    }
-    if (row.comparison.overall === 'COMPETITIVE' || row.comparison.usd === 'EQUAL') {
-      return 3;
-    }
-    if (row.comparison.usd === 'MORE_EXPENSIVE' || row.comparison.overall === 'MORE_EXPENSIVE_ALL') {
-      return 4;
-    }
-    return 5;
-  }
-
-  private comparisonLine(
-    label: string,
-    mine: number | null,
-    competitor: number | null,
-    difference: number | null,
-    status: string,
-    currency: 'ARS' | 'USD'
-  ): DetailLine | null {
-    if (!this.hasComparablePrices(mine, competitor, difference, status)) {
-      return null;
-    }
-
-    return {
-      label,
-      mine: currency === 'USD' ? this.formatUsd(mine) : this.formatMoney(mine),
-      competitor: currency === 'USD' ? this.formatUsd(competitor) : this.formatMoney(competitor),
-      result: this.differenceLabel(difference, currency),
-      status
-    };
-  }
-
-  private compactDifferenceLine(
-    label: string,
-    mine: number | null,
-    competitor: number | null,
-    difference: number | null,
-    status: string
-  ): CompactDifferenceLine | null {
-    if (!this.hasComparablePrices(mine, competitor, difference, status)) {
-      return null;
-    }
-
-    return { label, difference, status };
+  private isCashComparable(row: ComparativaProduct): boolean {
+    return row.matchStatus === 'MATCHED'
+      && this.isPositiveNumber(row.mine.cashArs)
+      && this.isPositiveNumber(row.competitor.cashArs)
+      && this.isFiniteNumber(row.differences.cashArs);
   }
 
   private buildBrandOptions(rows: ComparativaProduct[]): SelectOption[] {
@@ -427,18 +369,37 @@ export class ComparativaComponent implements OnInit, OnDestroy {
     return a.model.localeCompare(b.model, 'es', { sensitivity: 'base' });
   }
 
-  private normalize(value: string): string {
-    return (value ?? '')
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^a-z0-9\s]/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
+  private compareOptional(a: number | null | undefined, b: number | null | undefined, direction: 1 | -1): number {
+    if (!this.isFiniteNumber(a)) {
+      return this.isFiniteNumber(b) ? 1 : 0;
+    }
+    if (!this.isFiniteNumber(b)) {
+      return -1;
+    }
+    return (a - b) * direction;
   }
 
-  private safeNumber(value: number | null | undefined): number {
-    return this.isFiniteNumber(value) ? value : Number.POSITIVE_INFINITY;
+  private catalogDate(): Date | null {
+    return this.parseDate(this.catalogStatus?.last_successful_refresh_at ?? this.catalogStatus?.generated_at);
+  }
+
+  private parseDate(value: ApiDateValue | undefined): Date | null {
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  private normalize(value: string): string {
+    return (value ?? '').toLowerCase().normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9\s]/g, ' ')
+      .replace(/\s+/g, ' ').trim();
+  }
+
+  private arsFormatter(): Intl.NumberFormat {
+    return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 });
   }
 
   private isFiniteNumber(value: number | null | undefined): value is number {
@@ -447,17 +408,5 @@ export class ComparativaComponent implements OnInit, OnDestroy {
 
   private isPositiveNumber(value: number | null | undefined): value is number {
     return this.isFiniteNumber(value) && value > 0;
-  }
-
-  private hasComparablePrices(
-    mine: number | null | undefined,
-    competitor: number | null | undefined,
-    difference: number | null | undefined,
-    status: string | null | undefined
-  ): difference is number {
-    return status !== 'NOT_AVAILABLE'
-      && this.isPositiveNumber(mine)
-      && this.isPositiveNumber(competitor)
-      && this.isFiniteNumber(difference);
   }
 }

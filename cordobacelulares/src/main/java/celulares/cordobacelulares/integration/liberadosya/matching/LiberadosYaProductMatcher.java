@@ -113,6 +113,9 @@ public class LiberadosYaProductMatcher {
         if (!modelCompatible(query, identity)) {
             return CandidateScore.discard("model-incompatible");
         }
+        if (!conditionCompatible(query, identity)) {
+            return CandidateScore.discard("condition-incompatible");
+        }
         if (!memoryCompatible(query, identity)) {
             return CandidateScore.discard("memory-incompatible");
         }
@@ -188,18 +191,30 @@ public class LiberadosYaProductMatcher {
     }
 
     private boolean ramCompatible(ProductIdentity query, ProductIdentity candidate) {
-        return query.ramGb() == null || candidate.ramGb() == null || Objects.equals(query.ramGb(), candidate.ramGb());
+        return query.ramGb() == null || Objects.equals(query.ramGb(), candidate.ramGb());
     }
 
     private boolean storageCompatible(ProductIdentity query, ProductIdentity candidate) {
-        return query.storageGb() == null || candidate.storageGb() == null || Objects.equals(query.storageGb(), candidate.storageGb());
+        return query.storageGb() == null || Objects.equals(query.storageGb(), candidate.storageGb());
     }
 
     private boolean networkCompatible(ProductIdentity query, ProductIdentity candidate) {
         if (query.networkGeneration() == null) {
-            return true;
+            return candidate.networkGeneration() == null || "4G".equals(candidate.networkGeneration());
         }
         return Objects.equals(query.networkGeneration(), candidate.networkGeneration());
+    }
+
+    private boolean conditionCompatible(ProductIdentity query, ProductIdentity candidate) {
+        return isUsed(query) == isUsed(candidate);
+    }
+
+    private boolean isUsed(ProductIdentity identity) {
+        if (identity == null || identity.normalizedName() == null) {
+            return false;
+        }
+        String normalized = " " + identity.normalizedName() + " ";
+        return normalized.matches(".*\\s(USADO|USADA|USED|CPO|REACONDICIONADO|REFURBISHED)\\s.*");
     }
 
     private boolean variantCompatible(ProductIdentity query, ProductIdentity candidate) {
@@ -264,7 +279,10 @@ public class LiberadosYaProductMatcher {
         List<IndexedLiberadosYaProduct> afterModel = afterBrand.stream()
                 .filter(candidate -> modelCompatible(query, candidate.identity()))
                 .toList();
-        List<IndexedLiberadosYaProduct> afterRam = afterModel.stream()
+        List<IndexedLiberadosYaProduct> afterCondition = afterModel.stream()
+                .filter(candidate -> conditionCompatible(query, candidate.identity()))
+                .toList();
+        List<IndexedLiberadosYaProduct> afterRam = afterCondition.stream()
                 .filter(candidate -> ramCompatible(query, candidate.identity()))
                 .toList();
         List<IndexedLiberadosYaProduct> afterStorage = afterRam.stream()
@@ -278,13 +296,14 @@ public class LiberadosYaProductMatcher {
                 .toList();
         ScoredCandidate best = scored.isEmpty() ? null : scored.get(0);
         LOGGER.info(
-                "LiberadosYa match diagnostics. cid={} outcome={} query={} initialCandidates={} afterBrand={} afterModel={} afterRam={} afterStorage={} afterNetwork={} afterVariant={} maxPossibleScore={} threshold={} best={} bestScore={} bestReason={}",
+                "LiberadosYa match diagnostics. cid={} outcome={} query={} initialCandidates={} afterBrand={} afterModel={} afterCondition={} afterRam={} afterStorage={} afterNetwork={} afterVariant={} maxPossibleScore={} threshold={} best={} bestScore={} bestReason={}",
                 TiendaPorteDiagnostics.currentCorrelationId(),
                 outcome,
                 query.normalizedName(),
                 all.size(),
                 afterBrand.size(),
                 afterModel.size(),
+                afterCondition.size(),
                 afterRam.size(),
                 afterStorage.size(),
                 afterNetwork.size(),
