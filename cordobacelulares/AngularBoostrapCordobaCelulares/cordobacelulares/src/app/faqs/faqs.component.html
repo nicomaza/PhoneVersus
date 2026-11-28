@@ -20,6 +20,21 @@
         </div>
       </article>
 
+      <article class="faq-item" [class.open]="isOpen('used')">
+        <h2>
+          <button type="button" (click)="toggleFaq('used')" [attr.aria-expanded]="isOpen('used')" aria-controls="faq-used">
+            <span class="question-icon"><i class="bi bi-arrow-left-right" aria-hidden="true"></i></span>
+            <span>¿Reciben celulares usados o hacen canjes?</span>
+            <i class="bi bi-chevron-down chevron" aria-hidden="true"></i>
+          </button>
+        </h2>
+        <div id="faq-used" class="faq-answer-wrap" [attr.aria-hidden]="!isOpen('used')">
+          <div class="faq-answer">
+            <p>No. En Córdoba Celulares no recibimos equipos usados ni realizamos canjes. Todos los celulares y equipos que comercializamos son nuevos, originales y sellados de fábrica.</p>
+          </div>
+        </div>
+      </article>
+
       <article class="faq-item" [class.open]="isOpen('prices')">
         <h2>
           <button type="button" (click)="toggleFaq('prices')" [attr.aria-expanded]="isOpen('prices')" aria-controls="faq-prices">
@@ -113,6 +128,96 @@
               <div><strong>Retiro presencial</strong><p>Únicamente puede retirar el equipo el titular de la tarjeta, presentando su DNI físico. Sin excepciones.</p></div>
               <div><strong>Envío a domicilio</strong><p>Si abonaste con tarjeta, solamente el titular de la tarjeta puede recibir el equipo, presentando su DNI en mano. Sin excepciones.</p></div>
               <div><strong>Pagos en oficina</strong><p>Solo aceptamos efectivo o transferencia. Los pagos con tarjeta se realizan exclusivamente mediante link de pago. No se puede abonar presencialmente con tarjeta.</p></div>
+            </section>
+          </div>
+        </div>
+      </article>
+
+      <article class="faq-item" [class.open]="isOpen('combined-payment')">
+        <h2>
+          <button type="button" (click)="toggleFaq('combined-payment')"
+                  [attr.aria-expanded]="isOpen('combined-payment')" aria-controls="faq-combined-payment">
+            <span class="question-icon"><i class="bi bi-credit-card-2-front" aria-hidden="true"></i></span>
+            <span>¿Puedo pagar una parte en efectivo o transferencia y el resto con tarjeta?</span>
+            <i class="bi bi-chevron-down chevron" aria-hidden="true"></i>
+          </button>
+        </h2>
+        <div id="faq-combined-payment" class="faq-answer-wrap" [attr.aria-hidden]="!isOpen('combined-payment')">
+          <div class="faq-answer">
+            <p>¡Sí! Podés abonar una parte del equipo en efectivo o mediante transferencia bancaria y financiar el resto con tarjeta de crédito. Solamente se aplica la financiación al importe que decidas pagar con tarjeta.</p>
+
+            <section class="payment-simulator combined-payment-simulator" aria-labelledby="combined-simulator-title">
+              <div class="simulator-heading">
+                <span><i class="bi bi-calculator" aria-hidden="true"></i></span>
+                <div>
+                  <h3 id="combined-simulator-title">Simulador de pago combinado</h3>
+                  <p>Elegí cuánto querés financiar y cómo pagar el saldo.</p>
+                </div>
+              </div>
+
+              <div class="combined-fields">
+                <label>
+                  <span>Precio total del equipo en efectivo</span>
+                  <span class="money-input" [class.invalid]="invalidCombinedTotal()">
+                    <span>$</span>
+                    <input type="number" min="1" step="1" inputmode="decimal"
+                           [formControl]="combinedTotalControl" (blur)="markCombinedTotalTouched()"
+                           placeholder="Ej. 500000">
+                  </span>
+                  <small *ngIf="invalidCombinedTotal()" class="field-error">Ingresá un precio válido mayor que cero.</small>
+                </label>
+
+                <label>
+                  <span>Importe del precio base a financiar con tarjeta</span>
+                  <span class="money-input" [class.invalid]="invalidCombinedCard()">
+                    <span>$</span>
+                    <input type="number" min="1" step="1" inputmode="decimal"
+                           [formControl]="combinedCardControl" (blur)="markCombinedCardTouched()"
+                           placeholder="Ej. 200000">
+                  </span>
+                  <small *ngIf="invalidCombinedCard()" class="field-error">
+                    {{ combinedCardExceedsTotal() ? 'El importe a financiar no puede superar el precio total.' : 'Ingresá un importe válido mayor que cero.' }}
+                  </small>
+                </label>
+
+                <label>
+                  <span>Forma de pago del saldo restante</span>
+                  <select class="form-select combined-method" [formControl]="combinedBalanceMethodControl">
+                    <option value="cash">Efectivo</option>
+                    <option value="transfer">Transferencia</option>
+                  </select>
+                </label>
+              </div>
+
+              <p *ngIf="pricingLoading" class="simulator-status">
+                <span class="spinner-border spinner-border-sm" aria-hidden="true"></span>
+                Cargando modalidades actuales...
+              </p>
+              <p *ngIf="pricingError" class="simulator-error">{{ pricingError }}</p>
+
+              <div *ngIf="combinedSimulation as result" class="combined-results" aria-live="polite">
+                <div class="combined-summary">
+                  <div class="result-row">
+                    <span>Importe a pagar en {{ combinedBalanceLabel() }}</span>
+                    <strong>{{ formatArs(result.balanceTotal) }}</strong>
+                  </div>
+                  <div class="result-row">
+                    <span>Importe base a financiar con tarjeta</span>
+                    <strong>{{ formatArs(result.financedBase) }}</strong>
+                  </div>
+                </div>
+
+                <h4>Opciones de tarjeta disponibles</h4>
+                <div *ngFor="let option of result.financing" class="combined-option">
+                  <div class="combined-option-title">
+                    <strong>{{ option.label }}</strong>
+                    <span *ngIf="installmentDetail(option)">{{ installmentDetail(option) }}</span>
+                  </div>
+                  <div><span>Total a pagar con tarjeta</span><strong>{{ formatArs(option.total) }}</strong></div>
+                  <div class="combined-final"><span>Total final de la operación combinada</span><strong>{{ formatArs(option.finalTotal) }}</strong></div>
+                </div>
+                <p *ngIf="result.financing.length === 0" class="simulator-error">No hay modalidades de financiación disponibles actualmente.</p>
+              </div>
             </section>
           </div>
         </div>

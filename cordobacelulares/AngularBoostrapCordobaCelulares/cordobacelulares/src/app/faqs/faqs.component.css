@@ -351,6 +351,97 @@
   background: #fff;
 }
 
+.combined-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .9rem;
+}
+
+.combined-fields > label {
+  min-width: 0;
+}
+
+.combined-fields > label:last-child {
+  grid-column: 1 / -1;
+}
+
+.combined-fields > label > span:first-child {
+  display: block;
+  margin-bottom: .4rem;
+  color: #34403a;
+  font-size: .86rem;
+  font-weight: 700;
+}
+
+.combined-method {
+  min-height: 48px;
+  border-color: #cfd9d4;
+  border-radius: 12px;
+  font-weight: 700;
+}
+
+.combined-method:focus {
+  border-color: #198754;
+  box-shadow: 0 0 0 3px rgba(25, 135, 84, .13);
+}
+
+.combined-results {
+  display: grid;
+  gap: .8rem;
+  margin-top: 1rem;
+}
+
+.combined-summary,
+.combined-option {
+  overflow: hidden;
+  border: 1px solid #e0e6e3;
+  border-radius: 13px;
+  background: #fff;
+}
+
+.combined-results h4 {
+  margin: .25rem 0 0;
+  color: #17201c;
+  font-size: .95rem;
+  font-weight: 800;
+}
+
+.combined-option {
+  padding: .9rem;
+}
+
+.combined-option-title,
+.combined-option > div:not(.combined-option-title) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.combined-option-title {
+  margin-bottom: .65rem;
+  color: #17201c;
+}
+
+.combined-option-title span {
+  color: #68736d;
+  font-size: .78rem;
+}
+
+.combined-option > div:not(.combined-option-title) {
+  padding: .48rem 0;
+  color: #56615b;
+  font-size: .86rem;
+}
+
+.combined-option .combined-final {
+  margin-top: .35rem;
+  padding-top: .7rem !important;
+  border-top: 1px solid #dce6e1;
+  color: #126c3d !important;
+  font-weight: 800;
+}
+
 .result-row {
   display: flex;
   align-items: center;
@@ -531,6 +622,21 @@
 
   .shipping-grid {
     grid-template-columns: 1fr;
+  }
+
+  .combined-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .combined-fields > label:last-child {
+    grid-column: auto;
+  }
+
+  .combined-option-title,
+  .combined-option > div:not(.combined-option-title) {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: .2rem;
   }
 
   .result-row {

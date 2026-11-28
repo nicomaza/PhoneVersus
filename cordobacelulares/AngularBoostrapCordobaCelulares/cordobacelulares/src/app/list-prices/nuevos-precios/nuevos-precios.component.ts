@@ -199,7 +199,8 @@ export class NuevosPreciosComponent implements AfterViewInit, OnDestroy {
   private categoryProductAttentionKey: string | null = null;
   private categoryProductAttentionTimer?: ReturnType<typeof setTimeout>;
   private categoryProductAttentionEndTimer?: ReturnType<typeof setTimeout>;
-  private categorySuggestionShownForOpen = false;
+  private categoryScrollObserved = false;
+  private lastCategorySuggestionKey: string | null = null;
   private lastCategorySuggestionAt = 0;
   private financingAttentionTimer?: ReturnType<typeof setTimeout>;
   private financingAttentionEndTimer?: ReturnType<typeof setTimeout>;
@@ -425,7 +426,7 @@ export class NuevosPreciosComponent implements AfterViewInit, OnDestroy {
   }
 
   financingOptions(p: NuevoProductoLista): CatalogFinancingOption[] {
-    return this.catalogFinancingService.options(p);
+    return this.isPerfume(p) ? [] : this.catalogFinancingService.options(p);
   }
 
   selectedFinancing(p: NuevoProductoLista): CatalogFinancingOption | null {
@@ -465,9 +466,23 @@ export class NuevosPreciosComponent implements AfterViewInit, OnDestroy {
   }
 
   cardHint(p: NuevoProductoLista | null | undefined): string {
+    if (this.isPerfume(p)) {
+      return 'Tocar para ver precio por transferencia';
+    }
     return this.shouldShowColors(p)
       ? 'Tocar para ver transferencia, tarjeta y colores'
       : 'Tocar para ver transferencia y tarjeta';
+  }
+
+  isCashBestPrice(p: NuevoProductoLista): boolean {
+    if (this.isPerfume(p) || !this.hasValidMoney(p.precioPesos)) {
+      return false;
+    }
+    const otherPrices = [
+      p.precioTransferenciaBancaria,
+      ...this.financingOptions(p).map(option => option.total)
+    ].filter((value): value is number => this.hasValidMoney(value));
+    return otherPrices.every(value => p.precioPesos! <= value);
   }
 
   productConditionLabel(p: NuevoProductoLista | null | undefined): string {
@@ -920,15 +935,14 @@ export class NuevosPreciosComponent implements AfterViewInit, OnDestroy {
     this.cancelCategoryProductAttention();
     if (this.expandedCategory === categoria) {
       this.expandedCategory = null;
-      this.categorySuggestionShownForOpen = false;
+      this.categoryScrollObserved = false;
       this.startNextCategoryHint();
       return;
     }
 
     this.expandedCategory = categoria;
-    this.categorySuggestionShownForOpen = false;
+    this.categoryScrollObserved = false;
     this.categoryErrors[categoria] = null;
-    this.scheduleCategoryProductAttention();
 
     if (this.catalogLoaded || this.service.hasCatalogCache()) {
       this.loadCategoryFromCatalog(categoria);
@@ -1113,8 +1127,11 @@ export class NuevosPreciosComponent implements AfterViewInit, OnDestroy {
   private handleWindowScroll(): void {
     this.showFloatingSocial = window.scrollY > 300;
     this.cancelCategoryProductAttention();
-    this.scheduleCategoryProductAttention();
     const categoria = this.expandedCategory;
+    if (categoria && !this.hasSearch) {
+      this.categoryScrollObserved = true;
+      this.scheduleCategoryProductAttention();
+    }
     if (!categoria || this.hasSearch || this.catalogLoaded || !this.paginatedCategories.has(categoria)) {
       return;
     }
@@ -1384,31 +1401,34 @@ export class NuevosPreciosComponent implements AfterViewInit, OnDestroy {
 
   private scheduleCategoryProductAttention(): void {
     const category = this.expandedCategory;
-    if (this.reducedMotion || !category || this.hasSearch || this.categorySuggestionShownForOpen
+    if (this.reducedMotion || !category || !this.categoryScrollObserved || this.hasSearch
         || this.isCatalogModalOpen || this.categoryProductAttentionTimer) {
       return;
     }
-    const remainingInterval = Math.max(0, 30000 - (Date.now() - this.lastCategorySuggestionAt));
+    const remainingInterval = Math.max(0, 5000 - (Date.now() - this.lastCategorySuggestionAt));
     this.categoryProductAttentionTimer = setTimeout(() => {
       this.categoryProductAttentionTimer = undefined;
-      if (this.expandedCategory !== category || this.hasSearch || this.isCatalogModalOpen
-          || this.categorySuggestionShownForOpen) {
+      if (this.expandedCategory !== category || this.hasSearch || this.isCatalogModalOpen) {
         return;
       }
       const cards = Array.from(this.document.querySelectorAll<HTMLElement>('.lp-category-product-card'));
-      const card = cards.find(candidate => this.isElementFullyVisible(candidate));
+      const visibleCards = cards.filter(candidate => this.isElementFullyVisible(candidate));
+      const candidates = visibleCards.length > 1
+        ? visibleCards.filter(candidate => candidate.dataset['productKey'] !== this.lastCategorySuggestionKey)
+        : visibleCards;
+      const card = candidates[Math.floor(Math.random() * candidates.length)];
       const productKey = card?.dataset['productKey'];
       if (!productKey) {
         return;
       }
       this.categoryProductAttentionKey = productKey;
-      this.categorySuggestionShownForOpen = true;
+      this.lastCategorySuggestionKey = productKey;
       this.lastCategorySuggestionAt = Date.now();
       this.categoryProductAttentionEndTimer = setTimeout(() => {
         this.categoryProductAttentionKey = null;
         this.categoryProductAttentionEndTimer = undefined;
       }, 2500);
-    }, Math.max(3000, remainingInterval));
+    }, Math.max(1500, remainingInterval));
   }
 
   private cancelCategoryProductAttention(): void {

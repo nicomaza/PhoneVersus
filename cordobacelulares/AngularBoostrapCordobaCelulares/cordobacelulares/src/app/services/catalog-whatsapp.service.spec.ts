@@ -46,4 +46,27 @@ describe('CatalogWhatsappService', () => {
     expect(message).toContain('- Tarjeta 1 pago: $ 750.000');
     expect(message).not.toContain('cuotas de');
   });
+
+  it('sends only the perfume name and transfer price', () => {
+    const message = service.buildProductMessage({
+      marca: ' Perfúmes ',
+      modelo: 'Fragancia floral',
+      precioPesos: 100000,
+      precioTransferenciaBancaria: 103000,
+      precioTarjeta6Pagos: 130000,
+      colores: ['Rosa']
+    }, {
+      label: 'Tarjeta 6 cuotas',
+      total: 130000,
+      installments: 6,
+      installmentAmount: 21666.67
+    });
+
+    expect(message).toContain('Perfúmes Fragancia floral');
+    expect(message).toContain('- Transferencia: $ 103.000');
+    expect(message).not.toContain('Efectivo');
+    expect(message).not.toContain('Tarjeta');
+    expect(message).not.toContain('cuotas');
+    expect(message).not.toContain('Colores');
+  });
 });

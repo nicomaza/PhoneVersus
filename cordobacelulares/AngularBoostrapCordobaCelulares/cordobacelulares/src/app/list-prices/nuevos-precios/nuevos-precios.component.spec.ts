@@ -169,30 +169,45 @@ describe('NuevosPreciosComponent catalog variants', () => {
     tick(2500);
   }));
 
-  it('suggests one fully visible category product after three idle seconds', fakeAsync(() => {
+  it('randomly suggests visible category products after 1.5 idle seconds and respects the 5 second interval', fakeAsync(() => {
     (component as any).cancelCategoryProductAttention();
     (component as any).reducedMotion = false;
-    (component as any).categorySuggestionShownForOpen = false;
-    (component as any).lastCategorySuggestionAt = Date.now() - 30000;
+    (component as any).categoryScrollObserved = true;
+    (component as any).lastCategorySuggestionAt = Date.now() - 5000;
     const cards = Array.from(
       fixture.nativeElement.querySelectorAll('.lp-category-product-card') as NodeListOf<HTMLElement>
     );
-    spyOn(cards[0], 'getBoundingClientRect').and.returnValue({
-      x: 0, y: 100, top: 100, left: 0, right: 320, bottom: 260, width: 320, height: 160,
+    cards.forEach(card => spyOn(card, 'getBoundingClientRect').and.returnValue({
+      x: 0, y: 100, top: 100, left: 0,
+      right: 320, bottom: 260, width: 320, height: 160,
       toJSON: () => ({})
-    });
+    }));
+    spyOn(Math, 'random').and.returnValues(.75, 0);
     (component as any).scheduleCategoryProductAttention();
 
-    tick(2999);
+    tick(1499);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelectorAll('.lp-card-attention').length).toBe(0);
     tick(1);
     fixture.detectChanges();
 
-    const highlighted = fixture.nativeElement.querySelectorAll('.lp-card-attention') as NodeListOf<HTMLElement>;
+    let highlighted = fixture.nativeElement.querySelectorAll('.lp-card-attention') as NodeListOf<HTMLElement>;
     expect(highlighted.length).toBe(1);
-    expect(highlighted[0]).toBe(cards[0]);
-    expect(highlighted[0].textContent).toContain('Tocá para consultar');
+    expect(cards).toContain(highlighted[0]);
+    expect(Math.random).toHaveBeenCalled();
+    const firstHighlighted = highlighted[0];
+    expect(highlighted[0].textContent).toContain('Tocá para ver precios');
+    tick(2500);
+
+    (component as any).handleWindowScroll();
+    tick(2499);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelectorAll('.lp-card-attention').length).toBe(0);
+    tick(1);
+    fixture.detectChanges();
+    highlighted = fixture.nativeElement.querySelectorAll('.lp-card-attention') as NodeListOf<HTMLElement>;
+    expect(highlighted.length).toBe(1);
+    expect(highlighted[0]).not.toBe(firstHighlighted);
     tick(2500);
   }));
 
@@ -320,28 +335,37 @@ describe('NuevosPreciosComponent catalog variants', () => {
     expect(cardText.some(text => text.includes('Anthbot Genie 600 – Robot Cortacésped Inteligente') && text.includes('1.250.000'))).toBeTrue();
   });
 
-  it('hides the cash label and amount for a perfume in category and search cards and in details', () => {
+  it('shows only transfer for a perfume in category and search cards and in details', () => {
     const perfume = renderSingleProduct('  perfúmes  ', priceModel('Fragancia floral'), 'PERFUMES');
 
     let card = fixture.nativeElement.querySelector('.lp-category-body .lp-card') as HTMLElement;
-    expect(card.querySelector('.lp-price-line')).toBeNull();
+    expect(card.querySelector('.lp-price-line')).not.toBeNull();
     expect(card.textContent).not.toContain('Efectivo');
     expect(card.textContent).not.toContain('111.111');
+    expect(card.textContent).toContain('Transferencia');
+    expect(card.textContent).toContain('222.222');
 
     (component as any).applyFilter('Fragancia floral', false);
     fixture.detectChanges();
     card = fixture.nativeElement.querySelector('.lp-brand-block .lp-card') as HTMLElement;
-    expect(card.querySelector('.lp-price-line')).toBeNull();
+    expect(card.querySelector('.lp-price-line')).not.toBeNull();
     expect(card.textContent).not.toContain('Efectivo');
     expect(card.textContent).not.toContain('111.111');
+    expect(card.textContent).toContain('Transferencia');
+    expect(card.textContent).toContain('222.222');
 
     component.openDetails(perfume);
     fixture.detectChanges();
     const modalText = fixture.nativeElement.querySelector('.lp-modal-content')?.textContent ?? '';
     expect(modalText).not.toContain('Efectivo');
+    expect(modalText).toContain('Transferencia');
+    expect(modalText).toContain('222.222');
+    expect(modalText).not.toContain('Financiación');
+    expect(modalText).not.toContain('dólares');
+    expect(modalText).not.toContain('criptomonedas');
   });
 
-  it('keeps transfer and card prices visible for a perfume', () => {
+  it('hides every financing option for a perfume', () => {
     const perfume = renderSingleProduct('PERFUMES', priceModel('Fragancia floral'));
 
     component.openDetails(perfume);
@@ -350,8 +374,9 @@ describe('NuevosPreciosComponent catalog variants', () => {
 
     expect(modalText).toContain('Transferencia');
     expect(modalText).toContain('222.222');
-    expect(modalText).toContain('Tarjeta 6 cuotas');
-    expect(modalText).toContain('666.666');
+    expect(modalText).not.toContain('Tarjeta 6 cuotas');
+    expect(modalText).not.toContain('666.666');
+    expect(component.financingOptions(perfume)).toEqual([]);
   });
 
   it('keeps all three prices visible for a non-perfume product', () => {
@@ -371,13 +396,15 @@ describe('NuevosPreciosComponent catalog variants', () => {
     expect(modal.textContent).toContain('111.111');
     expect(modal.textContent).toContain('222.222');
     expect(modal.textContent).toContain('666.666');
+    expect(modal.querySelector('.lp-cash-highlight')).not.toBeNull();
+    expect(modal.textContent).toContain('Mejor precio');
   });
 
   it('removes the whole cash blocks for a perfume without leaving empty rows or separators', () => {
     const perfume = renderSingleProduct('PERFUMES', priceModel('Fragancia floral'));
     const card = fixture.nativeElement.querySelector('.lp-category-body .lp-card') as HTMLElement;
 
-    expect(card.querySelectorAll('.lp-price-line').length).toBe(0);
+    expect(card.querySelectorAll('.lp-price-line').length).toBe(1);
 
     component.openDetails(perfume);
     fixture.detectChanges();
@@ -385,7 +412,7 @@ describe('NuevosPreciosComponent catalog variants', () => {
       fixture.nativeElement.querySelectorAll('.lp-prices > .lp-price-row') as NodeListOf<HTMLElement>
     );
 
-    expect(rows.length).toBe(2);
+    expect(rows.length).toBe(1);
     for (const row of rows) {
       expect(row.querySelector('.lp-k')?.textContent?.trim()).toBeTruthy();
       expect(row.querySelector('.lp-v, .lp-financing-trigger')?.textContent?.trim()).toBeTruthy();
@@ -442,7 +469,7 @@ describe('NuevosPreciosComponent catalog variants', () => {
     expect(component.warningModalOpen).toBeTrue();
     expect(component.warningTitle).toBe('Informaci\u00f3n importante');
     expect(component.warningMessage).toContain('ESTE EQUIPO ES VERSI\u00d3N GLOBAL');
-    expect(component.warningMessage).toContain('SOLO VENDEMOS EQUIPOS SELLADOS DE F\u00c1BRICA');
+    expect(component.warningMessage).toContain('SOLO VENDEMOS EQUIPOS NUEVOS SELLADOS DE F\u00c1BRICA');
     expect(component.warningConfirmLabel).toBe('Entendido, consultar por WhatsApp');
 
     component.confirmWarningWhatsapp();

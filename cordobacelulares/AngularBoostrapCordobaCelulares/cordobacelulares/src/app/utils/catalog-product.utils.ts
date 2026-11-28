@@ -116,7 +116,7 @@ export function catalogProductWhatsappWarning(
   if (normalizeCatalogCategory(product?.marca) === 'xiaomi') {
     return {
       title: 'Informaci\u00f3n importante',
-      message: 'ESTE EQUIPO ES VERSI\u00d3N GLOBAL\nSOLO VENDEMOS EQUIPOS SELLADOS DE F\u00c1BRICA',
+      message: 'ESTE EQUIPO ES VERSI\u00d3N GLOBAL\nSOLO VENDEMOS EQUIPOS NUEVOS SELLADOS DE F\u00c1BRICA',
       confirmLabel: 'Entendido, consultar por WhatsApp',
       emphasized: true
     };

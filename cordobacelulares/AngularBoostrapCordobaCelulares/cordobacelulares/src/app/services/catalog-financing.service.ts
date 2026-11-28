@@ -22,6 +22,20 @@ export interface CatalogPaymentSimulation {
   financing: CatalogFinancingOption[];
 }
 
+export type CatalogCombinedBalanceMethod = 'cash' | 'transfer';
+
+export interface CatalogCombinedFinancingOption extends CatalogFinancingOption {
+  finalTotal: number;
+}
+
+export interface CatalogCombinedPaymentSimulation {
+  balanceMethod: CatalogCombinedBalanceMethod;
+  balanceBase: number;
+  balanceTotal: number;
+  financedBase: number;
+  financing: CatalogCombinedFinancingOption[];
+}
+
 type FinancingField = keyof Pick<
   TiendaPorteModelResponse,
   'precioTarjeta1Pago' | 'precioQr1Pago' | 'precioPlanZ3Pagos' | 'precioTarjeta3Pagos' | 'precioTarjeta6Pagos'
@@ -84,6 +98,43 @@ export class CatalogFinancingService {
         ? this.roundMoney(basePrice * profile.transferMultiplier)
         : null,
       financing: this.options(calculatedProduct)
+    };
+  }
+
+  simulateCombined(
+    totalBasePrice: number,
+    financedBasePrice: number,
+    balanceMethod: CatalogCombinedBalanceMethod,
+    profile: CatalogPaymentProfile
+  ): CatalogCombinedPaymentSimulation | null {
+    if (!this.validPositiveMoney(totalBasePrice)
+        || !this.validPositiveMoney(financedBasePrice)
+        || financedBasePrice > totalBasePrice) {
+      return null;
+    }
+
+    const financed = this.simulate(financedBasePrice, profile);
+    if (!financed) return null;
+
+    const balanceBase = this.roundMoney(totalBasePrice - financedBasePrice);
+    const balanceSimulation = balanceBase > 0 ? this.simulate(balanceBase, profile) : null;
+    const balanceTotal = balanceBase === 0
+      ? 0
+      : balanceMethod === 'cash'
+        ? balanceSimulation?.cash ?? null
+        : balanceSimulation?.transfer ?? null;
+
+    if (balanceTotal === null) return null;
+
+    return {
+      balanceMethod,
+      balanceBase,
+      balanceTotal,
+      financedBase: financed.cash,
+      financing: financed.financing.map(option => ({
+        ...option,
+        finalTotal: this.roundMoney(balanceTotal + option.total)
+      }))
     };
   }
 

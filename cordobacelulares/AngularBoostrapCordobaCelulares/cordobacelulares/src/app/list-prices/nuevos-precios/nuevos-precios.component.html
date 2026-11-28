@@ -160,6 +160,10 @@
                 <span class="lp-badge">Efectivo</span>
                 <span class="lp-price">$ {{ fmtMoney(p.efectivo) }}</span>
               </div>
+              <div *ngIf="isPerfume(p)" class="lp-price-line">
+                <span class="lp-badge">Transferencia</span>
+                <span class="lp-price">$ {{ fmtMoney(p.precioTransferenciaBancaria) }}</span>
+              </div>
 
               <div class="lp-subhint">
                 {{ cardHint(p) }}
@@ -249,7 +253,7 @@
               >
                 <span class="lp-card-action-hint lp-category-card-action-hint" aria-hidden="true">
                   <i class="bi bi-hand-index" aria-hidden="true"></i>
-                  Toc&aacute; para consultar
+                  Toc&aacute; para ver precios
                 </span>
                 <div class="card-body">
                   <div class="lp-model">{{ p.modelo }}</div>
@@ -260,6 +264,10 @@
                   <div *ngIf="!isPerfume(p)" class="lp-price-line">
                     <span class="lp-badge">Efectivo</span>
                     <span class="lp-price">$ {{ fmtMoney(p.efectivo) }}</span>
+                  </div>
+                  <div *ngIf="isPerfume(p)" class="lp-price-line">
+                    <span class="lp-badge">Transferencia</span>
+                    <span class="lp-price">$ {{ fmtMoney(p.precioTransferenciaBancaria) }}</span>
                   </div>
 
                   <div class="lp-subhint">
@@ -319,15 +327,18 @@
 
       <div class="modal-body" *ngIf="selected as p">
         <div class="lp-prices">
-          <div *ngIf="!isPerfume(p)" class="lp-price-row">
-            <div class="lp-k">Efectivo</div>
-            <div class="lp-v fw-bold">{{ fmtPrice(p.precioPesos) }}</div>
+          <div *ngIf="!isPerfume(p)" class="lp-price-row lp-cash-highlight">
+            <div class="lp-k lp-cash-label">
+              <span>Efectivo</span>
+              <small *ngIf="isCashBestPrice(p)" class="lp-best-price-badge">Mejor precio</small>
+            </div>
+            <div class="lp-v lp-cash-value">{{ fmtPrice(p.precioPesos) }}</div>
           </div>
           <div class="lp-price-row">
             <div class="lp-k">Transferencia</div>
             <div class="lp-v">{{ fmtPriceNoCents(p.precioTransferenciaBancaria) }}</div>
           </div>
-          <div class="lp-price-row lp-financing-row">
+          <div *ngIf="!isPerfume(p)" class="lp-price-row lp-financing-row">
             <div class="lp-k lp-financing-heading">
               <span>Financiaci&oacute;n</span>
               <small>Aceptamos TODAS las tarjetas</small>
@@ -418,7 +429,7 @@
           </div>
           <div class="lp-commercial-notes">
             <div>{{ productConditionLabel(p) }}</div>
-            <div>Atenci&oacute;n con turno previo &middot; Aceptamos d&oacute;lares y criptomonedas.</div>
+            <div *ngIf="!isPerfume(p)">Atenci&oacute;n con turno previo &middot; Aceptamos d&oacute;lares y criptomonedas.</div>
           </div>
         </div>
       </div>

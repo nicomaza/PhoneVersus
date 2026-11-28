@@ -69,10 +69,19 @@ export class CatalogWhatsappService {
     product: CatalogWhatsappProduct,
     financing?: CatalogWhatsappFinancing | null
   ): string {
-    const installment = tarjeta6Installment(product.precioTarjeta6Pagos);
     const sheetEmoji = this.isGoogleSheetProduct(product) ? ` ${this.sheetEmoji}` : '';
+    const heading = `Hola! Quiero consultar disponibilidad del ${product.marca.trim()} ${product.modelo.trim()}.${sheetEmoji}`;
+
+    if (this.isPerfume(product)) {
+      return [
+        heading,
+        `- Transferencia: $ ${formatCatalogMoney(product.precioTransferenciaBancaria)}`
+      ].join('\n');
+    }
+
+    const installment = tarjeta6Installment(product.precioTarjeta6Pagos);
     const lines = [
-      `Hola! Quiero consultar disponibilidad del ${product.marca} ${product.modelo}.${sheetEmoji}`,
+      heading,
       `- Efectivo: $ ${formatCatalogMoney(product.precioPesos)}`,
       `- Transferencia: $ ${formatCatalogMoney(product.precioTransferenciaBancaria)}`,
       financing
@@ -146,7 +155,11 @@ export class CatalogWhatsappService {
   }
 
   private shouldShowColors(product: CatalogWhatsappProduct, colors: string[]): boolean {
-    return this.normalizeSignal(product.marca) !== 'PERFUMES' && colors.length > 0;
+    return !this.isPerfume(product) && colors.length > 0;
+  }
+
+  private isPerfume(product: CatalogWhatsappProduct): boolean {
+    return this.normalizeSignal(product.marca) === 'PERFUMES';
   }
 
   private normalizeSignal(value: string | null | undefined): string {
